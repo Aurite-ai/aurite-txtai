@@ -11,3 +11,7 @@ venv/
 .env
 .git
 tests/
+config/*
+config/*
+!config/templates/
+!config/templates/*
