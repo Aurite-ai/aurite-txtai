@@ -1,0 +1,36 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/txtai-service', '.']
+
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/txtai-service']
+
+  # Deploy container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'txtai-service'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/txtai-service'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--memory'
+      - '4Gi'
+      - '--cpu'
+      - '2'
+      - '--service-account'
+      - 'txtai-sa@${PROJECT_ID}.iam.gserviceaccount.com'
+      - '--set-env-vars'
+      - 'API_KEY=${_API_KEY}'
+
+substitutions:
+  _API_KEY: '' # This will be provided by the trigger
+
+options:
+  logging: CLOUD_LOGGING_ONLY
