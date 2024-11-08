@@ -141,6 +141,30 @@ setup_api_key() {
     fi
 }
 
+# Function to setup service account key secret
+setup_sa_key_secret() {
+    local project_id=$1
+    echo -e "\n${BLUE}Setting up Service Account Key Secret...${NC}"
+
+    if ! gcloud secrets describe txtai-sa-key >/dev/null 2>&1; then
+        echo "Creating service account key secret..."
+
+        # Check for existing service account key
+        if [ ! -f "${SCRIPT_DIR}/../config/service-account.json" ]; then
+            echo -e "${RED}Error: No service account key found at config/service-account.json${NC}"
+            echo "Please download a service account key first"
+            return 1
+        fi
+
+        # Create secret from file
+        gcloud secrets create txtai-sa-key \
+            --data-file="${SCRIPT_DIR}/../config/service-account.json"
+        echo -e "${GREEN}✓ Service account key secret created${NC}"
+    else
+        echo -e "${YELLOW}! Service account key secret already exists${NC}"
+    fi
+}
+
 # Function to setup build trigger
 setup_build_trigger() {
     local project_id=$1
@@ -151,10 +175,20 @@ setup_build_trigger() {
         echo "Updating build trigger..."
         gcloud builds triggers update "$trigger_id" \
             --region=us-central1 \
-            --substitutions=_API_KEY='$(gcloud secrets versions access latest --secret=txtai-api-key)'
-        echo -e "${GREEN}✓ Build trigger updated${NC}"
+            --substitutions=_API_KEY='$(gcloud secrets versions access latest --secret=txtai-api-key)',_SA_KEY='$(gcloud secrets versions access latest --secret=txtai-sa-key)'
+        echo -e "${GREEN}✓ Build trigger updated with secret substitutions${NC}"
     else
         echo -e "${YELLOW}! No trigger ID provided${NC}"
+        echo "Creating new build trigger..."
+        gcloud builds triggers create github \
+            --name="txtai-prod" \
+            --region=us-central1 \
+            --repo-name=aurite-txtai \
+            --repo-owner=Aurite-ai \
+            --branch-pattern="^main$" \
+            --build-config="cloudbuild.yaml" \
+            --substitutions=_API_KEY='$(gcloud secrets versions access latest --secret=txtai-api-key)',_SA_KEY='$(gcloud secrets versions access latest --secret=txtai-sa-key)'
+        echo -e "${GREEN}✓ Build trigger created${NC}"
     fi
 }
 
@@ -222,17 +256,20 @@ if [[ "${TXTAI_NEEDS_BUCKET}" == "true" ]]; then
     FIXES_APPLIED=true
 fi
 
-if [[ "${TXTAI_NEEDS_SECRET}" == "true" ]]; then
+if [[ "${TXTAI_NEEDS_API_KEY}" == "true" ]]; then
     setup_api_key "${TXTAI_PROJECT_ID}"
     FIXES_APPLIED=true
 fi
 
-if [[ "${TXTAI_NEEDS_TRIGGER}" == "true" ]]; then
+if [[ "${TXTAI_NEEDS_SA_KEY}" == "true" ]]; then
+    setup_sa_key_secret "${TXTAI_PROJECT_ID}"
+    FIXES_APPLIED=true
+fi
+
+if [[ "${TXTAI_NEEDS_TRIGGER_UPDATE}" == "true" ]]; then
     trigger_id=$(gcloud builds triggers list --region=us-central1 --filter="name~txtai-prod" --format="get(id)")
-    if [[ -n "$trigger_id" ]]; then
-        setup_build_trigger "${TXTAI_PROJECT_ID}" "$trigger_id"
-        FIXES_APPLIED=true
-    fi
+    setup_build_trigger "${TXTAI_PROJECT_ID}" "$trigger_id"
+    FIXES_APPLIED=true
 fi
 
 if [[ "${TXTAI_NEEDS_BUILD_PERMS}" == "true" ]]; then

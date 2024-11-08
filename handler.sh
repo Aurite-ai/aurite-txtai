@@ -3,6 +3,21 @@
 # Get script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Function to setup service account
+setup_service_account() {
+    # Check if credentials are provided via environment variable
+    if [ -n "$GOOGLE_CREDENTIALS" ]; then
+        echo "Using service account credentials from environment"
+        echo "$GOOGLE_CREDENTIALS" > /app/config/service-account.json
+        export GOOGLE_APPLICATION_CREDENTIALS="/app/config/service-account.json"
+    elif [ -f "/app/config/service-account.json" ]; then
+        echo "Using service account credentials from mounted file"
+        export GOOGLE_APPLICATION_CREDENTIALS="/app/config/service-account.json"
+    else
+        echo "Warning: No service account credentials found"
+    fi
+}
+
 # Function to check config file
 check_config() {
     local config_file=$1
@@ -22,13 +37,12 @@ check_config() {
 # Function to start server
 start_server() {
     local config_file=$1
-    local creds_file=$2
     local port=${PORT:-8000}
 
     export PYTHONUNBUFFERED=1
-    if [ -f "$creds_file" ]; then
-        export GOOGLE_APPLICATION_CREDENTIALS="$creds_file"
-    fi
+
+    # Setup service account credentials
+    setup_service_account
 
     # Ensure API key is set
     if [ -z "${API_KEY}" ]; then
@@ -67,11 +81,10 @@ fi
 # Start For Docker Container
 if [ -f /.dockerenv ]; then
     echo "Starting txtai API service inside container..."
-    CONFIG_FILE="/app/config.yml"
-    CREDS_FILE="/app/service-account.json"
+    CONFIG_FILE="/app/config/config.yml"
 
     if check_config "$CONFIG_FILE"; then
-        start_server "$CONFIG_FILE" "$CREDS_FILE" &
+        start_server "$CONFIG_FILE" &
 
         # Wait for server to be healthy
         echo "Waiting for server to be healthy..."
@@ -95,14 +108,30 @@ else
     docker rm txtai-container || true
 
     if docker build -t txtai-service "${SCRIPT_DIR}"; then
+        # Check for API key in environment
+        if [ -z "${API_KEY}" ]; then
+            echo "Error: API_KEY environment variable not set"
+            echo "Please set API_KEY environment variable before running"
+            exit 1
+        fi
+
+        # Check for service account file
+        if [ ! -f "${SCRIPT_DIR}/config/service-account.json" ]; then
+            echo "Error: No service account credentials found at config/service-account.json"
+            echo "Please place your service account credentials file in the config directory"
+            exit 1
+        fi
+
         docker run \
             --name txtai-container \
             -p 8000:8000 \
             --memory=4g \
             --memory-swap=4g \
-            -v "${SCRIPT_DIR}/services/txtai/data":/app/data \
-            -v "${SCRIPT_DIR}/services/txtai/models":/app/models \
-            -v "${SCRIPT_DIR}/services/txtai/info":/app/info \
+            -v "${SCRIPT_DIR}/config":/app/config \
+            -v "${SCRIPT_DIR}/data":/app/data \
+            -v "${SCRIPT_DIR}/models":/app/models \
+            -v "${SCRIPT_DIR}/info":/app/info \
+            -e API_KEY="${API_KEY}" \
             txtai-service
     else
         echo "Error: Docker build failed"

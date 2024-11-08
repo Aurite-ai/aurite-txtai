@@ -166,9 +166,49 @@ check_cloud_build_permissions() {
     fi
 }
 
+# Add this function after check_cloud_build_permissions
+check_secrets() {
+    echo -e "\n${BLUE}Secret Manager Status:${NC}"
+
+    # Check API Key Secret
+    echo -n "- API Key Secret: "
+    if ! gcloud secrets describe txtai-api-key >/dev/null 2>&1; then
+        echo -e "${RED}✗ API key secret not found${NC}"
+        track_issue "API key secret not configured"
+        export TXTAI_NEEDS_API_KEY=true
+    else
+        echo -e "${GREEN}✓${NC}"
+    fi
+
+    # Check Service Account Key Secret
+    echo -n "- Service Account Key Secret: "
+    if ! gcloud secrets describe txtai-sa-key >/dev/null 2>&1; then
+        echo -e "${RED}✗ Service account key secret not found${NC}"
+        track_issue "Service account key secret not configured"
+        export TXTAI_NEEDS_SA_KEY=true
+    else
+        echo -e "${GREEN}✓${NC}"
+    fi
+
+    # Check Build Trigger Configuration
+    echo -n "- Build Trigger Secrets: "
+    local trigger_id=$(gcloud builds triggers list --region=us-central1 --filter="name~txtai-prod" --format="get(id)")
+    if [ -n "$trigger_id" ]; then
+        local substitutions=$(gcloud builds triggers describe "$trigger_id" --region=us-central1 --format="get(substitutions)")
+        if [[ "$substitutions" != *"_API_KEY"* ]] || [[ "$substitutions" != *"_SA_KEY"* ]]; then
+            echo -e "${RED}✗ Missing secret substitutions${NC}"
+            track_issue "Build trigger missing required secret substitutions"
+            export TXTAI_NEEDS_TRIGGER_UPDATE=true
+        else
+            echo -e "${GREEN}✓${NC}"
+        fi
+    fi
+}
+
 # Main execution
 check_prerequisites
 check_cloud_build_permissions
+check_secrets
 check_components
 check_cloud_run
 

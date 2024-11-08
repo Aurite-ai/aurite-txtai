@@ -2,8 +2,7 @@
 FROM neuml/txtai-cpu:latest
 
 # Copy the configuration files
-COPY config/config.yml /app/config.yml
-COPY config/service-account.json /app/service-account.json
+COPY config/templates/config.yml /app/config/config.yml
 
 # Copy the handler script
 COPY handler.sh /app/handler.sh

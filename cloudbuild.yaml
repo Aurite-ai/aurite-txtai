@@ -27,10 +27,11 @@ steps:
       - '--service-account'
       - 'txtai-sa@${PROJECT_ID}.iam.gserviceaccount.com'
       - '--set-env-vars'
-      - 'API_KEY=${_API_KEY}'
+      - 'API_KEY=${_API_KEY},GOOGLE_CREDENTIALS=${_SA_KEY}'
 
 substitutions:
-  _API_KEY: '' # This will be provided by the trigger
+  _API_KEY: '' # From secret manager
+  _SA_KEY: '' # From service account key in secret manager
 
 options:
   logging: CLOUD_LOGGING_ONLY
