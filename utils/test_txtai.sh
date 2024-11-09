@@ -1,17 +1,43 @@
 #!/bin/bash
 
-# Get script directory
+# Get script directory and env file path
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ENV_FILE="${SCRIPT_DIR}/../.env"
+BASE_URL="http://localhost:8000"
+
+# Function to load environment variables
+load_env() {
+    if [ ! -f "$ENV_FILE" ]; then
+        echo -e "${RED}Error: .env file not found at $ENV_FILE${NC}"
+        exit 1
+    fi
+
+    # Source the environment variables
+    set -a
+    source "$ENV_FILE"
+    set +a
+
+    # Validate required variables
+    if [ -z "${API_KEY}" ]; then
+        echo -e "${RED}Error: API_KEY environment variable not set${NC}"
+        echo "Please ensure API_KEY is set in .env"
+        exit 1
+    fi
+}
+
+# Update the check_env function
+check_env() {
+    load_env
+    echo -e "${GREEN}Environment variables loaded from $ENV_FILE${NC}"
+}
 
 echo "Testing txtai API endpoints..."
-
-# Base URL
-BASE_URL="http://localhost:8000"
 
 # Colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
+YELLOW='\033[1;33m'
 
 # Check and install required dependencies
 check_dependencies() {
@@ -31,9 +57,11 @@ check_dependencies() {
 # Check if server is running
 check_server() {
     echo "Checking if txtai server is running..."
-    if ! curl -s "${BASE_URL}/openapi.json" > /dev/null; then
+    if ! curl -s \
+        -H "Authorization: Bearer ${API_KEY}" \
+        "${BASE_URL}/openapi.json" > /dev/null; then
         echo -e "${RED}Error: txtai server is not running at ${BASE_URL}${NC}"
-        echo "Please start the server using the handler.sh script first"
+        echo "Please start the server using the run.sh script first"
         exit 1
     fi
     echo -e "${GREEN}Server is running!${NC}"
@@ -64,9 +92,9 @@ format_json() {
 
 # Test data
 TEST_DOCS='[
-    {"text": "txtai is an AI-powered search engine", "id": "doc1", "tags": {"type": "description"}},
-    {"text": "txtai supports semantic search capabilities", "id": "doc2", "tags": {"type": "feature"}},
-    {"text": "Vector search is fast and efficient", "id": "doc3", "tags": {"type": "benefit"}}
+    {"text": "txtai is an AI-powered search engine", "id": "doc1"},
+    {"text": "txtai supports semantic search capabilities", "id": "doc2"},
+    {"text": "Vector search is fast and efficient", "id": "doc3"}
 ]'
 
 # Validation function
@@ -153,10 +181,15 @@ test_endpoint() {
     local response
     local status
     if [[ "$method" == "GET" ]]; then
-        response=$(curl -s -w "\n%{http_code}" "${BASE_URL}${endpoint}${params:+?}${params}")
+        response=$(curl -s -w "\n%{http_code}" \
+            -H "Authorization: Bearer ${API_KEY}" \
+            "${BASE_URL}${endpoint}${params:+?}${params}")
     else
-        response=$(curl -s -w "\n%{http_code}" -X "${method}" "${BASE_URL}${endpoint}" \
+        response=$(curl -s -w "\n%{http_code}" \
+            -X "${method}" \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${API_KEY}" \
+            "${BASE_URL}${endpoint}" \
             -d "${data}")
     fi
 
@@ -234,8 +267,10 @@ main() {
     local total=9
 
     check_dependencies
-    echo "Starting API tests..."
+    check_env
+    check_server
 
+    echo "Starting API tests..."
     echo -e "\n${GREEN}Running Tests:${NC}"
     echo "- Basic Operations (count, add, index): 3 tests"
     echo "- Search Operations (search, batchsearch): 2 tests"

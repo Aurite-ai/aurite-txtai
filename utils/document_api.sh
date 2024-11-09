@@ -35,12 +35,14 @@ check_dependencies
 # Check if server is running
 check_server() {
     echo "Checking if txtai server is running..."
-    if ! curl -s "${BASE_URL}/openapi.json" > /dev/null; then
-        echo "Error: txtai server is not running at ${BASE_URL}"
+    if ! curl -s \
+        -H "Authorization: Bearer ${API_KEY}" \
+        "${BASE_URL}/openapi.json" > /dev/null; then
+        echo -e "${RED}Error: txtai server is not running at ${BASE_URL}${NC}"
         echo "Please start the server using the handler.sh script first"
         exit 1
     fi
-    echo "Server is running!"
+    echo -e "${GREEN}Server is running!${NC}"
 }
 
 # Format JSON with truncation
@@ -673,12 +675,19 @@ Generated on: $(date '+%Y-%m-%d %H:%M:%S')
 
 ## Base URL: ${BASE_URL}
 
+## Authentication
+All endpoints require an API key to be passed in the Authorization header:
+\`\`\`
+Authorization: Bearer ${API_KEY}
+\`\`\`
+
 ## Configuration Status
 The following features are currently enabled based on config.yml:
 - Writable API: $([ "$(echo "$config" | yq .writable)" == "true" ] && echo "✅" || echo "❌")
 - Embeddings: $([ -n "$(echo "$config" | yq .embeddings.path)" ] && echo "✅ ($(echo "$config" | yq .embeddings.path))" || echo "❌")
 - Index Backend: $(echo "$config" | yq .index.backend)
 - Text Segmentation: $([ "$(echo "$config" | yq .segmentation.sentences)" == "true" ] && echo "✅" || echo "❌")
+- Authentication: ✅ (API Key Required)
 
 EOF
 

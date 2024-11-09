@@ -1,3 +1,4 @@
+# Python
 __pycache__
 *.pyc
 *.pyo
@@ -5,9 +6,26 @@ __pycache__
 .Python
 env/
 venv/
+.venv/
 .env
 *.log
+
+# Git
 .git
 .gitignore
+
+# Development
 tests/
 utils/
+.vscode/
+*.md
+!README.md
+
+# Data directories (mounted at runtime)
+data/*
+models/*
+info/*
+
+# Keep config template
+config/*
+!config/templates/
