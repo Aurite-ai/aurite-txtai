@@ -19,3 +19,4 @@ config/*
 venv/
 ENV/
 !.vscode/settings.json
+logs/*

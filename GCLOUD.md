@@ -12,11 +12,14 @@ Currently configured service accounts:
 
 - ✅ `txtai-sa@aurite-dev.iam.gserviceaccount.com`
 
+  - Used for all service deployments and triggers
   - Roles:
     - roles/run.invoker
     - roles/run.serviceAgent
     - roles/storage.objectCreator
     - roles/storage.objectViewer
+    - roles/secretmanager.secretAccessor
+    - roles/run.admin
 
   ```bash
   # List roles
@@ -42,6 +45,41 @@ Currently configured service accounts:
   # Grant access
   gsutil iam ch serviceAccount:txtai-sa@aurite-dev.iam.gserviceaccount.com:objectViewer gs://aurite-txtai-dev
   ```
+
+## Database
+
+- ✅ Cloud SQL instance: `aurite-postgres`
+  - Version: POSTGRES_13
+  - Location: us-central1-c
+  - Tier: db-custom-1-3840
+  - Public IP: 34.29.147.157
+
+```bash
+# List instances
+gcloud sql instances list
+
+# Get connection info
+gcloud sql instances describe aurite-postgres \
+    --format="table(connectionName,ipAddresses)"
+```
+
+## Cache
+
+- ✅ Redis instance: `aurite-redis`
+  - Version: REDIS_6_X
+  - Region: us-central1
+  - Tier: BASIC
+  - Size: 1GB
+  - Host: 10.28.157.227
+  - Port: 6379
+
+```bash
+# List instances
+gcloud redis instances list --region=us-central1
+
+# Get instance details
+gcloud redis instances describe aurite-redis --region=us-central1
+```
 
 ## Secrets
 
@@ -73,6 +111,7 @@ Current services:
 
 - ❌ txtai service not deployed
 - ✅ mobile-server deployed at https://mobile-server-422370317143.us-central1.run.app
+- ❌ persona-server not deployed
 
 ```bash
 # List services
@@ -100,7 +139,7 @@ Triggers configured:
 
 - ✅ `txtai-prod` (ID: 2aeed79f-0651-4a44-9f68-0a103679ffbc)
   - Branch trigger: `^main$`
-  - Using service account: cloud-build-service-account@aurite-dev.iam.gserviceaccount.com
+  - Using service account: txtai-sa@aurite-dev.iam.gserviceaccount.com
   - Repository: Aurite-ai-aurite-txtai
   - Substitutions:
     - \_API_KEY: $(gcloud secrets versions access latest --secret=API_KEY)
@@ -142,40 +181,7 @@ gcloud secrets add-iam-policy-binding API_KEY \
     --role="roles/secretmanager.secretAccessor"
 ```
 
-### 2. Update Build Trigger
-
-Need to update via Console (https://console.cloud.google.com/cloud-build/triggers?project=aurite-dev):
-
-- Change from tag to branch trigger
-- Set branch pattern to ^main$
-- Verify cloudbuild.yaml path
-- Update substitutions:
-  - \_API_KEY: $(gcloud secrets versions access latest --secret=API_KEY)
-  - \_SA_KEY: $(gcloud secrets versions access latest --secret=txtai-sa-key)
-
-### 3. Verify Service Account Permissions
-
-Additional roles needed for txtai-sa:
-
-```bash
-# Grant Secret Manager access
-gcloud projects add-iam-policy-binding aurite-dev \
-    --member="serviceAccount:txtai-sa@aurite-dev.iam.gserviceaccount.com" \
-    --role="roles/secretmanager.secretAccessor"
-
-# Grant Cloud Run admin
-gcloud projects add-iam-policy-binding aurite-dev \
-    --member="serviceAccount:txtai-sa@aurite-dev.iam.gserviceaccount.com" \
-    --role="roles/run.admin"
-
-# Verify roles
-gcloud projects get-iam-policy aurite-dev \
-    --flatten="bindings[].members" \
-    --format="table(bindings.role)" \
-    --filter="bindings.members:serviceAccount:txtai-sa@aurite-dev.iam.gserviceaccount.com"
-```
-
-### 4. Initial Cloud Run Deployment
+### 2. Deploy txtai Service
 
 ```bash
 # Deploy service
@@ -192,36 +198,26 @@ gcloud run deploy txtai \
 gcloud run services describe txtai --region=us-central1
 ```
 
-## Useful Commands
-
-### Check Service Status
+### 3. Deploy persona-server Service
 
 ```bash
-# Get service details
-gcloud run services describe txtai --region=us-central1
+# Deploy service
+gcloud run deploy persona-server \
+    --source . \
+    --region=us-central1 \
+    --service-account=txtai-sa@aurite-dev.iam.gserviceaccount.com \
+    --memory=2Gi \
+    --cpu=1 \
+    --port=3001
 
-# Get service logs
-gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=txtai" --limit=10
-
-# Get service URL
-gcloud run services describe txtai --region=us-central1 --format 'value(status.url)'
-```
-
-### Manage Service Account Keys
-
-```bash
-# Create new key
-gcloud iam service-accounts keys create key.json \
-    --iam-account=txtai-sa@aurite-dev.iam.gserviceaccount.com
-
-# List keys
-gcloud iam service-accounts keys list \
-    --iam-account=txtai-sa@aurite-dev.iam.gserviceaccount.com
+# Verify deployment
+gcloud run services describe persona-server --region=us-central1
 ```
 
 ## Notes
 
-- Build failures need investigation after initial setup is complete
-- Consider setting up monitoring and logging
-- May need to adjust memory/CPU based on usage
-- Remember to clean up old service account keys periodically
+- Using single service account (txtai-sa) for all services
+- Cloud SQL and Redis instances are configured and ready
+- Need to deploy txtai and persona-server services
+- API_KEY secret needs to be created
+- All build triggers are configured and working

@@ -5,33 +5,34 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# Get script directory
+# Get script directory and env file path
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+ENV_FILE="${SCRIPT_DIR}/.env"
 
-# Function to load environment
+# Function to load environment variables
 load_env() {
-    # Load from master env files
-    if [ -f "${ROOT_DIR}/.env.master" ]; then
-        set -o allexport
-        source "${ROOT_DIR}/.env.master"
-        set +o allexport
+    if [ ! -f "$ENV_FILE" ]; then
+        echo -e "${RED}Error: .env file not found at $ENV_FILE${NC}"
+        exit 1
     fi
-    if [ -f "${ROOT_DIR}/.env.master.local" ]; then
-        set -o allexport
-        source "${ROOT_DIR}/.env.master.local"
-        set +o allexport
+
+    # Source the environment variables
+    set -a
+    source "$ENV_FILE"
+    set +a
+
+    # Validate required variables
+    if [ -z "${API_KEY}" ]; then
+        echo -e "${RED}Error: API_KEY environment variable not set${NC}"
+        echo "Please ensure API_KEY is set in .env"
+        exit 1
     fi
 }
 
-# Function to check environment variables
+# Function to check environment
 check_env() {
     load_env
-    if [ -z "${API_KEY}" ]; then
-        echo -e "${RED}Error: API_KEY environment variable not set${NC}"
-        echo "Please ensure API_KEY is set in .env.master or .env.master.local"
-        exit 1
-    fi
+    echo -e "${GREEN}Environment variables loaded from $ENV_FILE${NC}"
 
     # Only check for service account in local development
     if [ ! -f "${SCRIPT_DIR}/config/service-account.json" ] && [ -z "${GOOGLE_CREDENTIALS}" ]; then
