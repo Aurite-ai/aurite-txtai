@@ -20,8 +20,8 @@ COPY handler.sh /app/
 # Make the handler script executable
 RUN chmod +x /app/handler.sh
 
-# Cloud Run uses PORT environment variable
-ENV PORT=8000 \
+# Set Cloud Run's expected port
+ENV PORT=8080 \
     PYTHONUNBUFFERED=1
 
 # Start the txtai API service using the handler script

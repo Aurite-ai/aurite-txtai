@@ -1,32 +1,11 @@
 steps:
-  # Create logs directory
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        mkdir -p logs
-        echo "Build started at $(date)" > logs/build.log
-
-  # Build the container image with verbose output
+  # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
-    args:
-      [
-        'build',
-        '--progress=plain',
-        '--no-cache',
-        '-t',
-        'gcr.io/$PROJECT_ID/txtai:$BUILD_ID',
-        '.',
-      ]
-    id: 'build'
-    waitFor: ['-'] # Start immediately
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/txtai', '.']
 
-  # Push the image to Google Container Registry
+  # Push the image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/txtai:$BUILD_ID']
-    id: 'push'
-    waitFor: ['build']
+    args: ['push', 'gcr.io/$PROJECT_ID/txtai']
 
   # Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -35,28 +14,25 @@ steps:
       - 'run'
       - 'deploy'
       - 'txtai'
-      - '--image=gcr.io/$PROJECT_ID/txtai:$BUILD_ID'
-      - '--region=us-central1'
-      - '--platform=managed'
-      - '--memory=4Gi'
-      - '--cpu=2'
-      - '--vpc-connector=aurite-vpc-connector'
-      - '--set-env-vars=API_KEY=${_API_KEY}'
-      - '--set-env-vars=GOOGLE_CREDENTIALS=${_SA_KEY}'
-      - '--service-account=txtai-sa@${PROJECT_ID}.iam.gserviceaccount.com'
-    id: 'deploy'
-    waitFor: ['push']
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/txtai'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--memory'
+      - '4Gi'
+      - '--cpu'
+      - '2'
+      - '--vpc-connector'
+      - 'aurite-vpc-connector'
+      - '--service-account'
+      - 'txtai-sa@${PROJECT_ID}.iam.gserviceaccount.com'
+      - '--allow-unauthenticated'
+      - '--quiet'
 
 images:
-  - 'gcr.io/$PROJECT_ID/txtai:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/txtai'
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  logStreamingOption: STREAM_ON
-  machineType: 'N1_HIGHCPU_8'
-
-substitutions:
-  _API_KEY: '' # From secret manager
-  _SA_KEY: '' # From service account key in secret manager
-
-timeout: '1800s' # 30 minutes

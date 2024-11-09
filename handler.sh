@@ -39,19 +39,14 @@ check_config() {
 # Function to start server
 start_server() {
     local config_file=$1
-    local port=${PORT:-8000}
+    local port=${PORT:-8080}
 
     export PYTHONUNBUFFERED=1
 
     # Setup service account credentials
     setup_service_account
 
-    # Check for API key
-    if [ -z "${API_KEY}" ]; then
-        echo "Error: API_KEY environment variable is not set"
-        exit 1
-    fi
-
+    echo "Starting server on port $port"
     CONFIG="$config_file" uvicorn "txtai.api:app" \
         --host 0.0.0.0 \
         --port "$port" \
