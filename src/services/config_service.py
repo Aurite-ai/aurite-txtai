@@ -1,6 +1,7 @@
 from typing import Optional
 from pydantic_settings import BaseSettings
 from txtai.api import API
+import os
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""

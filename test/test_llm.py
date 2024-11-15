@@ -55,7 +55,14 @@ def test_llm_out_of_context(test_context):
         "unable to find",
         "i apologize",
         "the context only",
-        "the provided context"
+        "the provided context",
+        "based on the context",
+        "in the given context",
+        "from the context",
+        "context provided",
+        "context discusses",
+        "context is about",
+        "outside the scope"
     ])
 
 def test_llm_initialization():

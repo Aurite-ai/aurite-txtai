@@ -1,36 +1,55 @@
+from fastapi import HTTPException, Security, Depends
 from fastapi.security import APIKeyHeader
-from fastapi import Security, HTTPException, status
-import hashlib
+from ..services.config_service import config_service
 
-from pydantic_settings import BaseSettings
+api_key_header = APIKeyHeader(name="Authorization", auto_error=True)
 
-from src.services.config_service import config_service
-
-API_KEY_NAME = "Authorization"
-api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
-
-def hash_key(key: str) -> str:
-    """Create SHA-256 hash of API key"""
-    return hashlib.sha256(key.encode()).hexdigest()
-
-async def get_api_key(api_key_header: str = Security(api_key_header)):
-    if not api_key_header.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid API key format"
-        )
-    api_key = api_key_header.split(" ")[1]
+async def verify_token(api_key: str = Security(api_key_header)):
+    """Verify the API token from request header
     
-    # Hash the provided key and compare with stored hash
-    if hash_key(api_key) != config_service.settings.API_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid API key"
-        )
-    return api_key
+    Args:
+        api_key: API key from request header
+        
+    Returns:
+        True if valid
+        
+    Raises:
+        HTTPException if invalid
+    """
+    try:
+        # Extract token from "Bearer <token>" format
+        if not api_key.startswith("Bearer "):
+            raise HTTPException(status_code=403, detail="Invalid authorization header format")
+        
+        token = api_key.split(" ")[1]
+        if token != config_service.settings.API_KEY:
+            raise HTTPException(status_code=403, detail="Invalid API key")
+            
+        return True
+    except IndexError:
+        raise HTTPException(status_code=403, detail="Invalid authorization header format")
 
-class Settings(BaseSettings):
-    API_KEY: str
+async def get_api_key(api_key: str = Security(api_key_header)) -> str:
+    """Get and validate API key from request header
     
-    class Config:
-        env_file = ".env"
+    Args:
+        api_key: API key from request header
+        
+    Returns:
+        Validated API key
+        
+    Raises:
+        HTTPException if invalid
+    """
+    try:
+        # Extract token from "Bearer <token>" format
+        if not api_key.startswith("Bearer "):
+            raise HTTPException(status_code=403, detail="Invalid authorization header format")
+        
+        token = api_key.split(" ")[1]
+        if token != config_service.settings.API_KEY:
+            raise HTTPException(status_code=403, detail="Invalid API key")
+            
+        return token
+    except IndexError:
+        raise HTTPException(status_code=403, detail="Invalid authorization header format")

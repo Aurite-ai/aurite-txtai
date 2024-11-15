@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.routes import embeddings
+from src.routes import embeddings, llm
 import logging
 
 # Configure logging
@@ -28,6 +28,12 @@ app.include_router(
     embeddings.router,
     prefix="/api/embeddings",
     tags=["embeddings"]
+)
+
+app.include_router(
+    llm.router,
+    prefix="/api/llm",
+    tags=["llm"]
 )
 
 @app.get("/", tags=["health"])

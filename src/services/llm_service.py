@@ -76,15 +76,20 @@ class LLMService:
             messages = [
                 {
                     "role": "system", 
-                    "content": "You are a helpful AI assistant. Answer questions using only the provided context. "
-                              "If the answer cannot be found in the context, say so clearly."
+                    "content": """You are a helpful AI assistant. You must ONLY answer questions using the provided context.
+                    If the answer cannot be found in the context, you must clearly state that the information is not 
+                    available in the given context. Do not make assumptions or provide information from outside the context."""
                 },
                 {
                     "role": "user", 
-                    "content": f"Using only the following context, answer the question.\n\n"
-                              f"Context: {context}\n\n"
-                              f"Question: {question}\n\n"
-                              f"Answer:"
+                    "content": f"""Answer this question using ONLY the context below. If the answer is not in the context, 
+                    say that you cannot answer based on the given context.
+
+                    Context: {context}
+
+                    Question: {question}
+
+                    Answer:"""
                 }
             ]
             return self._llm(messages)
