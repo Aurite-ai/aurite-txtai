@@ -150,14 +150,16 @@ class EmbeddingsService:
             logger.error("Failed to delete documents: %s", str(e), exc_info=True)
             raise HTTPException(status_code=500, detail=str(e))
 
-    def simple_search(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+    def semantic_search(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
         """
-        Perform pure semantic search.
-
+        Execute pure semantic search using embeddings.
+        
         References:
-            Notebooks/01_Introducing_txtai.ipynb:            ```python
-            # Run an embeddings search
-            uid = embeddings.search(query, 1)[0][0]            ```
+            Notebooks/01_Introducing_txtai.ipynb:
+            ```python
+            # Pure semantic search
+            embeddings.search("feel good story", limit=1)
+            ```
         """
         results = self._execute_search(query, limit)
         return self._format_results(results)

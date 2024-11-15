@@ -74,7 +74,7 @@ async def hybrid_search(query: HybridSearchQuery):
 async def semantic_search(query: SearchQuery):
     """Perform semantic-only search"""
     try:
-        results = embeddings_service.simple_search(query.query, query.limit)
+        results = embeddings_service.semantic_search(query.query, query.limit)
         return {"results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

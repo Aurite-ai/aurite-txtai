@@ -55,12 +55,12 @@ def test_embeddings():
         count = embeddings.count()
         assert count == len(test_docs), "Document count mismatch"
         
-        # Test simple search
-        logger.info("Testing simple search functionality")
-        results = embeddings.simple_search("test document", 1)
-        logger.info(f"Simple search results: {results}")
-        assert len(results) > 0, "Simple search returned no results"
-        assert "metadata" in results[0], "Simple search results missing metadata"
+        # Test semantic search
+        logger.info("Testing semantic search functionality")
+        results = embeddings.semantic_search("test document", 1)
+        logger.info(f"Semantic search results: {results}")
+        assert len(results) > 0, "Semantic search returned no results"
+        assert "metadata" in results[0], "Semantic search results missing metadata"
         
         # Test hybrid search
         logger.info("Testing hybrid search functionality")
