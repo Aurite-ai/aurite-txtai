@@ -6,7 +6,8 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, project_root)
 
 from newsapi import NewsApiClient
-from utils.logging_config import api_logger
+
+from src.middleware.logging_config import api_logger
 
 
 class NewsAPIClient:

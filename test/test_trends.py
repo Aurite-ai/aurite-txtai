@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 
-from app.main import app
+from src.main import app
 
 # Load environment variables from .env file
 load_dotenv()
@@ -36,9 +36,7 @@ async def test_get_trends(client):
 @pytest.mark.asyncio
 async def test_get_sports_trends(client):
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.get(
-            "/trends/sports", headers={"X-API-Key": os.getenv("API_KEY")}
-        )
+        response = await ac.get("/trends/sports", headers={"X-API-Key": os.getenv("API_KEY")})
     assert response.status_code == 200
     assert "summary" in response.json()
     assert "trends" in response.json()
@@ -47,9 +45,7 @@ async def test_get_sports_trends(client):
 @pytest.mark.asyncio
 async def test_get_cooking_trends(client):
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.get(
-            "/trends/cooking", headers={"X-API-Key": os.getenv("API_KEY")}
-        )
+        response = await ac.get("/trends/cooking", headers={"X-API-Key": os.getenv("API_KEY")})
     assert response.status_code == 200
     assert "summary" in response.json()
     assert "trends" in response.json()
@@ -58,9 +54,7 @@ async def test_get_cooking_trends(client):
 @pytest.mark.asyncio
 async def test_get_gaming_trends(client):
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.get(
-            "/trends/gaming", headers={"X-API-Key": os.getenv("API_KEY")}
-        )
+        response = await ac.get("/trends/gaming", headers={"X-API-Key": os.getenv("API_KEY")})
     assert response.status_code == 200
     assert "summary" in response.json()
     assert "trends" in response.json()
@@ -69,9 +63,7 @@ async def test_get_gaming_trends(client):
 @pytest.mark.asyncio
 async def test_get_finance_trends(client):
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.get(
-            "/trends/finance", headers={"X-API-Key": os.getenv("API_KEY")}
-        )
+        response = await ac.get("/trends/finance", headers={"X-API-Key": os.getenv("API_KEY")})
     assert response.status_code == 200
     assert "summary" in response.json()
     assert "trends" in response.json()
@@ -80,9 +72,7 @@ async def test_get_finance_trends(client):
 @pytest.mark.asyncio
 async def test_get_technology_trends(client):
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.get(
-            "/trends/technology", headers={"X-API-Key": os.getenv("API_KEY")}
-        )
+        response = await ac.get("/trends/technology", headers={"X-API-Key": os.getenv("API_KEY")})
     assert response.status_code == 200
     assert "summary" in response.json()
     assert "trends" in response.json()
@@ -99,9 +89,7 @@ async def test_get_ideas(client):
 
 @pytest.mark.asyncio
 async def test_get_statistics(client):
-    trend_name = (
-        "Some Trend Name"  # Replace with an actual trend name from your database
-    )
+    trend_name = "Some Trend Name"  # Replace with an actual trend name from your database
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.get(
             f"/statistics/{trend_name}", headers={"X-API-Key": os.getenv("API_KEY")}
