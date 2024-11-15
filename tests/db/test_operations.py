@@ -1,7 +1,7 @@
 import pytest
 
-from services.db.models import Content, SocialPost
-from services.db.operations import DatabaseOperations
+from src.services.db.models import Content, SocialPost
+from src.services.db.operations import DatabaseOperations
 
 
 @pytest.mark.asyncio

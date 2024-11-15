@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from app.db_client import DBClient
+from src.services.db.client import DBClient
 
 
 def get_trends(limit: int = 10) -> Dict[str, Any]:
@@ -134,7 +134,5 @@ def get_statistics(trend_name: str) -> Dict[str, Any]:
 
     return {
         "trend": trend_name,
-        "statistics": [
-            {"name": stat["stat_name"], "value": stat["stat_value"]} for stat in stats
-        ],
+        "statistics": [{"name": stat["stat_name"], "value": stat["stat_value"]} for stat in stats],
     }

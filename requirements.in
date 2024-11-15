@@ -32,4 +32,6 @@ nltk>=3.8.1
 textblob>=0.18.0
 
 # Logging
-loguru>=0.8.0
+loguru>=0.7.2
+praw
+prawcore

@@ -3,7 +3,7 @@ import os
 import praw
 from prawcore import ResponseException
 
-from utils.logging_config import scraper_logger
+from src.middleware.logging_config import scraper_logger
 
 
 class RedditScraper:
@@ -13,9 +13,7 @@ class RedditScraper:
         user_agent = "python:ai.aurite.trendai:v1.0 (by /u/Intelligent_Pay4364)"
 
         if not client_id or not client_secret:
-            scraper_logger.error(
-                "Reddit API credentials not found in environment variables"
-            )
+            scraper_logger.error("Reddit API credentials not found in environment variables")
             raise ValueError("Reddit API credentials not set")
 
         self.reddit = praw.Reddit(
