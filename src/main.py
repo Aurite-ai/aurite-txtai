@@ -1,13 +1,12 @@
 from fastapi import FastAPI
-from .routers import embeddings
+from src.routes import embeddings
 
-app = FastAPI(title="txtai Service")
+app = FastAPI(title="Search API")
 
-# Add routers
 app.include_router(embeddings.router)
 
 @app.get("/")
-async def root():
+async def health_check():
     return {"status": "healthy"}
 
 if __name__ == "__main__":

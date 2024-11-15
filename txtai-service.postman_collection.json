@@ -58,18 +58,18 @@
       }
     },
     {
-      "name": "Search Italian Dishes",
+      "name": "Semantic Search - Italian Dishes",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "console.log('\\nSearch Results for Italian Dishes:')",
-              "const results = pm.response.json().results;",
+              "console.log('\\nSemantic Search Results for Italian Dishes:')",
+              "const response = pm.response.json();",
+              "const results = response.results;",
               "results.forEach((result, index) => {",
               "    console.log(`\\n${index + 1}. Score: ${result.score.toFixed(4)}`);",
-              "    console.log(`   Text: ${result.document.text}`);",
-              "    console.log(`   Metadata: ${JSON.stringify(result.document.metadata, null, 2)}`);",
+              "    console.log(`   Text: ${result.text}`);",
               "});"
             ],
             "type": "text/javascript"
@@ -79,9 +79,9 @@
       "request": {
         "method": "POST",
         "url": {
-          "raw": "{{base_url}}/api/embeddings/search",
+          "raw": "{{base_url}}/api/embeddings/semantic-search",
           "host": ["{{base_url}}"],
-          "path": ["api", "embeddings", "search"]
+          "path": ["api", "embeddings", "semantic-search"]
         },
         "header": [
           {
@@ -103,90 +103,13 @@
           "script": {
             "exec": [
               "console.log('\\nSearch Results for Soup Dishes:')",
-              "const results = pm.response.json().results;",
+              "const response = pm.response.json();",
+              "const results = response.results;",
               "results.forEach((result, index) => {",
-              "    console.log(`\\n${index + 1}. Score: ${result.score.toFixed(4)}`);",
-              "    console.log(`   Text: ${result.document.text}`);",
-              "    console.log(`   Metadata: ${JSON.stringify(result.document.metadata, null, 2)}`);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "url": {
-          "raw": "{{base_url}}/api/embeddings/search",
-          "host": ["{{base_url}}"],
-          "path": ["api", "embeddings", "search"]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"query\": \"hot soup with broth\", \"limit\": 2}"
-        }
-      }
-    },
-    {
-      "name": "Search Easy Recipes",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "console.log('\\nSearch Results for Easy Recipes:')",
-              "const results = pm.response.json().results;",
-              "results.forEach((result, index) => {",
-              "    console.log(`\\n${index + 1}. Score: ${result.score.toFixed(4)}`);",
-              "    console.log(`   Text: ${result.document.text}`);",
-              "    console.log(`   Metadata: ${JSON.stringify(result.document.metadata, null, 2)}`);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "url": {
-          "raw": "{{base_url}}/api/embeddings/search",
-          "host": ["{{base_url}}"],
-          "path": ["api", "embeddings", "search"]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"query\": \"simple quick recipes for beginners\", \"limit\": 2}"
-        }
-      }
-    },
-    {
-      "name": "Search with Hybrid Weights",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "console.log('\\nHybrid Search Results:')",
-              "const results = pm.response.json().results;",
-              "results.forEach((result, index) => {",
-              "    console.log(`\\n${index + 1}. Combined Score: ${result.score.toFixed(4)}`);",
-              "    console.log(`   Text: ${result.document.text}`);",
-              "    console.log(`   Metadata: ${JSON.stringify(result.document.metadata, null, 2)}`);",
-              "    if (result.scores) {",
-              "        console.log(`   Semantic Score: ${result.scores.semantic.toFixed(4)}`);",
-              "        console.log(`   Keyword Score: ${result.scores.keyword.toFixed(4)}`);",
+              "    console.log(`\\n${index + 1}. Score: ${result.scores.semantic.toFixed(4)}`);",
+              "    console.log(`   Text: ${result.text}`);",
+              "    if (result.metadata) {",
+              "        console.log(`   Metadata: ${JSON.stringify(result.metadata, null, 2)}`);",
               "    }",
               "});"
             ],
@@ -209,7 +132,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"query\": \"spicy soup recipes\", \"limit\": 3, \"hybrid_weight\": 0.7}"
+          "raw": "{\"query\": \"hot soup with broth\", \"limit\": 2}"
         }
       }
     }
