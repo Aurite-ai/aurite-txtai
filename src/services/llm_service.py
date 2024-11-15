@@ -22,11 +22,11 @@ class LLMService:
             os.environ["ANTHROPIC_API_KEY"] = config_service.settings.ANTHROPIC_API_KEY
             
             if config_service.settings.LLM_PROVIDER == "anthropic":
-                # Use Claude
-                self._llm = LLM("claude-3-sonnet-20240229")
+                # Use Claude with litellm provider
+                self._llm = LLM("anthropic/claude-3-sonnet-20240229")
             else:
-                # Use GPT-4
-                self._llm = LLM("gpt-4-turbo-preview")
+                # Use GPT-4 with litellm provider
+                self._llm = LLM("openai/gpt-4-turbo-preview")
                 
             logger.info(f"LLM initialized with provider: {config_service.settings.LLM_PROVIDER}")
         except Exception as e:

@@ -8,10 +8,13 @@ logger = logging.getLogger(__name__)
 class EmbeddingsService:
     """Service for managing embeddings operations"""
     
+    # Class variables for storing indices and configs
+    _indices = {}
+    _configs = {}
+    
     def __init__(self):
         """Initialize embeddings service with configuration"""
         self._embeddings = None
-        self._custom_indices = {}
         self.initialize_embeddings()
     
     def initialize_embeddings(self):
@@ -24,8 +27,120 @@ class EmbeddingsService:
             logger.error(f"Failed to initialize embeddings: {str(e)}")
             raise
     
+    @classmethod
+    def create_index(cls, name: str, config: Optional[Dict] = None) -> Embeddings:
+        """Create a new embeddings index
+        
+        Args:
+            name: Name of the index
+            config: Optional configuration overrides
+            
+        Returns:
+            Embeddings instance for the index
+        """
+        try:
+            # Start with base config
+            index_config = {
+                "path": config_service.settings.EMBEDDINGS_MODEL,
+                "content": True,
+                "backend": "faiss",
+                "indexes": {
+                    "sparse": {
+                        "bm25": {
+                            "terms": True,
+                            "normalize": True
+                        }
+                    },
+                    "dense": {}
+                },
+                "batch": 32,
+                "normalize": True
+            }
+            
+            # Update with any custom config
+            if config:
+                index_config.update(config)
+            
+            # Create new embeddings instance with config
+            embeddings = Embeddings(index_config)
+            
+            # Store index and config
+            cls._indices[name] = embeddings
+            cls._configs[name] = index_config
+            
+            logger.info(f"Created custom index: {name}")
+            return embeddings
+        except Exception as e:
+            logger.error(f"Failed to create index {name}: {str(e)}")
+            raise
+    
+    @classmethod
+    def get_index(cls, name: str) -> Optional[Embeddings]:
+        """Get an existing embeddings index
+        
+        Args:
+            name: Name of the index
+            
+        Returns:
+            Embeddings instance or None if not found
+        """
+        return cls._indices.get(name)
+    
+    @classmethod
+    def list_indices(cls) -> List[str]:
+        """List all available indices
+        
+        Returns:
+            List of index names
+        """
+        return list(cls._indices.keys())
+    
+    @classmethod
+    def delete_index(cls, name: str) -> bool:
+        """Delete an embeddings index
+        
+        Args:
+            name: Name of the index
+            
+        Returns:
+            True if deleted, False if not found
+        """
+        try:
+            if name in cls._indices:
+                del cls._indices[name]
+                del cls._configs[name]
+                logger.info(f"Deleted index: {name}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to delete index {name}: {str(e)}")
+            raise
+    
+    @classmethod
+    def add_documents(cls, index: Embeddings, documents: List[Dict[str, Any]]) -> int:
+        """Add documents to a specific index
+        
+        Args:
+            index: Embeddings instance to add to
+            documents: List of documents to add
+            
+        Returns:
+            Number of documents added
+        """
+        try:
+            # Format documents for indexing
+            data = [(doc["text"], doc.get("metadata", {})) for doc in documents]
+            
+            # Index documents
+            index.index(data)
+            logger.info(f"Added {len(documents)} documents to index")
+            return len(documents)
+        except Exception as e:
+            logger.error(f"Failed to add documents to index: {str(e)}")
+            raise
+    
     def add(self, documents: List[Dict[str, Any]]) -> int:
-        """Add documents to the embeddings index
+        """Add documents to the default embeddings index
         
         Args:
             documents: List of documents with text and metadata
@@ -99,74 +214,6 @@ class EmbeddingsService:
             return self._process_results(results)
         except Exception as e:
             logger.error(f"Hybrid search failed: {str(e)}")
-            raise
-    
-    def create_custom_index(self, name: str, config: Optional[Dict] = None) -> None:
-        """Create a custom embeddings index with optional configuration
-        
-        Args:
-            name: Name of the custom index
-            config: Optional configuration overrides
-        """
-        try:
-            # Merge base config with custom overrides
-            index_config = config_service.embeddings_config.copy()
-            if config:
-                index_config.update(config)
-            
-            # Create new embeddings instance
-            self._custom_indices[name] = Embeddings(index_config)
-            logger.info(f"Created custom index: {name}")
-        except Exception as e:
-            logger.error(f"Failed to create custom index {name}: {str(e)}")
-            raise
-    
-    def add_to_custom_index(self, name: str, documents: List[Dict[str, Any]]) -> int:
-        """Add documents to a custom index
-        
-        Args:
-            name: Name of the custom index
-            documents: List of documents to add
-            
-        Returns:
-            Number of documents added
-        """
-        try:
-            if name not in self._custom_indices:
-                raise ValueError(f"Custom index {name} does not exist")
-                
-            self._custom_indices[name].index(documents)
-            return len(documents)
-        except Exception as e:
-            logger.error(f"Failed to add to custom index {name}: {str(e)}")
-            raise
-    
-    def search_custom_index(self, name: str, query: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Search a custom index
-        
-        Args:
-            name: Name of the custom index
-            query: Search query text
-            limit: Maximum number of results
-            
-        Returns:
-            List of search results with scores
-        """
-        try:
-            if name not in self._custom_indices:
-                raise ValueError(f"Custom index {name} does not exist")
-                
-            sql = f"""
-            SELECT text, score, metadata
-            FROM txtai 
-            WHERE similar('{query}')
-            ORDER BY score DESC
-            LIMIT {limit}
-            """
-            results = self._custom_indices[name].search(sql)
-            return self._process_results(results)
-        except Exception as e:
-            logger.error(f"Failed to search custom index {name}: {str(e)}")
             raise
     
     def _process_results(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

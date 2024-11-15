@@ -7,7 +7,6 @@ from src.services.embeddings_service import EmbeddingsService
 from src.services.config_service import config_service
 from google.cloud import storage
 import logging
-import pytest
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
