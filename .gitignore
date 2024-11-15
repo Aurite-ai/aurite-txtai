@@ -12,7 +12,8 @@ __pycache__/
 dist/
 build/
 *.egg-info/
-
+config/application_default_credentials.json
+config/service-account.json
 # Unit test / coverage reports
 htmlcov/
 .coverage

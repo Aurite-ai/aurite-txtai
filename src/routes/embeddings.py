@@ -1,14 +1,17 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
-from src.services.embeddings_service import SearchService
+from typing import List, Optional, Dict
+from src.services.embeddings_service import EmbeddingsService
 
 router = APIRouter(prefix="/api/embeddings", tags=["embeddings"])
-search_service = SearchService()
+embeddings_service = EmbeddingsService()
 
 class Document(BaseModel):
     text: str
-    metadata: Optional[dict] = None
+    metadata: Optional[Dict] = None
+
+class Documents(BaseModel):
+    documents: List[Document]
 
 class SearchQuery(BaseModel):
     query: str
@@ -20,14 +23,11 @@ class SearchResult(BaseModel):
     metadata: Optional[dict] = None
 
 @router.post("/add")
-async def add_documents(documents: List[Document]):
+async def add_documents(request: Documents):
     """Add documents to the embeddings database"""
     try:
-        # Convert to format expected by txtai
-        docs = [(i, doc.text, doc.metadata) for i, doc in enumerate(documents)]
-        search_service.embeddings.index(docs)
-        search_service.embeddings.save()
-        return {"status": "success", "count": len(documents)}
+        count = embeddings_service.add(request.documents)
+        return {"status": "success", "count": count}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -35,8 +35,8 @@ async def add_documents(documents: List[Document]):
 async def search(query: SearchQuery):
     """Search the embeddings database"""
     try:
-        results = search_service.hybrid_search(query.query, query.limit)
-        return {"results": results}  # Wrap results in object to match test expectations
+        results = embeddings_service.hybrid_search(query.query, query.limit)
+        return {"results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -44,7 +44,7 @@ async def search(query: SearchQuery):
 async def semantic_search(query: SearchQuery):
     """Perform semantic-only search"""
     try:
-        results = search_service.simple_search(query.query, query.limit)
+        results = embeddings_service.simple_search(query.query, query.limit)
         return {"results": [{"text": text, "score": score} for score, text in results]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
