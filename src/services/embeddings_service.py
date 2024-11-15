@@ -1,54 +1,92 @@
 from txtai import Embeddings
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import logging
-import json
+from .config_service import config_service
 
 logger = logging.getLogger(__name__)
 
 class EmbeddingsService:
+    """Service for managing embeddings operations"""
+    
     def __init__(self):
-        """Initialize the embeddings service with default configuration"""
-        self.embeddings = self.create_index("default")
-
-    @staticmethod
-    def create_index(name: str) -> Embeddings:
-        """Create a new embeddings index with specified configuration"""
-        config = {
-            "path": "sentence-transformers/nli-mpnet-base-v2",
-            "content": True,
-            "backend": "faiss",
-            "indexes": {
-                "sparse": {
-                    "bm25": {
-                        "terms": True,
-                        "normalize": True
-                    }
-                },
-                "dense": {}
-            },
-            "batch": 32,
-            "normalize": True,
-            "defaults": False
-        }
-        
-        embeddings = Embeddings(config)
-        return embeddings
-
+        """Initialize embeddings service with configuration"""
+        self._embeddings = None
+        self._custom_indices = {}
+        self.initialize_embeddings()
+    
+    def initialize_embeddings(self):
+        """Initialize the embeddings configuration"""
+        try:
+            # Create embeddings instance with config from config service
+            self._embeddings = Embeddings(config_service.embeddings_config)
+            logger.info("Embeddings service initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize embeddings: {str(e)}")
+            raise
+    
     def add(self, documents: List[Dict[str, Any]]) -> int:
-        """Add documents to the default index"""
-        return self.add_documents(self.embeddings, documents)
-
+        """Add documents to the embeddings index
+        
+        Args:
+            documents: List of documents with text and metadata
+            
+        Returns:
+            Number of documents added
+        """
+        try:
+            self._embeddings.index(documents)
+            return len(documents)
+        except Exception as e:
+            logger.error(f"Failed to add documents: {str(e)}")
+            raise
+    
     def count(self) -> int:
-        """Get total document count in default index"""
-        results = self.embeddings.search("select count(*) as total from txtai")
-        return results[0]["total"] if results else 0
-
+        """Get total document count in index
+        
+        Returns:
+            Total number of documents
+        """
+        try:
+            results = self._embeddings.search("select count(*) as total from txtai")
+            return results[0]["total"] if results else 0
+        except Exception as e:
+            logger.error(f"Failed to get count: {str(e)}")
+            raise
+    
     def semantic_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Search the default index"""
-        return self._semantic_search(self.embeddings, query, limit)
-
+        """Perform semantic search on the embeddings index
+        
+        Args:
+            query: Search query text
+            limit: Maximum number of results
+            
+        Returns:
+            List of search results with scores
+        """
+        try:
+            sql = f"""
+            SELECT text, score, metadata
+            FROM txtai 
+            WHERE similar('{query}')
+            ORDER BY score DESC
+            LIMIT {limit}
+            """
+            results = self._embeddings.search(sql)
+            return self._process_results(results)
+        except Exception as e:
+            logger.error(f"Semantic search failed: {str(e)}")
+            raise
+    
     def hybrid_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Perform hybrid search combining semantic and keyword matching"""
+        """Perform hybrid search combining semantic and keyword matching
+        
+        Args:
+            query: Search query text
+            limit: Maximum number of results
+            
+        Returns:
+            List of search results with scores
+        """
         try:
             sql = f"""
             SELECT text, score, metadata
@@ -57,68 +95,105 @@ class EmbeddingsService:
             ORDER BY score DESC
             LIMIT {limit}
             """
-            logger.info(f"Executing hybrid search SQL: {sql}")
-            results = self.embeddings.search(sql)
-            logger.info(f"Raw search results: {results}")
-            return self.process_results(results)
+            results = self._embeddings.search(sql)
+            return self._process_results(results)
         except Exception as e:
-            logger.error(f"Error in hybrid search: {str(e)}")
+            logger.error(f"Hybrid search failed: {str(e)}")
             raise
-
-    @staticmethod
-    def add_documents(index: Embeddings, documents: List[Dict[str, Any]]) -> int:
-        """Add documents to index while preserving metadata"""
-        indexed_docs = []
-        for i, doc in enumerate(documents):
-            # Ensure metadata is a dict and JSON serializable
-            metadata = doc.get("metadata", {})
-            if not isinstance(metadata, dict):
-                metadata = {}
-                
-            indexed_docs.append({
-                "id": str(i),
-                "text": doc["text"],
-                "metadata": json.dumps(metadata)  # Serialize metadata
-            })
+    
+    def create_custom_index(self, name: str, config: Optional[Dict] = None) -> None:
+        """Create a custom embeddings index with optional configuration
         
-        index.index(indexed_docs)
-        return len(documents)
-
-    @staticmethod
-    def _semantic_search(index: Embeddings, query: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Internal method for semantic search with metadata preservation"""
-        # Use SQL query to ensure metadata is returned properly
-        sql = f"""
-        SELECT text, score, metadata
-        FROM txtai 
-        WHERE similar('{query}')
-        LIMIT {limit}
+        Args:
+            name: Name of the custom index
+            config: Optional configuration overrides
         """
-        results = index.search(sql)
-        return EmbeddingsService.process_results(results)
-
-    @staticmethod
-    def process_results(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Process and normalize search results"""
+        try:
+            # Merge base config with custom overrides
+            index_config = config_service.embeddings_config.copy()
+            if config:
+                index_config.update(config)
+            
+            # Create new embeddings instance
+            self._custom_indices[name] = Embeddings(index_config)
+            logger.info(f"Created custom index: {name}")
+        except Exception as e:
+            logger.error(f"Failed to create custom index {name}: {str(e)}")
+            raise
+    
+    def add_to_custom_index(self, name: str, documents: List[Dict[str, Any]]) -> int:
+        """Add documents to a custom index
+        
+        Args:
+            name: Name of the custom index
+            documents: List of documents to add
+            
+        Returns:
+            Number of documents added
+        """
+        try:
+            if name not in self._custom_indices:
+                raise ValueError(f"Custom index {name} does not exist")
+                
+            self._custom_indices[name].index(documents)
+            return len(documents)
+        except Exception as e:
+            logger.error(f"Failed to add to custom index {name}: {str(e)}")
+            raise
+    
+    def search_custom_index(self, name: str, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Search a custom index
+        
+        Args:
+            name: Name of the custom index
+            query: Search query text
+            limit: Maximum number of results
+            
+        Returns:
+            List of search results with scores
+        """
+        try:
+            if name not in self._custom_indices:
+                raise ValueError(f"Custom index {name} does not exist")
+                
+            sql = f"""
+            SELECT text, score, metadata
+            FROM txtai 
+            WHERE similar('{query}')
+            ORDER BY score DESC
+            LIMIT {limit}
+            """
+            results = self._custom_indices[name].search(sql)
+            return self._process_results(results)
+        except Exception as e:
+            logger.error(f"Failed to search custom index {name}: {str(e)}")
+            raise
+    
+    def _process_results(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Process search results to ensure consistent format
+        
+        Args:
+            results: Raw search results from txtai
+            
+        Returns:
+            Processed results with consistent format
+        """
         processed = []
         for result in results:
-            # Create new result dict
-            processed_result = {
-                "text": result["text"],
-                "score": float(result.get("score", 0.0)),  # Ensure score is float
-                "metadata": {}
-            }
-            
-            # Handle metadata
-            metadata = result.get("metadata")
+            # Ensure metadata is a dict
+            metadata = result.get("metadata", {})
             if isinstance(metadata, str):
                 try:
-                    processed_result["metadata"] = json.loads(metadata)
-                except (json.JSONDecodeError, TypeError):
-                    pass
-            elif isinstance(metadata, dict):
-                processed_result["metadata"] = metadata
-                
-            processed.append(processed_result)
-                
+                    metadata = eval(metadata)  # Convert string repr of dict to dict
+                except:
+                    metadata = {}
+            
+            processed.append({
+                "text": result.get("text", ""),
+                "score": float(result.get("score", 0.0)),
+                "metadata": metadata
+            })
         return processed
+
+# Global embeddings service instance
+embeddings_service = EmbeddingsService()

@@ -5,6 +5,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pytest
 from httpx import AsyncClient, ASGITransport
 from src.main import app
+from src.services.config_service import config_service
 
 test_foods = {
     "documents": [
@@ -33,10 +34,17 @@ test_foods = {
     ]
 }
 
+@pytest.fixture(autouse=True)
+def setup_test_env():
+    """Setup test environment variables"""
+    os.environ["API_KEY"] = config_service.settings.API_KEY
+    yield
+    # Cleanup not needed for env vars
+
 @pytest.mark.asyncio
 async def test_api_workflow():
     """Test complete API workflow including embeddings and LLM endpoints"""
-    headers = {"Authorization": f"Bearer {os.getenv('API_KEY')}"}
+    headers = {"Authorization": f"Bearer {config_service.settings.API_KEY}"}
     
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # Test health check

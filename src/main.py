@@ -23,18 +23,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers with prefix
-app.include_router(
-    embeddings.router,
-    prefix="/api/embeddings",
-    tags=["embeddings"]
-)
-
-app.include_router(
-    llm.router,
-    prefix="/api/llm",
-    tags=["llm"]
-)
+# Include routers
+app.include_router(embeddings.router)
+app.include_router(llm.router)
 
 @app.get("/", tags=["health"])
 async def health_check():
