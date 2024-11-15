@@ -12,61 +12,49 @@ default:
 setup:
     #!/usr/bin/env bash
     echo "Setting up development environment..."
-    sudo apt update
-    sudo apt install postgresql postgresql-contrib
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install --upgrade pip
-    pip install pip-tools build hatchling
+
+    # Create virtual environment if it doesn't exist
+    if [ ! -d ".venv" ]; then
+        python3 -m venv .venv
+        source .venv/bin/activate
+        pip install --upgrade pip
+        pip install pip-tools build hatchling
+    else
+        source .venv/bin/activate
+    fi
+
+    # Install dependencies
     pip-compile requirements.in
     pip install -e .
     pip install -r requirements.txt
-    pre-commit install
+
+    # Install pre-commit hooks if not already installed
+    if [ ! -f ".git/hooks/pre-commit" ]; then
+        pre-commit install
+    fi
+
+    # Set up database if not already configured
+    just db-setup
+
     echo "Setup complete! Run 'source .venv/bin/activate' to activate the environment"
 
 # Database commands
 db-setup:
-    #!/usr/bin/env bash
-    set -e  # Exit on error
-    echo "Setting up databases..."
-    
-    # Ensure package is installed in development mode
-    pip install -e .
-    
-    # Create PostgreSQL user if it doesn't exist
-    if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='aurite_user'" | grep -q 1; then
-        echo "Creating PostgreSQL user: aurite_user"
-        sudo -u postgres psql -c "CREATE USER aurite_user WITH PASSWORD 'autumnBank36' CREATEDB;"
-    fi
-    
-    # Modify authentication method in pg_hba.conf
-    if ! sudo grep -q "local.*all.*aurite_user.*md5" /etc/postgresql/*/main/pg_hba.conf; then
-        echo "Updating PostgreSQL authentication configuration..."
-        echo "local   all             aurite_user                               md5" | sudo tee -a /etc/postgresql/*/main/pg_hba.conf
-        sudo service postgresql restart
-    fi
-    
-    # Create databases if they don't exist
-    for DB in aurite_db aurite_test_db; do
-        if ! sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw $DB; then
-            echo "Creating database: $DB"
-            sudo -u postgres createdb -O aurite_user $DB
-        else
-            echo "Database $DB already exists"
-        fi
-    done
-    
-    echo "Initializing database schema..."
-    cd src && python3 -m aurite_txtai.scripts.init_db
+    bash scripts/init_db.sh
 
 db-init:
-    cd src && python3 -m aurite_txtai.scripts.init_db
+    bash scripts/init_db.sh
 
 db-reset:
     #!/usr/bin/env bash
     echo "Resetting databases..."
-    dropdb -U aurite_user aurite_db --if-exists
-    dropdb -U aurite_user aurite_test_db --if-exists
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        dropdb aurite_db --if-exists
+        dropdb aurite_test_db --if-exists
+    else
+        sudo -u postgres dropdb aurite_db --if-exists
+        sudo -u postgres dropdb aurite_test_db --if-exists
+    fi
     just db-setup
 
 db-migrate:
