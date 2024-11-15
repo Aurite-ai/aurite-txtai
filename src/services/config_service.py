@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     EMBEDDINGS_MODEL: str = "sentence-transformers/nli-mpnet-base-v2"
     EMBEDDINGS_PREFIX: str = "txtai"
     
+    # LLM Settings
+    LLM_MODEL: str = "TheBloke/Mistral-7B-OpenOrca-AWQ"
+    LLM_DTYPE: str = "torch.bfloat16"
+    OPENAI_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    LLM_PROVIDER: str = "anthropic"  # or "openai"
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
