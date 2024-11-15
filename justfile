@@ -3,13 +3,12 @@ default:
     @just --list
 
 # Install dependencies
-setup:
+pip-install:
     pip install -r requirements.txt
-    npm install -g newman
 
 # Start the development server
 dev:
-    python -m src.main
+    uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 # Run Postman collection tests with Newman
 postman:

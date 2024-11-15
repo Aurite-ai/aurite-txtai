@@ -6,6 +6,17 @@
   "item": [
     {
       "name": "Health Check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('Health Check Response:', JSON.stringify(pm.response.json(), null, 2));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "url": {
@@ -15,7 +26,18 @@
       }
     },
     {
-      "name": "Add Documents",
+      "name": "Add Recipe Documents",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('Add Documents Response:', JSON.stringify(pm.response.json(), null, 2));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "url": {
@@ -31,34 +53,29 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": [
-            {
-              "text": "Embeddings are great for semantic search",
-              "metadata": {
-                "source": "documentation",
-                "category": "search"
-              }
-            },
-            {
-              "text": "Vector search helps find similar content",
-              "metadata": {
-                "source": "blog",
-                "category": "search"
-              }
-            },
-            {
-              "text": "Natural language processing with transformers",
-              "metadata": {
-                "source": "tutorial",
-                "category": "nlp"
-              }
-            }
-          ]
+          "raw": "{\"documents\": [{\"text\": \"Spaghetti carbonara is a classic Italian pasta dish made with eggs, pecorino cheese, guanciale, and black pepper\", \"metadata\": {\"category\": \"pasta\", \"cuisine\": \"Italian\", \"difficulty\": \"intermediate\"}}, {\"text\": \"Traditional Japanese ramen consists of wheat noodles in a rich pork bone broth with chashu pork, soft-boiled egg, and nori\", \"metadata\": {\"category\": \"soup\", \"cuisine\": \"Japanese\", \"difficulty\": \"advanced\"}}, {\"text\": \"Chicken tikka masala features grilled marinated chicken in a creamy, spiced tomato-based curry sauce\", \"metadata\": {\"category\": \"curry\", \"cuisine\": \"Indian\", \"difficulty\": \"intermediate\"}}, {\"text\": \"Fresh pesto sauce combines basil leaves, pine nuts, garlic, parmesan cheese, and olive oil, perfect for pasta\", \"metadata\": {\"category\": \"sauce\", \"cuisine\": \"Italian\", \"difficulty\": \"easy\"}}, {\"text\": \"Classic French onion soup is made with caramelized onions, beef broth, and topped with crusty bread and melted gruyere cheese\", \"metadata\": {\"category\": \"soup\", \"cuisine\": \"French\", \"difficulty\": \"intermediate\"}}, {\"text\": \"Homemade pizza dough requires flour, yeast, water, and olive oil, kneaded until elastic and left to rise\", \"metadata\": {\"category\": \"bread\", \"cuisine\": \"Italian\", \"difficulty\": \"intermediate\"}}, {\"text\": \"Beef bourguignon is a French stew of beef braised in red wine with mushrooms, pearl onions, and bacon lardons\", \"metadata\": {\"category\": \"stew\", \"cuisine\": \"French\", \"difficulty\": \"advanced\"}}, {\"text\": \"Fresh guacamole combines ripe avocados, lime juice, diced onions, tomatoes, cilantro, and jalapeños\", \"metadata\": {\"category\": \"appetizer\", \"cuisine\": \"Mexican\", \"difficulty\": \"easy\"}}]}"
         }
       }
     },
     {
-      "name": "Search Documents",
+      "name": "Search Italian Dishes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('\\nSearch Results for Italian Dishes:')",
+              "const results = pm.response.json().results;",
+              "results.forEach((result, index) => {",
+              "    console.log(`\\n${index + 1}. Score: ${result.score.toFixed(4)}`);",
+              "    console.log(`   Text: ${result.document.text}`);",
+              "    console.log(`   Metadata: ${JSON.stringify(result.document.metadata, null, 2)}`);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "url": {
@@ -74,10 +91,125 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": {
-            "query": "semantic search",
-            "limit": 2
+          "raw": "{\"query\": \"traditional Italian pasta recipes\", \"limit\": 3}"
+        }
+      }
+    },
+    {
+      "name": "Search Soup Dishes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('\\nSearch Results for Soup Dishes:')",
+              "const results = pm.response.json().results;",
+              "results.forEach((result, index) => {",
+              "    console.log(`\\n${index + 1}. Score: ${result.score.toFixed(4)}`);",
+              "    console.log(`   Text: ${result.document.text}`);",
+              "    console.log(`   Metadata: ${JSON.stringify(result.document.metadata, null, 2)}`);",
+              "});"
+            ],
+            "type": "text/javascript"
           }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/embeddings/search",
+          "host": ["{{base_url}}"],
+          "path": ["api", "embeddings", "search"]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"query\": \"hot soup with broth\", \"limit\": 2}"
+        }
+      }
+    },
+    {
+      "name": "Search Easy Recipes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('\\nSearch Results for Easy Recipes:')",
+              "const results = pm.response.json().results;",
+              "results.forEach((result, index) => {",
+              "    console.log(`\\n${index + 1}. Score: ${result.score.toFixed(4)}`);",
+              "    console.log(`   Text: ${result.document.text}`);",
+              "    console.log(`   Metadata: ${JSON.stringify(result.document.metadata, null, 2)}`);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/embeddings/search",
+          "host": ["{{base_url}}"],
+          "path": ["api", "embeddings", "search"]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"query\": \"simple quick recipes for beginners\", \"limit\": 2}"
+        }
+      }
+    },
+    {
+      "name": "Search with Hybrid Weights",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('\\nHybrid Search Results:')",
+              "const results = pm.response.json().results;",
+              "results.forEach((result, index) => {",
+              "    console.log(`\\n${index + 1}. Combined Score: ${result.score.toFixed(4)}`);",
+              "    console.log(`   Text: ${result.document.text}`);",
+              "    console.log(`   Metadata: ${JSON.stringify(result.document.metadata, null, 2)}`);",
+              "    if (result.scores) {",
+              "        console.log(`   Semantic Score: ${result.scores.semantic.toFixed(4)}`);",
+              "        console.log(`   Keyword Score: ${result.scores.keyword.toFixed(4)}`);",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/embeddings/search",
+          "host": ["{{base_url}}"],
+          "path": ["api", "embeddings", "search"]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"query\": \"spicy soup recipes\", \"limit\": 3, \"hybrid_weight\": 0.7}"
         }
       }
     }
