@@ -1,0 +1,43 @@
+{
+  "path": "sentence-transformers/nli-mpnet-base-v2",
+  "content": true,
+  "backend": "faiss",
+  "indexes": {
+    "sparse": {
+      "bm25": {
+        "terms": true,
+        "normalize": true
+      },
+      "path": "sentence-transformers/all-MiniLM-L6-v2",
+      "dimensions": 384,
+      "backend": "faiss",
+      "offset": 2,
+      "build": {
+        "create": "2024-11-15T06:21:04Z",
+        "python": "3.12.3",
+        "settings": {
+          "components": "IDMap,Flat"
+        },
+        "system": "Linux (x86_64)",
+        "txtai": "7.5.1"
+      },
+      "update": "2024-11-15T06:21:04Z"
+    },
+    "dense": {}
+  },
+  "batch": 32,
+  "normalize": true,
+  "autoid": 2,
+  "dimensions": 768,
+  "offset": 2,
+  "build": {
+    "create": "2024-11-15T06:21:04Z",
+    "python": "3.12.3",
+    "settings": {
+      "components": "IDMap,Flat"
+    },
+    "system": "Linux (x86_64)",
+    "txtai": "7.5.1"
+  },
+  "update": "2024-11-15T06:21:04Z"
+}
