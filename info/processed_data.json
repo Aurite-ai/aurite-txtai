@@ -1,0 +1,872 @@
+[
+  {
+    "category": "Technology",
+    "content": "I wrote up some tips that I think will help academics, or anybody else who happens to use matplotlib to make figures that end up in LaTeX documents. A long time ago I was a layout/typography nerd, so I've been trained to be anal, hence the tips below!\nhttps://duetosymmetry.com/code/latex-mpl-fig-tips/",
+    "sentiment": {
+      "score": -0.05,
+      "category": "negative"
+    },
+    "summary": "i was a layouttypography nerd so ive been trained to be anal hence the tips below. i wrote up some tips that i think will help academics or anybody else who happens to use matplotlib to make figures that end up in latex documents a long time ago. httpsduetosymmetrycomcodelatexmplfigtips. org/blog/2013/01/26/how-to-make-a-figure-with-matplotlib-",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Pro tips for matplotlib figures to really feel right in LaTeX publications",
+    "url": "https://www.reddit.com/r/Python/comments/1evp7ip/pro_tips_for_matplotlib_figures_to_really_feel/",
+    "posted_at": 1724029486.0,
+    "post_id": "1evp7ip",
+    "author": "duetosymmetry"
+  },
+  {
+    "category": "Technology",
+    "content": "# Weekly Thread: Project Ideas \ud83d\udca1\n\nWelcome to our weekly Project Ideas thread! Whether you're a newbie looking for a first project or an expert seeking a new challenge, this is the place for you.\n\n## How it Works:\n\n1. **Suggest a Project**: Comment your project idea\u2014be it beginner-friendly or advanced.\n2. **Build & Share**: If you complete a project, reply to the original comment, share your experience, and attach your source code.\n3. **Explore**: Looking for ideas? Check out Al Sweigart's [\"The Big Book of Small Python Projects\"](https://www.amazon.com/Big-Book-Small-Python-Programming/dp/1718501242) for inspiration.\n\n## Guidelines:\n\n* Clearly state the difficulty level.\n* Provide a brief description and, if possible, outline the tech stack.\n* Feel free to link to tutorials or resources that might help.\n\n# Example Submissions:\n\n## Project Idea: Chatbot\n\n**Difficulty**: Intermediate\n\n**Tech Stack**: Python, NLP, Flask/FastAPI/Litestar \n\n**Description**: Create a chatbot that can answer FAQs for a website.\n\n**Resources**: [Building a Chatbot with Python](https://www.youtube.com/watch?v=a37BL0stIuM)\n\n# Project Idea: Weather Dashboard\n\n**Difficulty**: Beginner\n\n**Tech Stack**: HTML, CSS, JavaScript, API\n\n**Description**: Build a dashboard that displays real-time weather information using a weather API.\n\n**Resources**: [Weather API Tutorial](https://www.youtube.com/watch?v=9P5MY_2i7K8)\n\n## Project Idea: File Organizer\n\n**Difficulty**: Beginner\n\n**Tech Stack**: Python, File I/O\n\n**Description**: Create a script that organizes files in a directory into sub-folders based on file type.\n\n**Resources**: [Automate the Boring Stuff: Organizing Files](https://automatetheboringstuff.com/2e/chapter9/)\n\nLet's help each other grow. Happy coding! \ud83c\udf1f",
+    "sentiment": {
+      "score": 0.13242424242424244,
+      "category": "positive"
+    },
+    "summary": "weekly thread project ideas welcome to our weekly project ideas thread. Suggest a project comment your project ideabe it beginnerfriendly or advanced build share if you complete a project reply to the original comment share your experience and attach your source code explore looking for ideas check out al sweigarts the big book of small python projectshttpswwwamazoncombigbooksmallpythonprogrammingdp for inspiration guidelines clearly state the difficulty level provide a brief description and if possible outline the tech stack feel free to",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Monday Daily Thread: Project ideas!",
+    "url": "https://www.reddit.com/r/Python/comments/1evnvtp/monday_daily_thread_project_ideas/",
+    "posted_at": 1724025608.0,
+    "post_id": "1evnvtp",
+    "author": "AutoModerator"
+  },
+  {
+    "category": "Technology",
+    "content": "**What My Project Does:** Hey everyone! I am Dinones! I coded a Python program using object detection that lets my computer hunt for shiny Pok\u00e9mon on my physical Nintendo Switch while I sleep. So far, I\u2019ve\u00a0**automatically caught shiny Pok\u00e9mon**\u00a0like Giratina, Dialga or Azelf, Rotom, Drifloon, all three starters, and more in Pok\u00e9mon BDSP. Curious to see how it works? Check it out! The program is available for everyone! Obviously, for free; I'm just a student who likes to program this stuff in his free time :)\n\nThe games run on a\u00a0**Nintendo Switch**\u00a0(**not emulated**, a real one). The program gets the output images using a capture card, then, it process them to detect whether the pokemon is shiny or not (OpenCV). Finally, it emulates the joycons using bluetooth (NXBT) and control the Nintendo.\n\nI also want to know what do you think about it: Is it fair to use it in singleplayer? And multiplayer?\n\n**Target Audience**: All Pok\u00e9mon BDSP gamers.  \n**Comparison**: As far as I know, nobody did this before.\n\n\ud83d\udcfd\ufe0f Youtube:\u00a0[https://www.youtube.com/watch?v=84czUOAvNyk](https://www.youtube.com/watch?v=84czUOAvNyk)  \n\ud83e\udd16 Github:\u00a0[https://github.com/Dinones/Nintendo-Switch-Pokemon-Shiny-Hunter](https://github.com/Dinones/Nintendo-Switch-Pokemon-Shiny-Hunter)",
+    "sentiment": {
+      "score": 0.225,
+      "category": "positive"
+    },
+    "summary": "A python program using object detection that lets my computer hunt for shiny pokmon on my physical nintendo switch while i sleep. It automatically caught shiny p okmon like giratina dialga or azelf rotom drifloon. It emulates the joycons using bluetooth nxbt and control the nintendo. The program is available for everyone obviously for free and is available online for anyone to download. It is not known if anyone has ever done this before.",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "I Created the Definitive AUTOMATIC Shiny Hunter for Pok\u00e9mon BDSP in Python",
+    "url": "https://www.reddit.com/r/Python/comments/1evng2g/i_created_the_definitive_automatic_shiny_hunter/",
+    "posted_at": 1724024371.0,
+    "post_id": "1evng2g",
+    "author": "Dinones"
+  },
+  {
+    "category": "Technology",
+    "content": "**Hi there !**\n\nLet me introduce you to [Queupy](https://github.com/EnzoTheBrown/Queupy/)! Use your existing PostgreSQL database for queuing and transferring messages between your services. The idea behind this project is that sometimes PostgreSQL is enough for your queuing needs, especially during the early stages of your project. As your project grows and your requirements become more complex, you can seamlessly transition to more specialized tools like RabbitMQ, Redis, or Kafka without needing to overhaul your code. By starting with Queupy, you'll avoid the hassle of reformatting your code to accommodate different queuing paradigms later on.\n\n# What is Queupy?\n\nQueupy is a Python library designed to provide a fast and safe message queuing system using PostgreSQL. It creates a dedicated table (\\_queupy\\_event) to handle event messages efficiently, offering both producer and consumer functionalities in a simple, yet powerful package.\n\nFeatures\n\nSimple Initialization and Setup: No need for additional services\u2014Queupy works directly with PostgreSQL.\n\nEfficient Event Queuing: Leverages PostgreSQL for fast and reliable event queuing.\n\nEasy-to-use Interfaces: Provides intuitive producer and consumer interfaces for handling events.Hi there,Let me introduce you to Queupy! Use your existing PostgreSQL database for queuing and transferring messages between your services. The idea behind this project is that sometimes PostgreSQL is enough for your queuing needs, especially during the early stages of your project. As your project grows and your requirements become more complex, you can seamlessly transition to more specialized tools like RabbitMQ, Redis, or Kafka without needing to overhaul your code. By starting with Queupy, you'll avoid the hassle of reformatting your code to accommodate different queuing paradigms later on.What is Queupy?Queupy is a Python library designed to provide a fast and safe message queuing system using PostgreSQL. It creates a dedicated table (\\_queupy\\_event) to handle event messages efficiently, offering both producer and consumer functionalities in a simple, yet powerful package.FeaturesSimple Initialization and Setup: No need for additional services\u2014Queupy works directly with PostgreSQL. Efficient Event Queuing: Leverages PostgreSQL for fast and reliable event queuing. Easy-to-use Interfaces: Provides intuitive producer and consumer interfaces for handling events.\n\n\n\nI'll be glad to hear any critics on this library !",
+    "sentiment": {
+      "score": 0.0972972972972973,
+      "category": "positive"
+    },
+    "summary": "queupy is a python library designed to provide a fast and safe message queuing system using postgresql it creates a dedicated table queupyevent to handle event messages efficiently offering both producer and consumer functionalities in a simple yet powerful package. features simple initialization and setup no need for additional services. easytouse interfaces provides intuitive producer andConsumer interfaces for handling events. ill be glad to hear any critics on this library. https://githubcomenzothebrownqueup",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Use your database for queuing with Queupy",
+    "url": "https://www.reddit.com/r/Python/comments/1evcbny/use_your_database_for_queuing_with_queupy/",
+    "posted_at": 1723995829.0,
+    "post_id": "1evcbny",
+    "author": "ResultBitter"
+  },
+  {
+    "category": "Technology",
+    "content": "# What My Project Does\n\n  \nRecently I've noticed that I spend way too much time listening to the same playlists/genres over and over again so with the goal of expanding my music knowledge I've decided to make this program that keeps track of the listening time for all the genres in Spotify.\n\nIt works by having two threads, one for the cli and user input and another that constantly pings the Spotify API for the currently playing song and keeps track of the listening time in an sqlite database.\n\n  \n# Target Audience\n\nThis project is meant for anyone that has a hard time finding new music genres to listen to. It is by no means production ready but if I see people enjoy it I might setup a website for it and make it public.\n\n  \n# Comparison\n\nAs far as I'm aware there aren't any projects like this one. The one's available out there keep track of all your stats but none give you a set goal or have the option to track the listening time for a given genre.\n\nAny comments/recommendations are welcome. Hope it helps someone learn more about music!\n\n[Here's the repo for anyone that wants to check it out.](https://github.com/Maypher/Spotify-Genre-Tracker)",
+    "sentiment": {
+      "score": 0.18091856060606062,
+      "category": "positive"
+    },
+    "summary": "Program that keeps track of the listening time for all the genres in spotify. Works by having two threads one for the cli and user input and another that constantly pings the spotifyapi for the currently playing song. Keeps track of listening time in an sqlite database target audience. By no means production ready but if i see people enjoy it i might setup a website for it and make it public comparison as far as im aware there arent any projects like this one.",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": " I made a Spotify Genre Tracker with the goal of broadening my music taste. ",
+    "url": "https://www.reddit.com/r/Python/comments/1evbgzb/i_made_a_spotify_genre_tracker_with_the_goal_of/",
+    "posted_at": 1723993651.0,
+    "post_id": "1evbgzb",
+    "author": "Maypher"
+  },
+  {
+    "category": "Technology",
+    "content": "**What My Project Does**\n\nEasily write commands into your CLI to track your time on different activities.\n\n**Target Audience**\n\nIt is an easy and quick way to be more responsible with your time. Whether you are working or studying, this tool aims to make you more conscious about how you spend your time.\n\n**Comparison**\u00a0\n\nThere are a few time-tracking apps that already exist but they are clunky and complicated. Clocker minimizes the time spent setting up this process and allows you to get started right away.\n\nThis is my first project and I would love some feedback!  \n[https://github.com/tferracina/timetrack](https://github.com/tferracina/timetrack)\n\nIt is still in its early stages but I am excited to keep adding features.",
+    "sentiment": {
+      "score": 0.20066964285714284,
+      "category": "positive"
+    },
+    "summary": "This tool aims to make you more conscious about how you spend your time comparison there are a few timetracking apps that already exist but they are clunky and complicated clocker minimizes the time spent setting up this process and allows you to get started right away. This is my first project and i would love some feedback. It is still in its early stages but i am excited to keep adding features. I would love to hear your feedback on this project. If you have any",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "I made a simple CLI time tracker",
+    "url": "https://www.reddit.com/r/Python/comments/1evaak9/i_made_a_simple_cli_time_tracker/",
+    "posted_at": 1723990588.0,
+    "post_id": "1evaak9",
+    "author": "NaturalPicture"
+  },
+  {
+    "category": "Technology",
+    "content": "**What My Project Does:**  \nThis project is a hands-on implementation of essential machine learning algorithms and components. It includes practical examples with well-known datasets like Iris and ORL, and showcases the application of various techniques such as classification, PCA and LDA. Also, this project comes with optimization visualization for people to learn how optimization algorithms, such as SGD, Adam, and RMSProp, works.\n\n**Target Audience:**  \nThis project is primarily intended for people who want to deepen their understanding of core ML concepts. It\u2019s an educational tool rather than a production-ready framework.\n\n**Comparison:**  \nUnlike many existing ML libraries that offer high-level abstraction, this framework focuses on providing a clear, step-by-step understanding of how key algorithms work under the hood. It's designed to bridge the gap between theory and practical implementation. This project implements components using Numpy rather than some major ML frameworks out there.\n\n**Github Link:**  \n[https://github.com/lazywulf/Basic-ML-Framework](https://github.com/lazywulf/Basic-ML-Framework)  \nPlease go through README if you have any questions with the \"experiments\". Thanks! :)",
+    "sentiment": {
+      "score": 0.13749999999999998,
+      "category": "positive"
+    },
+    "summary": "This project is a handson implementation of essential machine learning algorithms and components. It includes practical examples with wellknown datasets like iris and orl and showcases the application of various techniques such as classification pca and lda. This project comes with optimization visualization for people to learn how optimization algorithms such as sgd adam and rmsprop works. It is primarily intended for people who want to deepen their understanding of core ml concepts. It focuses on providing a clear stepbystep understanding of",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Building Blocks of ML: Tiny Machine Learning Framework for Learners",
+    "url": "https://www.reddit.com/r/Python/comments/1ev5l0r/building_blocks_of_ml_tiny_machine_learning/",
+    "posted_at": 1723974810.0,
+    "post_id": "1ev5l0r",
+    "author": "lazywulf09009"
+  },
+  {
+    "category": "Technology",
+    "content": "# Weekly Thread: What's Everyone Working On This Week? \ud83d\udee0\ufe0f\n\nHello /r/Python! It's time to share what you've been working on! Whether it's a work-in-progress, a completed masterpiece, or just a rough idea, let us know what you're up to!\n\n## How it Works:\n\n1. **Show & Tell**: Share your current projects, completed works, or future ideas.\n2. **Discuss**: Get feedback, find collaborators, or just chat about your project.\n3. **Inspire**: Your project might inspire someone else, just as you might get inspired here.\n\n## Guidelines:\n\n* Feel free to include as many details as you'd like. Code snippets, screenshots, and links are all welcome.\n* Whether it's your job, your hobby, or your passion project, all Python-related work is welcome here.\n\n## Example Shares:\n\n1. **Machine Learning Model**: Working on a ML model to predict stock prices. Just cracked a 90% accuracy rate!\n2. **Web Scraping**: Built a script to scrape and analyze news articles. It's helped me understand media bias better.\n3. **Automation**: Automated my home lighting with Python and Raspberry Pi. My life has never been easier!\n\nLet's build and grow together! Share your journey and learn from others. Happy coding! \ud83c\udf1f",
+    "sentiment": {
+      "score": 0.41111111111111115,
+      "category": "positive"
+    },
+    "summary": "weekly thread whats everyone working on this week hello rpython its time to share what youve been working on whether its a workinprogress a completed masterpiece or just a rough idea let us know what youre up to how it works show tell share your current projects completed works or future ideas discuss get feedback find collaborators or just chat about your project inspire your project might inspire someone else just as you might get inspired here guidelines feel free to include as many details as youd like code snippets screenshots",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Sunday Daily Thread: What's everyone working on this week?",
+    "url": "https://www.reddit.com/r/Python/comments/1euvt6o/sunday_daily_thread_whats_everyone_working_on/",
+    "posted_at": 1723939210.0,
+    "post_id": "1euvt6o",
+    "author": "AutoModerator"
+  },
+  {
+    "category": "Technology",
+    "content": "# What does my Project do?\n\nAnimeSnap helps you find anime details just from a screenshot. It is built on top of Anilist API. You can find:\n\n* The Anime name\n* The episode\n* The timestamps (start to end) where the scene from the screenshot is shown\n\nAnd much more if you check\u00a0`Include All Details`. It will also show multiple results with a percentage of accuracy.\n\n# Target Audience\n\nAnyone who watches anime\n\n# Comparison\n\n-\n\n# GitHub\n\nGitHub Link: [https://github.com/rohankishore/AnimeSnap](https://github.com/rohankishore/AnimeSnap)",
+    "sentiment": {
+      "score": 0.3333333333333333,
+      "category": "positive"
+    },
+    "summary": "animesnap helps you find anime details just from a screenshot. built on top of anilistapi you can find the anime name the episode the timestamps start to end where the scene from the screenshot is shown. It will also show multiple results with a percentage of accuracy target audience anyone who watches anime comparison GitHub link: http://www. gawker. com/news/features/anime-nap-demo. html#storylink=cpy",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "I made an Anime Finder GUI for Anilist API | AnimeSnap",
+    "url": "https://www.reddit.com/r/Python/comments/1euqj71/i_made_an_anime_finder_gui_for_anilist_api/",
+    "posted_at": 1723924784.0,
+    "post_id": "1euqj71",
+    "author": "Specialist-Arachnid6"
+  },
+  {
+    "category": "Technology",
+    "content": "Announcing an app (executable) I build which is a solution for running Python scripts without any prerequisites or external system dependencies, eliminating the need for Python installation on the systems. Catch is that the packages which script uses should be bundled during app build process, so a new app should be build respectively. there is a plan to provide option to include local package path if exists on system.\n\n**What My Project Does**\n\n* Runs python script out-of-the-box provided the packages that are used by script are add during build pipeline.\n* isolated from system. meaning doesn't affect any changes in system or python, don't need to fiddle with paths and packages\n* Output of script are displayed on terminal like console   \n\n**Target Audience**\n\n* This was build to help run scripts consistently across systems with any breakage from python or packages. \n* imo this can also help make non-technical people's life easy.\n\n**Comparison**\u00a0\n\n* This works like python interpreter without the hassle of setup and management\n\n**Limitations**\n* Script execution fails if the required package is not already bundled in the app.\n* Python and Packages are immutable, they cannot be modified including versions.\n* App size and initial load time increases as more number of packages are added.\n* Pyinstaller is pain to work with (imo), and any windows os change might break the app.\n\n[https://github.com/Nannigalaxy/PyScript-Engine](https://github.com/Nannigalaxy/PyScript-Engine)\n\nexecutable: [https://github.com/Nannigalaxy/PyScript-Engine/releases/download/v1.0.0/pyscript-engine\\_v1.0.0\\_py3.10\\_x86\\_win64.exe](https://github.com/Nannigalaxy/PyScript-Engine/releases/download/v1.0.0/pyscript-engine_v1.0.0_py3.10_x86_win64.exe)\n\nlet me know if you have any thoughts on this.",
+    "sentiment": {
+      "score": 0.09107744107744108,
+      "category": "positive"
+    },
+    "summary": "A solution for running python scripts without any prerequisites or external system dependencies eliminating the need for python installation on the systems. The packages which script uses should be bundled during app build process so a new app should be build respectively. This works like python interpreter without the hassle of setup and management limitations script execution fails if the required package is not already bundled in the app python and packages are immutable they cannot be modified including versions app size and initial load time increases as more number of packages are added",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Standalone GUI app that executes python scripts: Run py scripts without any installations*",
+    "url": "https://www.reddit.com/r/Python/comments/1eujibn/standalone_gui_app_that_executes_python_scripts/",
+    "posted_at": 1723906230.0,
+    "post_id": "1eujibn",
+    "author": "nannigalaxy"
+  },
+  {
+    "category": "General",
+    "content": "A simple crud api where I could store and access customer reviews.\n\nDjango process:\n1. Install django\n2. Install rest framework\n3. Create project\n4. Create app\n5. Create model\n6. Create serializer\n7. Create viewset\n8. Connect viewset\n9. Connect app to django\n10. Make migrations\nDone\n\nFastapi:\n1. Research docs specifically for crud\n2. Find many non-agreed upon solutions\n3. Try to setup first part\n4. Realize you need to build crud from scratch and understand sqlalchemy\n5. Realize there's no easy to way to upload images from the beginning\n6. Look at SQLModel because maybe it's easier\n7. It's not, still no automigrations or anything useful\n8. Find alembic because this is the \"proper way\"\n9. Alembic is complicated\n10. Build your own crud that's kind of lacking\n11. Figure out some way to store images\n12. Fight to figure out how to create a basic created_at / updated_at field\n13. Connect crud to app\n14. Make sure the validators from pydantic models match your regular models (or just use SQLModel)\n15. Build out each view individually\n16. Hope it works\n17. Keep trying until it does.\n\nNote that those steps ^ take a lot longer than the django ones.\n\nMaybe I'm just dumb. How is fastapi really a viable solution for rest apis? What am I missing?",
+    "sentiment": {
+      "score": 0.10364583333333333,
+      "category": "positive"
+    },
+    "summary": "A simple crudapi where i could store and access customer reviews. a simple crUDapi where I could store customer reviews django process install django install rest framework create project create app create model create serializer create viewset connect viewset to django make migrations done fastapi research docs specifically for crud find many nonagreed upon solutions try to setup first part realize you need to build crud from scratch and understand sqlalchemy realize theres no easy to way",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "I just built with Django in 30 minutes what took me a ton of hours with FastAPI",
+    "url": "https://www.reddit.com/r/Python/comments/1eucunn/i_just_built_with_django_in_30_minutes_what_took/",
+    "posted_at": 1723883165.0,
+    "post_id": "1eucunn",
+    "author": "thezackplauche"
+  },
+  {
+    "category": "Technology",
+    "content": "**Hey Reddit!**\n\nI've recently had some free time, so I've been exploring and building. I'm excited to introduce [Guard AI](https://github.com/codeguardai/guardai), a python tool that makes securing your code easier than ever.\n\n**Target Audience**\n\nIf you care about clean, secure code on your local machine, or in open-source projects you maintain\u2014or you're simply interested in seeing practical use cases of LLMs\u2014you'll want to check this out!\n\n**What My Project Does**\n\n**Guard AI** is an AI-driven tool that scans your code for security vulnerabilities. It\u2019s fast, easy to use, and integrates seamlessly into your development workflow.\n\n**Comparison**\n\n* **AI-Powered Security:** Identify vulnerabilities using OpenAI, Gemini, or even your own custom AI servers (meaning you can set up Ollama locally and it just works - unlimited scans for free!).\n* **CI/CD Integration:** I\u2019ve put a lot of effort into making sure this runs smoothly in CI/CD pipelines, especially in GitHub Actions. I created two custom actions that should make things like automated PR comments a breeze.\n* **Cross-Platform:** Works on Linux, macOS, and Windows.\n\n**Get Started:**\n\n1. **Install Guard AI**: Quick and easy [installation guide](https://github.com/codeguardai/guardai?tab=readme-ov-file#installation). It's as easy as `pip install guardai`.\n2. **Run a Scan**: Try it out with `guardai --provider openai --directory ./your-code`.\n3. **Integrate with CI**: Use the provided [GitHub Actions](https://github.com/codeguardai?q=action&type=all&language=&sort=) to automate security checks in your CI pipelines.\n\n\ud83d\udd17 [Check it out on GitHub](https://github.com/codeguardai/guardai)\n\nFeedback is always welcome. I've got a lot of ideas for new features (check the [README](https://github.com/codeguardai/guardai?tab=readme-ov-file#future-work) for some), and I'm excited to see how this goes!",
+    "sentiment": {
+      "score": 0.31528925619834713,
+      "category": "positive"
+    },
+    "summary": "guard ai is an aidriven tool that scans your code for security vulnerabilities. Easy to use and integrates seamlessly into your development workflow. Works unlimited scans for free cicd integration. Works on linux macos and windows works on openai gemini or even your own custom ai servers. Can be used to test and test your code on your local machine or in opensource projects you maintainor to see practical use cases of llmsyoull want to check this out.",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "GuardAI: Code Security Analysis Made Easy",
+    "url": "https://www.reddit.com/r/Python/comments/1euamj9/guardai_code_security_analysis_made_easy/",
+    "posted_at": 1723873954.0,
+    "post_id": "1euamj9",
+    "author": "nooby148"
+  },
+  {
+    "category": "Technology",
+    "content": "# Weekly Thread: Resource Request and Sharing \ud83d\udcda\n\nStumbled upon a useful Python resource? Or are you looking for a guide on a specific topic? Welcome to the Resource Request and Sharing thread!\n\n## How it Works:\n\n1. **Request**: Can't find a resource on a particular topic? Ask here!\n2. **Share**: Found something useful? Share it with the community.\n3. **Review**: Give or get opinions on Python resources you've used.\n\n## Guidelines:\n\n* Please include the type of resource (e.g., book, video, article) and the topic.\n* Always be respectful when reviewing someone else's shared resource.\n\n## Example Shares:\n\n1. **Book**: [\"Fluent Python\"](https://www.amazon.com/Fluent-Python-Concise-Effective-Programming/dp/1491946008) \\- Great for understanding Pythonic idioms.\n2. **Video**: [Python Data Structures](https://www.youtube.com/watch?v=pkYVOmU3MgA) \\- Excellent overview of Python's built-in data structures.\n3. **Article**: [Understanding Python Decorators](https://realpython.com/primer-on-python-decorators/) \\- A deep dive into decorators.\n\n## Example Requests:\n\n1. **Looking for**: Video tutorials on web scraping with Python.\n2. **Need**: Book recommendations for Python machine learning.\n\nShare the knowledge, enrich the community. Happy learning! \ud83c\udf1f",
+    "sentiment": {
+      "score": 0.4666666666666667,
+      "category": "positive"
+    },
+    "summary": "weekly thread resource request and sharing stumbled upon a useful python resource or are you looking for a guide on a specific topic welcome to the resource requests and sharing thread how it works. Please include the type of resource eg book video article and the topic always be respectful when reviewing someone elses shared resource example shares book fluent python. video python data structures. article understanding python decorators. a deep dive into decorators example requests looking for video tutorials on web scraping with python need book recommendations for python",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Saturday Daily Thread: Resource Request and Sharing! Daily Thread",
+    "url": "https://www.reddit.com/r/Python/comments/1eu3yfn/saturday_daily_thread_resource_request_and/",
+    "posted_at": 1723852812.0,
+    "post_id": "1eu3yfn",
+    "author": "AutoModerator"
+  },
+  {
+    "category": "Technology",
+    "content": "I have worked a lot on code that queries data stores and have been upset by how coupled things can get to the data store's specific features.  I started this project for fun to see if I can come up with a layer between the data store and application code so that you could swap things out easily or mock data stores in unit tests.  I'm not sure if it useful but would love to get feedback or opinions on this type of thing.  I'd also be interested in hearing how it can be improved as I kind of just took a stab at the abstractions and don't have a lot of experience with abstract classes.  Thanks!\n\n[https://github.com/chrisatkeson/data-layer](https://github.com/chrisatkeson/data-layer)\n\n**What My Project Does**: \n\nThe project creates a layer between your data store and your application.  It defines 3 core components\n\n**Store**: Something that holds data, most implement CRUD operations\n\n**Entity**: A python dataclass that defines schema for data\n\n**Filter**: A python object that can filter entities.  Filters can be combined together to perform complex read operations.  \n\nSee readme for more information.  \n\n**Target Audience**:\n\nPython developers working with data stores.  Ideally would be useful for swapping out data stores and trying out different technology.  Also would be useful for unit testing.  \n\n**Comparison**:\n\nI'm not aware of an existing framework for this but would be interested to see if there was anything.  ",
+    "sentiment": {
+      "score": 0.2587962962962963,
+      "category": "positive"
+    },
+    "summary": "The project creates a layer between your data store and your application. It defines core components store something that holds data most implement crud operations entity a python dataclass that defines schema for data filter a python object that can filter entities filters can be combined together to perform complex read operations see readme for more information target audience python developers working with data stores ideally would be useful for swapping out data stores and trying out different technology. Also would be use for unit testing comparison and mock data stores",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Python Data Layer",
+    "url": "https://www.reddit.com/r/Python/comments/1eu1ggr/python_data_layer/",
+    "posted_at": 1723846152.0,
+    "post_id": "1eu1ggr",
+    "author": "cdogatke"
+  },
+  {
+    "category": "Technology",
+    "content": "Any chance we can get **Python 3.14** released on **Pi Day** (Fri, Mar 14, 2025) \ud83d\udcc5 \n\nAnd if not possible just a mini 3.14 release called Pi-thon on that date \ud83d\udc0d",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "python will be released on pi day fri mar and if not possible just a mini release called pithon on that date. any chance we can get python released on Pi Day fri mar? If not, we'll release python on Pi day Fri mar. If we can't get python out on Fri mar, we will release it on Fri Mar. If it's Fri Mar or Fri Mar, we can release it the next day. We'll also release a mini python release on Fri",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Python 3.14 on Pi Day \ud83d\udca1",
+    "url": "https://www.reddit.com/r/Python/comments/1eu1e8d/python_314_on_pi_day/",
+    "posted_at": 1723845987.0,
+    "post_id": "1eu1e8d",
+    "author": "AchwaqKhalid"
+  },
+  {
+    "category": "Technology",
+    "content": "My black scholes model calculator is a website that allows for people to input data, manually or through a ticker, to analyze different premium cost at different strike prices.\n\n* **What My Project Does:** My website allows users to calculate the premiums of calls and puts in option trading. It also allows for users to analyze data through a heat map, input a stock to see different premium cost, and to download some data.\n* **Target Audience**: My target audience would be students who want to study the model and for traders to make more informed financial decisions\n* **Comparison**\u00a0This project has a heat map and the option to put in your own stock, which is harder to find on other calculators. It wasn\u2019t made to compare though, but rather as just another tool to use.\n\nSource Code: https://github.com/erikhox/blackscholes\nWebsite: https://options-erik.streamlit.app",
+    "sentiment": {
+      "score": 0.0787037037037037,
+      "category": "positive"
+    },
+    "summary": "My project allows users to calculate the premiums of calls and puts in option trading. It also allows for users to analyze data through a heat map. My target audience would be students who want to study the model and for traders to make more informed financial decisions comparison this project has the option to put in your own stock which is harder to find on other calculators. It wasnt made to compare though but rather as just another tool to use source code httpsgithubcomerikhoxblacks",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Black-Scholes model calculator",
+    "url": "https://www.reddit.com/r/Python/comments/1etz65g/blackscholes_model_calculator/",
+    "posted_at": 1723840344.0,
+    "post_id": "1etz65g",
+    "author": "Voice_Educational"
+  },
+  {
+    "category": "Technology",
+    "content": "I have used modgrammar and pyparsing so far to create parsers in Python. I have used recdescent parser generator in Perl in the past, and also Lex/Yacc with C, etc.\n\n  \nWhat are the parser generators that you like the most that is Python based?",
+    "sentiment": {
+      "score": 0.11666666666666665,
+      "category": "positive"
+    },
+    "summary": "i have used modgrammar and pyparsing so far to create parsers in python. i have used recdescent parser generator in Perl in the past and also lexyacc with c etc. what are the parser generators that you like the most that is python based? i would like to hear from you about your favorite python based parsers. i would love to hear about your favourite parsers that are python based. please email me at jennifer. smith@",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Python based parser generator that you have used",
+    "url": "https://www.reddit.com/r/Python/comments/1etx11n/python_based_parser_generator_that_you_have_used/",
+    "posted_at": 1723834916.0,
+    "post_id": "1etx11n",
+    "author": "Spread-Sanity"
+  },
+  {
+    "category": "Technology",
+    "content": "**Source code:**\u00a0[https://github.com/IdanHajbeko/Confession-Wall](https://github.com/IdanHajbeko/Confession-Wall)\n\n**website:** [**https://unified-first-rooster.ngrok-free.app/**](https://unified-first-rooster.ngrok-free.app/)\n\n**What My Project Does**\n\nMy Python application hosts a website where people can post confessions anonymously.\n\n**Target Audience**  \nAnyone who wants to post confessions anonymously or learn about backend development with python",
+    "sentiment": {
+      "score": 0.2,
+      "category": "positive"
+    },
+    "summary": "python application hosts a website where people can post confessions anonymously. target audience anyone who wants toPost confessions anonymously or learn about backend development with python. source code: http://www. gcode. com/comidanhajbekoconfessionwall. python app: \u00a0http:// www. google. co. uk/forms/d/u/s/1F1F7C-F7E-F1A-F9C-D9B-",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "confession wall",
+    "url": "https://www.reddit.com/r/Python/comments/1etrcqs/confession_wall/",
+    "posted_at": 1723821121.0,
+    "post_id": "1etrcqs",
+    "author": "Good_Doughnut8308"
+  },
+  {
+    "category": "Technology",
+    "content": "**What My Project Does:**\n\nThis libaray allows you to easily train agents built with Keras or PyTorch using reinforcement learning. You just need to have your agent class inherit from the RL or RL\\_pytorch class, and you can easily train your agent built with Keras or PyTorch.\n\n**Target Audience:**\n\nAnyone who wants to train agents using reinforcement learning or research reinforcement learning can use this library.\n\n**Comparison:**\n\nThis library enables easy training of agents by having your agent class inherit from the RL or RL\\_pytorch class. Additionally, it can use Python\u2019s multiprocessing module to speed up the collection and storage of trajectories.\n\n  \n[https://github.com/NoteDance/Note\\_rl](https://github.com/NoteDance/Note_rl)",
+    "sentiment": {
+      "score": 0.375,
+      "category": "positive"
+    },
+    "summary": "libaray allows you to easily train agents built with keras or pytorch using reinforcement learning. You just need to have your agent class inherit from the rl or rlpytorch class and you can easily train your agent. It can use pythons multiprocessing module to speed up the collection and storage of trajectories. Anyone who wants to train agents using reinforcementlearning or research reinforcement learning can use this library. For more information on how to use lib",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Note_rl: Reinforcement learning library for Keras and PyTorch.",
+    "url": "https://www.reddit.com/r/Python/comments/1etn26h/note_rl_reinforcement_learning_library_for_keras/",
+    "posted_at": 1723810074.0,
+    "post_id": "1etn26h",
+    "author": "NoteDancing"
+  },
+  {
+    "category": "Technology",
+    "content": "Hello everyone,\n\nI\u2019m thrilled to introduce [SpotAPI](https://github.com/Aran404/SpotAPI), a Python library designed to make interacting with Spotify's APIs a breeze! \n\n**What My Project Does:**\n\nSpotAPI provides a Python wrapper to interact with both private and public Spotify APIs. It emulates the requests typically made through a web browser, enabling you to access Spotify\u2019s rich set of features programmatically. SpotAPI uses your Spotify username and password to authenticate, allowing you to work with Spotify data right out of the box\u2014no additional API keys required!\n\n**Features:**\n- **Public API Access**: Easily retrieve and manipulate public Spotify data, including playlists, albums, and tracks.\n- **Private API Access**: Explore private Spotify endpoints to customize and enhance your application as needed.\n- **Ready to Use**: Designed for immediate integration, allowing you to accomplish tasks with just a few lines of code.\n- **No API Key Required**: Enjoy seamless usage without needing a Spotify API key. It\u2019s straightforward and hassle-free!\n- **Browser-like Requests**: Accurately replicate the HTTP requests Spotify makes in the browser, providing a true-to-web experience while staying under the radar.\n\n**Target Audience:**\n\nSpotAPI is ideal for developers looking to integrate Spotify data into their applications or anyone interested in experimenting with Spotify\u2019s API. It\u2019s perfect for both educational purposes and personal projects where ease of use and quick integration are priorities.\n\n**Comparison:**\n\nWhile traditional Spotify APIs require API keys and can be cumbersome to set up, SpotAPI simplifies this process by bypassing the need for API keys. It provides a more streamlined approach to accessing Spotify data with user authentication, making it a valuable tool for quick and efficient Spotify data handling.\n\n**Note:** SpotAPI is intended solely for educational purposes and should be used responsibly. Accessing private endpoints and scraping data without proper authorization may violate Spotify's terms of service.\n\nCheck out the project on [GitHub](https://github.com/Aran404/SpotAPI) and let me know your thoughts! I\u2019d love to hear your feedback and contributions.\n\nFeel free to ask any questions or share your experiences here. Happy coding!\n",
+    "sentiment": {
+      "score": 0.24340136054421768,
+      "category": "positive"
+    },
+    "summary": "python library designed to make interacting with spotifys apis a breeze. Uses your spotify username and password to authenticate allowing you to work with spotify data right out of the box. No additionalapi keys required features publicapi access easily retrieve and manipulate public spotifyData. privateapi access explore private spotify endpoints to customize and enhance your application as needed. perfect for both educational purposes and personal projects where ease of use and quick integration are priorities. note spotapi is",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "SpotAPI: Spotify API without the hassle!",
+    "url": "https://www.reddit.com/r/Python/comments/1etgwc9/spotapi_spotify_api_without_the_hassle/",
+    "posted_at": 1723786354.0,
+    "post_id": "1etgwc9",
+    "author": "Major-Ad-4196"
+  },
+  {
+    "category": "Technology",
+    "content": "# Weekly Thread: Meta Discussions and Free Talk Friday \ud83c\udf99\ufe0f\n\nWelcome to Free Talk Friday on /r/Python! This is the place to discuss the r/Python community (meta discussions), Python news, projects, or anything else Python-related!\n\n## How it Works:\n\n1. **Open Mic**: Share your thoughts, questions, or anything you'd like related to Python or the community.\n2. **Community Pulse**: Discuss what you feel is working well or what could be improved in the /r/python community.\n3. **News & Updates**: Keep up-to-date with the latest in Python and share any news you find interesting.\n\n## Guidelines:\n\n* All topics should be related to Python or the /r/python community.\n* Be respectful and follow Reddit's [Code of Conduct](https://www.redditinc.com/policies/content-policy).\n\n## Example Topics:\n\n1. **New Python Release**: What do you think about the new features in Python 3.11?\n2. **Community Events**: Any Python meetups or webinars coming up?\n3. **Learning Resources**: Found a great Python tutorial? Share it here!\n4. **Job Market**: How has Python impacted your career?\n5. **Hot Takes**: Got a controversial Python opinion? Let's hear it!\n6. **Community Ideas**: Something you'd like to see us do? tell us.\n\nLet's keep the conversation going. Happy discussing! \ud83c\udf1f",
+    "sentiment": {
+      "score": 0.38484848484848483,
+      "category": "positive"
+    },
+    "summary": "weekly thread meta discussions and free talk friday. python news projects or anything else pythonrelated how it works. open mic share your thoughts questions or anything youd like related to python or the community community pulse. news updates keep uptodate with the latest in python and share any news you find interesting guidelines all topics should be related toPython or the rpython community be respectful and follow reddits code of conducthttpswww. redditinccompoliciescontentpolicy example topics new python",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Friday Daily Thread: r/Python Meta and Free-Talk Fridays",
+    "url": "https://www.reddit.com/r/Python/comments/1etajo2/friday_daily_thread_rpython_meta_and_freetalk/",
+    "posted_at": 1723766441.0,
+    "post_id": "1etajo2",
+    "author": "AutoModerator"
+  },
+  {
+    "category": "Technology",
+    "content": "**What My Project Does**  \nThis project allows you to use a Linux machine (eg Raspberry Pi) to send and receive data directly with ESP8266/ESP32 microcontrollers using ESP-NOW.\n\n**Target Audience**  \nThe target audience are project builders who wish to share data directly between Linux and ESP32/ESP8266 microcontrollers.\n\n**Comparison**  \nESP-NOW is a protocol designed for use only between Espressif microcontrollers, to my knowledge there exists no other Python implementation of the protocol that allows data/messages to be sent and received in this way.\n\n  \nGithub: [https://github.com/ChuckMash/ESPythoNOW](https://github.com/ChuckMash/ESPythoNOW)",
+    "sentiment": {
+      "score": 0.065625,
+      "category": "positive"
+    },
+    "summary": "The project allows you to use a linux machine eg raspberry pi to send and receive data directly with espesp microcontrollers using espnow. The target audience are project builders who wish to share data directly between linux and espespMicrocontrollers. There exists no other python implementation of the protocol that allows datamessages to be sent and received in this way. For more information on the project visit: http://www. gopher. com/chuckmashes/espnow",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "ESPythoNOW: Python implementation of ESP-NOW protocol\n",
+    "url": "https://www.reddit.com/r/Python/comments/1et4k7p/espythonow_python_implementation_of_espnow/",
+    "posted_at": 1723751187.0,
+    "post_id": "1et4k7p",
+    "author": "ChuckMash"
+  },
+  {
+    "category": "Technology",
+    "content": "Now that most of the videos from PyCon US have been uploaded https://youtube.com/playlist?list=PL2Uw4_HvXqvYhjub9bw4uDAmNtprgAvlJ&si=iaO7Vs1VaZj5Cn3W, does anyone have any particular favourites from this year?\nI\u2019ve personally really enjoyed the videos on Functional Python and pydantic a lot!",
+    "sentiment": {
+      "score": 0.38888888888888884,
+      "category": "positive"
+    },
+    "summary": "Most of the videos from pycon us have been uploaded. Does anyone have any particular favourites from this year? I personally really enjoyed the videos on functional python and pydantic a lot. I'm looking forward to hearing what other people have to say about the conference. I hope you've all had a great time at Pycon this year. Thank you for all your support and support over the past few months. I'll be posting more videos from the conference in the coming days.",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Personal highlights from PyCon US 2024?",
+    "url": "https://www.reddit.com/r/Python/comments/1et20on/personal_highlights_from_pycon_us_2024/",
+    "posted_at": 1723745222.0,
+    "post_id": "1et20on",
+    "author": "cbhamill"
+  },
+  {
+    "category": "Technology",
+    "content": "**What My Project Does**\n\nWell when I\u2019m browsing the internet, I tend to save a ton of content\u2014but remembering when and what you saved? Total brain freeze! \u2744\ufe0f That\u2019s where SurfSense comes in. SurfSense is like a Knowledge Graph \ud83e\udde0 Brain \ud83e\udde0 for anything you see on the World Wide Web. Now, you\u2019ll never forget any browsing session. Easily capture your web browsing session and desired webpage content using an easy-to-use Chrome extension. Then, ask your personal knowledge base anything about your saved content., and voil\u00e0\u2014instant recall! \ud83e\uddd1\u200d\ud83d\udcbb\ud83c\udf10\n\n**Target Audience**\u00a0\n\nFor anyone who saves a lot of Dynamic Web Page content and forget about it.\n\n**Comparison**\u00a0\n\nMost solution I saw were scraping the web content but SurfSense extention directly reads the data from loaded DOM.\n\nCheck it out at [https://github.com/MODSetter/SurfSense](https://github.com/MODSetter/SurfSense) and give your initial thoughts",
+    "sentiment": {
+      "score": 0.014814814814814815,
+      "category": "positive"
+    },
+    "summary": "Surfsense is like a knowledge graph brain for anything you see on the world wide web. easily capture your web browsing session and desired webpage content using an easytouse chrome extension. Then ask your personal knowledge base anything about your saved content and voilinstant recall. target audience for anyone who saves a lot of dynamic web page content and forget about it comparison most solution i saw were scraping the web content but surfsense directly reads the data from loaded dom check it out at https",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "SurfSense A Brain for your Web Browsing Sessions. Never Forget anything you see on Internet",
+    "url": "https://www.reddit.com/r/Python/comments/1esm0io/surfsense_a_brain_for_your_web_browsing_sessions/",
+    "posted_at": 1723695197.0,
+    "post_id": "1esm0io",
+    "author": "Uiqueblhats"
+  },
+  {
+    "category": "General",
+    "content": "Consider the following very simple script (just to demonstrate what I\u2019m talking about)\n\n    def append_len(list_in: list = []) -> None:\n        list_in.append(len(list_in))\n        print(list_in)\n    \n    x = []\n    append_len()\n    append_len()\n    append_len(x)\n    append_len(x)\n\nThe output is\n\n    [0]\n    [0, 1]\n    [0]\n    [0, 1]\n\nPretty pointless here, but are there cases people have found where it\u2019s *useful* to define a mutable default argument like this, rather than a default value of `None` and setting to `[]` (or some other mutable object) in the body of the function?",
+    "sentiment": {
+      "score": 0.029166666666666664,
+      "category": "positive"
+    },
+    "summary": "Consider the following very simple script just to demonstrate what im talking about. def appendlenlistin list none listinappendlen listin printlistin x appendlen appendlenappendlenx appendlenx the output is pretty pointless here but are there cases people have found where its useful to define a mutable default argument like this rather than a default value of none and setting to or some other mutable object in the body of the function. consider the followingvery simple script to demonstrate",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Use cases where a mutable default argument is warranted?",
+    "url": "https://www.reddit.com/r/Python/comments/1eskrri/use_cases_where_a_mutable_default_argument_is/",
+    "posted_at": 1723691237.0,
+    "post_id": "1eskrri",
+    "author": "DatBoi_BP"
+  },
+  {
+    "category": "Technology",
+    "content": "**What My Project Does**\n\n[ImageRevise](https://github.com/Thymester/ImageRevise/releases/tag/v0.4) is a somewhat feature-rich image processing application designed to simplify tasks such as resizing, watermarking, optimizing, and managing image metadata. Key features include:\n\n* **Resize Images**: Adjust dimensions with options to maintain aspect ratio or specify custom sizes.\n* **Add Watermarks**: Customize and place watermarks at various positions with adjustable sizes.\n* **Optimize Images**: Reduce file sizes for web use while maintaining quality.\n* **Remove Metadata**: Eliminate EXIF data to enhance privacy and manage file information.\n* **Preview Changes**: See a live preview of image modifications before saving.\n\n**Target Audience**\n\nThis is for users who want to resize, watermark, remove metadata, and compress/resize their images. It is also a project that I wanted to do to help build my Python skills.\n\n**Comparison**\n\nMy Python image tool stands out from other image-processing tools for a few reasons:\n\n1. **Custom Watermark Positioning**: Unlike many tools that offer basic watermarking, my tool allows users to place watermarks at various positions (center, bottom right, bottom left, top right, top left), giving you more control over the watermark\u2019s placement.\n2. **Flexible Resizing Options**: my tool can resize images while maintaining the original aspect ratio, and it supports multiple size presets (Small, Medium, Large). This flexibility benefits users who need to resize images without distorting them.\n3. **Metadata Removal**: The tool allows EXIF metadata to be removed from images. This focus on privacy is only sometimes standard in image processing tools, making it a unique feature for users concerned about image privacy.\n4. **Preview Functionality**: Users can preview the resized image with the watermark applied directly within the GUI. This real-time feedback ensures the final output meets their expectations before saving the image.\n5. **Optimization for Web Use**: my tool includes functionality for optimizing images for web use by adjusting quality and file type (PNG or JPEG), which can help reduce file sizes while maintaining acceptable image quality.\n6. **GUI Integration**: The tool integrates these functionalities into a user-friendly GUI using Tkinter, making it accessible for users who prefer a graphical interface over command-line tools.",
+    "sentiment": {
+      "score": 0.1285954785954786,
+      "category": "positive"
+    },
+    "summary": "imagerevise is a somewhat featurerich image processing application designed to simplify tasks such as resizing watermarking and managing image metadata. Features include resize images adjust dimensions with options to maintain aspect ratio or specify custom sizes add watermarks customize and place watermarks at various positions with adjustable sizes optimize images reduce file sizes for web use while maintaining quality remove metadata eliminate exif data to enhance privacy and manage file information preview changes see a live preview of image modifications before saving target audience this is for",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "ImageRevise - Resize, Watermark, EXIF remove, and compress images!",
+    "url": "https://www.reddit.com/r/Python/comments/1esjwv3/imagerevise_resize_watermark_exif_remove_and/",
+    "posted_at": 1723688717.0,
+    "post_id": "1esjwv3",
+    "author": "Quiet-Star"
+  },
+  {
+    "category": "Technology",
+    "content": "**What My Project Does**\n\n[marimo](https://github.com/marimo-team/marimo) - an open-source reactive notebook for Python - now has built-in support for SQL. You can query dataframes, CSVs, tables and more, and get results back as Python dataframes.\n\n**Target Audience**\n\nThis is for notebook users who like to mix-and-match Python and SQL. Using SQL to query dataframes can be much cleaner and more intuitive than the Pandas API in many cases.\n\n**Comparison**\n\nThe alternative to using built-in SQL is to either continue to use Pandas, or write SQL strings in vanilla Python code.\n\nComparing SQL vs Pandas - let's say we want to find the average salary of employees in each department who were hired after 2020, but only for departments with more than 5 such employees.\n\n    SELECT department, AVG(salary) as avg_salary\n    FROM employees\n    WHERE YEAR(hire_date) > 2020\n    GROUP BY department\n    HAVING COUNT(*) > 5\n    ORDER BY avg_salary DESC\n\nvs\n\n    result = (df[df['hire_date'].dt.year > 2020]\n              .groupby('department')\n              .filter(lambda x: len(x) > 5)\n              .groupby('department')\n              ['salary']\n              .mean()\n              .sort_values(ascending=False)\n              .reset_index(name='avg_salary'))",
+    "sentiment": {
+      "score": 0.17375,
+      "category": "positive"
+    },
+    "summary": "Marimohttps. commarimoteammarimo an opensource reactive notebook for python now has builtin support for sql you can query dataframes csvs tables and more and get results back as python dataframes target audience is for notebook users who like to mixandmatch python and sql using sql to query dataframe can be much cleaner and more intuitive than the pandas api in many cases comparison the alternative to using builtin sql is to either continue to use pandas",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "marimo notebooks now have built-in support for SQL",
+    "url": "https://www.reddit.com/r/Python/comments/1eshjs4/marimo_notebooks_now_have_builtin_support_for_sql/",
+    "posted_at": 1723682050.0,
+    "post_id": "1eshjs4",
+    "author": "mmmmmmyles"
+  },
+  {
+    "category": "Technology",
+    "content": "# Weekly Thread: Professional Use, Jobs, and Education \ud83c\udfe2\n\nWelcome to this week's discussion on Python in the professional world! This is your spot to talk about job hunting, career growth, and educational resources in Python. Please note, this thread is **not for recruitment**.\n\n---\n\n## How it Works:\n\n1. **Career Talk**: Discuss using Python in your job, or the job market for Python roles.\n2. **Education Q&A**: Ask or answer questions about Python courses, certifications, and educational resources.\n3. **Workplace Chat**: Share your experiences, challenges, or success stories about using Python professionally.\n\n---\n\n## Guidelines:\n\n- This thread is **not for recruitment**. For job postings, please see r/PythonJobs or the recruitment thread in the sidebar.\n- Keep discussions relevant to Python in the professional and educational context.\n  \n---\n\n## Example Topics:\n\n1. **Career Paths**: What kinds of roles are out there for Python developers?\n2. **Certifications**: Are Python certifications worth it?\n3. **Course Recommendations**: Any good advanced Python courses to recommend?\n4. **Workplace Tools**: What Python libraries are indispensable in your professional work?\n5. **Interview Tips**: What types of Python questions are commonly asked in interviews?\n\n---\n\nLet's help each other grow in our careers and education. Happy discussing! \ud83c\udf1f",
+    "sentiment": {
+      "score": 0.27361111111111114,
+      "category": "positive"
+    },
+    "summary": "weekly thread professional use python in the professional world. discuss using python in your job or the job market for python roles. Ask or answer questions about python courses certifications and educational resources. Share your experiences challenges or success stories about using python professionally. Please note this thread is not for recruitment for job postings please see rpythonjobs or the recruitment thread in the sidebar. keep discussions relevant to python in a professional and educational context example topics: career paths what kinds of roles are out there for",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Thursday Daily Thread: Python Careers, Courses, and Furthering Education!",
+    "url": "https://www.reddit.com/r/Python/comments/1esgse1/thursday_daily_thread_python_careers_courses_and/",
+    "posted_at": 1723680008.0,
+    "post_id": "1esgse1",
+    "author": "AutoModerator"
+  },
+  {
+    "category": "Technology",
+    "content": "# What My Project Does\n\nBasically, it uses gmail's API to:  \n- **send messages**.  \n- **get message-ids**.  \n- **delete messages**.  \n\n\nPart 1:  \n[https://www.reddit.com/r/Python/comments/1eouavj/sharing\\_what\\_i\\_would\\_consider\\_as\\_a\\_win/](https://www.reddit.com/r/Python/comments/1eouavj/sharing_what_i_would_consider_as_a_win/)  \n  \nIn part 1, I was suggested to apply argparse and lose the prompt.  \n\n\n# Target Audience:  \nHere is the GmailManager with argparse:  \n[https://github.com/benSharon/Gmail-Manager/tree/GmailManager-argparse](https://github.com/benSharon/Gmail-Manager/tree/GmailManager-argparse)\n\nOf course, you opinions is of utmost importance and needless to say: be brutal.",
+    "sentiment": {
+      "score": -0.6875,
+      "category": "negative"
+    },
+    "summary": "My project uses gmailsapi to send messages get messageids delete messages. In part i was suggested to apply argparse and lose the prompt target audience here is the gmailmanager with argparse. of course you opinions is of utmost importance and needless to say be brutal. I would love to hear your opinions on this project. Please post them in the comments below. I will try to respond to them as soon as possible. Thank you for your time and support. I hope to",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Sharing what I would consider as a win (part 2)",
+    "url": "https://www.reddit.com/r/Python/comments/1esbd8n/sharing_what_i_would_consider_as_a_win_part_2/",
+    "posted_at": 1723666182.0,
+    "post_id": "1esbd8n",
+    "author": "theNotoriousJew"
+  },
+  {
+    "category": "Technology",
+    "content": "This my second post related to Scrapy. The first thing I wanted to do after getting the crawling working was saving results and crawl stats to a database. This is the general approach that I took for maintaining a log of each crawl's core stats.\n\n[Saving Scrapy Crawl Stats to PostgreSQL with a Custom Extension and SQLAlchemy](https://www.xiegerts.com/post/scrapy-extension-save-crawlstats-postgres/)  \n",
+    "sentiment": {
+      "score": 0.07500000000000001,
+      "category": "positive"
+    },
+    "summary": "This is my second post related to scrapy. The first thing i wanted to do after getting the crawling working was saving results and crawl stats to a database. This is the general approach that i took for maintaining a log of each crawls core stats. saving scrapy crawl Stats to postgresql with a custom extension and sqlalchemy. https://wwwxiegertscompostscrapyextensionsavecrawlstatspostgres. com/crawl statspostgres",
+    "source": "reddit",
+    "platform": "Reddit",
+    "title": "Saving Scrapy Crawl Stats to PostgreSQL with a Custom Extension and SQLAlchemy",
+    "url": "https://www.reddit.com/r/Python/comments/1es1wsb/saving_scrapy_crawl_stats_to_postgresql_with_a/",
+    "posted_at": 1723642919.0,
+    "post_id": "1es1wsb",
+    "author": "siegerts"
+  },
+  {
+    "category": "Technology",
+    "content": "Automated analysis with Stackspot AI offers capabilities such as code review generation, documentation creation, and much more.",
+    "sentiment": {
+      "score": 0.19999999999999998,
+      "category": "positive"
+    },
+    "summary": "stackspot ai offers capabilities such as code review generation documentation creation and much more. automated analysis with stackSpot ai is available for iOS, Android, and Windows devices. Use the stackspot app to test your code and create your own code reviews and documentation. The app is free to download and use for a limited time only. For more information on the app, visit stackspot. com/ai or go to: http://www. stackspotai. com/.",
+    "source": "news_api",
+    "title": "reviewer-stk-ai 1.1.0",
+    "url": "https://pypi.org/project/reviewer-stk-ai/",
+    "published_at": 1723951445.0
+  },
+  {
+    "category": "General",
+    "content": "FLUX is an advanced open-source image generation model developed by Black Forest Labs. Its ecosystem has been growing rapidly, and I've created a curated list of resources focusing on this ecosystem.The GitHub repo (https://github.com/Eris2025/awesome-flux) i\u2026",
+    "sentiment": {
+      "score": 0.11111111111111112,
+      "category": "positive"
+    },
+    "summary": "Flux is an advanced opensource image generation model developed by black forest labs. The flux ecosystem has been growing rapidly and ive created a curated list of resources focusing on this ecosystem. The GitHub repo for flux can be found at: http://www. flux. com/repositories/flux-components. html. i. e. flux is a open source image-generation model. It was developed by Black Forest labs and is available for free on the",
+    "source": "news_api",
+    "title": "Show HN: Awesome Flux \u2013 Open Source repo for FLUX model resources",
+    "url": "https://github.com/Eris2025/awesome-flux",
+    "published_at": 1723949891.0
+  },
+  {
+    "category": "Technology",
+    "content": "Secure Python sandbox for AI/ML code execution using Docker. Run LLM outputs safely.",
+    "sentiment": {
+      "score": 0.45,
+      "category": "positive"
+    },
+    "summary": "secure python sandbox for aiml code execution using docker run llm outputs safely",
+    "source": "news_api",
+    "title": "ai-code-sandbox added to PyPI",
+    "url": "https://pypi.org/project/ai-code-sandbox/",
+    "published_at": 1723948033.0
+  },
+  {
+    "category": "Technology",
+    "content": "Python wrapper for California's energy price API MIDAS.",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "python wrapper for californias energy price api midas",
+    "source": "news_api",
+    "title": "california-midasapi added to PyPI",
+    "url": "https://pypi.org/project/california-midasapi/",
+    "published_at": 1723946855.0
+  },
+  {
+    "category": "General",
+    "content": "Library for loading, manipulating, and retargeting skeleton poses and motions.",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "library for loading manipulating and retargeting skeleton poses and motions",
+    "source": "news_api",
+    "title": "poselib-v2 added to PyPI",
+    "url": "https://pypi.org/project/poselib-v2/",
+    "published_at": 1723946137.0
+  },
+  {
+    "category": "Technology",
+    "content": "Python program for finding catenary shapes and mass densities",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "python program for finding catenary shapes and mass densities",
+    "source": "news_api",
+    "title": "catenary-solver added to PyPI",
+    "url": "https://pypi.org/project/catenary-solver/",
+    "published_at": 1723945845.0
+  },
+  {
+    "category": "General",
+    "content": "An oppinionated Llama Server engine with focus on agentic task",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "an oppinionated llama server engine with focus on agentic task",
+    "source": "news_api",
+    "title": "gallama added to PyPI",
+    "url": "https://pypi.org/project/gallama/",
+    "published_at": 1723944795.0
+  },
+  {
+    "category": "General",
+    "content": "Cute project from maker just_another_person on Instructables:This circuit works by connecting components not through wires, but by dough! Overall, there are two types of dough\u2013 a conductive, as well as insulative one. When using the two together, it can form \u2026",
+    "sentiment": {
+      "score": 0.25,
+      "category": "positive"
+    },
+    "summary": "The circuit works by connecting components not through wires but by dough overall there are two types of dough a conductive as well as insulative one when using the two together it can form a circuit. cute project from maker justanotherperson on instructablest on Instructablest. Click here for more information on how to make a circuit using dough and other materials from the internet. Back to Mail Online home. back to the page you came from. \"How do you build a circuit?\"",
+    "source": "news_api",
+    "title": "Squishable Circuits",
+    "url": "https://blog.adafruit.com/2024/08/17/squishable-circuits/",
+    "published_at": 1723944003.0
+  },
+  {
+    "category": "Technology",
+    "content": "An NDN Storage Library for Applications in Python 3",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "an ndn storage library for applications in python",
+    "source": "news_api",
+    "title": "ndn-python-database added to PyPI",
+    "url": "https://pypi.org/project/ndn-python-database/",
+    "published_at": 1723942778.0
+  },
+  {
+    "category": "Technology",
+    "content": "Extract and load your data reliably from API Clients with native fault-tolerant and checkpointing mechanism.",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "'s API has native faulttolerant and checkpointing mechanism. extract and load your data reliably from API clients with native fault tolerance. Use the API's built-in checkpointing and fault tolerance to load data reliably. Use our API's native fault tolerant and fault tolerant mechanism to load yourData reliably fromapi clients. use our API\u2019s native fault tolerant and fault-tolerance to load Data reliably fromAPI clients. Using our API, we can load data from",
+    "source": "news_api",
+    "title": "bizon added to PyPI",
+    "url": "https://pypi.org/project/bizon/",
+    "published_at": 1723942255.0
+  },
+  {
+    "category": "General",
+    "content": "A sample test package",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "a sample test package",
+    "source": "news_api",
+    "title": "ft-yde-goes-package added to PyPI",
+    "url": "https://pypi.org/project/ft-yde-goes-package/",
+    "published_at": 1723941257.0
+  },
+  {
+    "category": "General",
+    "content": "https://security-tracker.debian.org/tracker/DSA-5750-1",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "httpssecuritytrackerdebianorgtrackerdsa",
+    "source": "news_api",
+    "title": "DSA-5750-1 python-asyncssh - security update",
+    "url": "https://lists.debian.org/debian-security-announce/2024/msg00163.html",
+    "published_at": 1723939200.0
+  },
+  {
+    "category": "Technology",
+    "content": "A collection of different modules for Python that make life a little bit easier.",
+    "sentiment": {
+      "score": -0.09375,
+      "category": "negative"
+    },
+    "summary": "a collection of different modules for python that make life a little bit easier",
+    "source": "news_api",
+    "title": "cerrax-py added to PyPI",
+    "url": "https://pypi.org/project/cerrax-py/",
+    "published_at": 1723939037.0
+  },
+  {
+    "category": "General",
+    "content": "Library for communicating with and controlling Minecraft servers via MCPQ plugin",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "library for communicating with and controlling minecraft servers via mcpq plugin",
+    "source": "news_api",
+    "title": "mcpq added to PyPI",
+    "url": "https://pypi.org/project/mcpq/",
+    "published_at": 1723938172.0
+  },
+  {
+    "category": "Technology",
+    "content": "That\u2019s all the Python code we need to write. We still need to write a template, however. We could explicitly tell the view which template to use by adding a template_name attribute to the view, but in the absence of an explicit template Django will infer one \u2026",
+    "sentiment": {
+      "score": -0.0125,
+      "category": "negative"
+    },
+    "summary": "We still need to write a template. We could explicitly tell the view which template to use by adding a templatename attribute to the view. But in the absence of an explicit template django will infer one. This is all the python code we need to writing. We can then use this code to write our own python code to create our own template. For example, we could use this to create a template for our web page. For more information on how to use this",
+    "source": "news_api",
+    "title": "Do Django generic views automatically generate templates for Django models?",
+    "url": "https://stackoverflow.com/questions/78883448/do-django-listviews-automatically-generate-templates-for-django-models",
+    "published_at": 1723937850.0
+  },
+  {
+    "category": "Technology",
+    "content": "Python library to configure and control the Exoy(tm) ONE.",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "python library to configure and control the exoytm one",
+    "source": "news_api",
+    "title": "pyexoyone added to PyPI",
+    "url": "https://pypi.org/project/pyexoyone/",
+    "published_at": 1723937831.0
+  },
+  {
+    "category": "General",
+    "content": "A tool to estimate GPU memory requirements",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "a tool to estimate gpu memory requirements",
+    "source": "news_api",
+    "title": "cfit added to PyPI",
+    "url": "https://pypi.org/project/cfit/",
+    "published_at": 1723936743.0
+  },
+  {
+    "category": "Technology",
+    "content": "Article URL: https://github.com/tcsenpai/neoretrosynth\nComments URL: https://news.ycombinator.com/item?id=41278778\nPoints: 1\n# Comments: 0",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "article URL: http://www. newsycombinator. com/2013/01/28/news/features/top-stories. html?storylink=cpy. Article title: \"Top 10 News Stories of 2013\" Article topic: \"The Top 10 News stories of 2012\" Article URL: \u00a0http:// www. newsycom Binatorcom. com/. html. article title:\u00a0\"The Top Ten Stories of 2011\" Article subtitle: \"A",
+    "source": "news_api",
+    "title": "Show HN: NeoRetro Synth \u2013 a retro-style synthesizer and drum machine",
+    "url": "https://github.com/tcsenpai/neoretrosynth",
+    "published_at": 1723936081.0
+  },
+  {
+    "category": "Technology",
+    "content": "OpenAI announced it had dismantled an Iranian influence operation that was producing content related to the U.S. Presidential election. OpenAI has dismantled an Iran-linked influence operation, tracked as identified as\u00a0Storm-2035, that was generating content \u2026",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "openai announced it had dismantled an iranian influence operation that was producing content related to the us presidential election. openai has dismantled aniranlinked influence operation tracked as identified as storm that was generating content. The operation was tracking content from a storm believed to be based in Iran. The storm was identified as being based in Tehran, Iran, and was tracking the social media activity of the Iranian government. It was also tracking content that was being produced in Iran in the run-up",
+    "source": "news_api",
+    "title": "OpenAI dismantled an Iranian influence operation targeting the U.S. presidential election",
+    "url": "https://securityaffairs.com/167194/intelligence/openai-dismantled-iranian-influence-operation.html",
+    "published_at": 1723935780.0
+  },
+  {
+    "category": "General",
+    "content": "We\u2019ve got the New nEw NEW for you right here:NEW PRODUCTS THIS WEEKMono Enclosed Speaker \u2013 1W 8 OhmListen up! This 2.8\u2033 x 1.2\u2033 speaker is a great addition to any audio project where you need 8 ohm impedance and 1W or less of power. We particularly like this s\u2026",
+    "sentiment": {
+      "score": 0.21354359925788496,
+      "category": "positive"
+    },
+    "summary": "mono enclosed speaker w ohmlisten up this x speaker is a great addition to any audio project where you need ohm impedance and w or less of power. weve got the new new new for you right herenew products this week. We particularly like this s mono enclosed speaker which is great for a home audio project. We especially like the mono enclosed speakers which are great for home audio projects. Weve got a whole new range of products for you this week",
+    "source": "news_api",
+    "title": null,
+    "url": "https://blog.adafruit.com/2024/08/17/584113/",
+    "published_at": 1723934989.0
+  },
+  {
+    "category": "General",
+    "content": "An LLDB extension for debugging Lean programs",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "an lldb extension for debugging lean programs",
+    "source": "news_api",
+    "title": "lean-lldb added to PyPI",
+    "url": "https://pypi.org/project/lean-lldb/",
+    "published_at": 1723934241.0
+  },
+  {
+    "category": "General",
+    "content": "Article URL: https://github.com/MNoorFawi/lzhw\nComments URL: https://news.ycombinator.com/item?id=41278576\nPoints: 1\n# Comments: 0",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "article url httpsgithubcommnoorfawilzhw comments url httpsnewsycombinatorcomitemid points comments",
+    "source": "news_api",
+    "title": "Show HN: Python Compression Suite for Pandas DataFrames, CSV and Excel Files",
+    "url": "https://github.com/MNoorFawi/lzhw",
+    "published_at": 1723934136.0
+  },
+  {
+    "category": "General",
+    "content": "Smithsonian shares how NASA scientists are studying four grams of rocks and dirt scooped from the asteroid Bennu as part of the OSIRIS-REx mission. Inside the bland, brick-and-steel Building 34 at the NASA Goddard Space Flight Center in suburban Maryland, sci\u2026",
+    "sentiment": {
+      "score": -0.08888888888888889,
+      "category": "negative"
+    },
+    "summary": "Nasa scientists are studying four grams of rocks and dirt scooped from the asteroid bennu as part of the osirisrex mission inside the bland brickandsteel building at the nasa goddard space flight center in suburban maryland sci. smithsonian shares how nasa scientists were using the dirt and rocks to study the solar system's early history. The mission is part of a larger plan to send a probe to the moon in the 2030s. The goal is to",
+    "source": "news_api",
+    "title": "What\u2019s in asteroid dust?",
+    "url": "https://blog.adafruit.com/2024/08/17/whats-in-space-dust/",
+    "published_at": 1723932009.0
+  },
+  {
+    "category": "Technology",
+    "content": "**Background Information:**\r\nI'm in the process of building a workflow for real-time financial data analysis using the Wolfram Language on a budget. Due to the lack of native websocket support in Mathematica, I've decided to create a hybrid system that levera\u2026",
+    "sentiment": {
+      "score": -0.0625,
+      "category": "negative"
+    },
+    "summary": "Im in the process of building a workflow for realtime financial data analysis using the wolfram language on a budget. Due to the lack of native websocket support in mathematica ive decided to create a hybrid system that leverages wolfram and other programming languages. im in the. process of. building a. workflow forrealtime financialDataAnalysis using thewolfram language and other. programming languages such as wolfram, wolfram2 and wolfram3. For more information,",
+    "source": "news_api",
+    "title": "Real-Time Financial Data Analysis with Python/Wolfram Language Hybrid \u2013 Overcoming Blocking Issues",
+    "url": "https://community.wolfram.com/groups/-/m/t/3250713",
+    "published_at": 1723931311.0
+  },
+  {
+    "category": "Technology",
+    "content": "I try to do a migration \u201cpython manage.py makemigrations \u201d but I get an error\nTraceback (most recent call last):\n File \"/home/anton/Documents/project2/backend/my_backend/manage.py\", line 22, in \n main()\n File \"/home/anton/Documents/project2/backend/my_backend\u2026",
+    "sentiment": {
+      "score": 0.16666666666666666,
+      "category": "positive"
+    },
+    "summary": "i try to do a migration python managepy makemigrations but i get an error traceback. most recent call last file homeantondocumentsprojectbackendmybackendmanagepy line in main file. i try to use managepy to migrate a file to a new directory. i get a traceback error. i can't get the migration to work. I try using managepy again and get the same error. I don't know how to fix it.",
+    "source": "news_api",
+    "title": "ModuleNotFoundError: No module named 'django.contrib.contenttyfrom datetime import timedelta'",
+    "url": "https://stackoverflow.com/questions/78883250/modulenotfounderror-no-module-named-django-contrib-contenttyfrom-datetime-impo",
+    "published_at": 1723929020.0
+  },
+  {
+    "category": "General",
+    "content": "A package for creating retrieval-augmented generation apps",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "a package for creating retrievalaugmented generation apps",
+    "source": "news_api",
+    "title": "ragmatic added to PyPI",
+    "url": "https://pypi.org/project/ragmatic/",
+    "published_at": 1723924845.0
+  },
+  {
+    "category": "Finance",
+    "content": "The Las Vegas Sphere is powered by approximately 150 NVIDIA RTX A6000 GPUs. Blog post from Nividia:Sphere Studios creates video content in its Burbank, Calif., facility, then transfers it digitally to Sphere in Las Vegas. The content is then streamed in real \u2026",
+    "sentiment": {
+      "score": -0.06666666666666667,
+      "category": "negative"
+    },
+    "summary": "The las vegas sphere is powered by approximately n Nvidia rtx a gpus blog post from nividiasphere studios creates video content in its burbank calif facility then transfers it digitally to sphere in las Vegas. The content is then streamed in real to the sphere in Las Vegas. The sphere is also powered by about approximately n NVIDIA rTX aGPus. The spherical is also Powered by approximately\u00a0n Nvidia r TX a GPus blogpost from n dividendias",
+    "source": "news_api",
+    "title": "Behind the Screens: Hardware Behind the Las Vegas Sphere",
+    "url": "https://blog.adafruit.com/2024/08/17/behind-the-screens-hardware-behind-the-las-vegas-sphere/",
+    "published_at": 1723924800.0
+  },
+  {
+    "category": "General",
+    "content": "Multi-platform CLI utilities for using Docassemble",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "multiplatform cli utilities for using docassemble",
+    "source": "news_api",
+    "title": "docassemblecli3 added to PyPI",
+    "url": "https://pypi.org/project/docassemblecli3/",
+    "published_at": 1723924793.0
+  },
+  {
+    "category": "Technology",
+    "content": "Today we launched a Typescript library for building video processing applications that can run completely client-sideThis project has been started in March 2023 with the mission of creating the \"video processing toolkit for the area of AI\". During an extensiv\u2026",
+    "sentiment": {
+      "score": 0.1,
+      "category": "positive"
+    },
+    "summary": "Typescript library for building video processing applications. Can run completely clientsidethis project has been started in march with the mission of creating the video processing toolkit for the area of ai during an extensiv. today we launched a typescriptlibrary for buildingVideo processing applications that can run completely client side. Today we launched an extensible version of the library. It can be used to build a video processing application that can be run on any type of client. It",
+    "source": "news_api",
+    "title": "Show HN: Typescript library for editing videos with code",
+    "url": "https://github.com/diffusionstudio/core",
+    "published_at": 1723922991.0
+  },
+  {
+    "category": "Finance",
+    "content": "i have used Django Stack listed on Marketplace of GCP.\nWhen I visit the IP address I get an error DisallowedHost so I've changed settings.py to (for now) ALLOWED_HOSTS = [\"*\"].\nProblem is I don't see any changes, still same error. How do I make it update?\nI r\u2026",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "summary": "i have used django stack listed on marketplace of gcp when i visit the ip address i get an error disallowedhost so ive changed settingspy to for now allowedhosts problem is i dont see any changes still same error how do i make it update i r r. i have used \u00a0django stack on marketplace \u00a0of gcp \u00a0when i visit \u00a0the ip address \u00a0i get an\u00a0error\u00a0disallowedhost\u00a0so ive",
+    "source": "news_api",
+    "title": "How to update code for Django Stack on Google Cloud Platform",
+    "url": "https://stackoverflow.com/questions/78883078/how-to-update-code-for-django-stack-on-google-cloud-platform",
+    "published_at": 1723922449.0
+  }
+]

@@ -1,0 +1,67 @@
+[
+  {
+    "source": "news_api",
+    "domain": "technology",
+    "title": "ndn-python-database added to PyPI",
+    "cleaned_title": "ndnpythondatabase added to pypi",
+    "content": "An NDN Storage Library for Applications in Python 3",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "url": "https://pypi.org/project/ndn-python-database/",
+    "published_at": "2024-08-18T00:59:38Z"
+  },
+  {
+    "source": "news_api",
+    "domain": "technology",
+    "title": "bizon added to PyPI",
+    "cleaned_title": "bizon added to pypi",
+    "content": "Extract and load your data reliably from API Clients with native fault-tolerant and checkpointing mechanism.",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "url": "https://pypi.org/project/bizon/",
+    "published_at": "2024-08-18T00:50:55Z"
+  },
+  {
+    "source": "news_api",
+    "domain": "technology",
+    "title": "ft-yde-goes-package added to PyPI",
+    "cleaned_title": "ftydegoespackage added to pypi",
+    "content": "A sample test package",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "url": "https://pypi.org/project/ft-yde-goes-package/",
+    "published_at": "2024-08-18T00:34:17Z"
+  },
+  {
+    "source": "news_api",
+    "domain": "technology",
+    "title": "DSA-5750-1 python-asyncssh - security update",
+    "cleaned_title": "dsa pythonasyncssh security update",
+    "content": "https://security-tracker.debian.org/tracker/DSA-5750-1",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "url": "https://lists.debian.org/debian-security-announce/2024/msg00163.html",
+    "published_at": "2024-08-18T00:00:00Z"
+  },
+  {
+    "source": "news_api",
+    "domain": "technology",
+    "title": "cerrax-py added to PyPI",
+    "cleaned_title": "cerraxpy added to pypi",
+    "content": "A collection of different modules for Python that make life a little bit easier.",
+    "sentiment": {
+      "score": 0.0,
+      "category": "neutral"
+    },
+    "url": "https://pypi.org/project/cerrax-py/",
+    "published_at": "2024-08-17T23:57:17Z"
+  }
+]

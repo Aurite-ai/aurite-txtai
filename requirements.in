@@ -1,0 +1,15 @@
+# Development tools
+black
+isort
+mypy
+pylint
+pre-commit
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+
+# Type checking
+types-requests
+types-python-dateutil 

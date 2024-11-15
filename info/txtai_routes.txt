@@ -1,0 +1,63 @@
+/search (GET):
+
+Finds similar documents to a query
+Parameters: query (string, required)
+/batchsearch (POST):
+
+Batch search for similar documents
+Body: queries, limit, weights, index, parameters, graph
+/add (POST):
+
+Adds documents for indexing
+Body: list of {id, text, tags}
+/addobject (POST):
+
+Adds binary documents for indexing
+Multipart form: data, uid, field
+/addimage (POST):
+
+Adds images for indexing
+Multipart form: data, uid, field
+/index (GET):
+
+Builds embeddings index for batched documents
+/upsert (GET):
+
+Runs embeddings upsert for batched documents
+/delete (POST):
+
+Deletes from embeddings index
+Body: list of ids to delete
+/reindex (POST):
+
+Recreates embeddings index
+Body: config, function (optional)
+/count (GET):
+
+Returns count of indexed documents
+/explain (POST):
+
+Explains token importance for query-text pairs
+Body: query, texts, limit
+/batchexplain (POST):
+
+Batch version of /explain
+Body: queries, texts, limit
+/transform (GET):
+
+Transforms text to embeddings
+Parameters: text, category (optional), index (optional)
+/batchtransform (POST):
+
+Batch version of /transform
+Parameters: category (optional), index (optional)
+Body: list of texts
+/similarity (POST):
+
+Computes similarity between query and texts
+Body: query, texts
+/batchsimilarity (POST):
+
+Batch version of /similarity
+Body: queries, texts
+All endpoints return JSON responses. Error responses use HTTPValidationError schema

@@ -1,0 +1,48 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment directories
+.venv/
+venv/
+env/
+
+# Local environment variables
+.env
+.env.*
+
+# IDE/editor specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build and distribution
+dist/
+build/
+*.egg-info/
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Development tools
+.mypy_cache/
+.ruff_cache/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.docker/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Project specific
+dev/
+copilot/
+.gpt-runner/
