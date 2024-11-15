@@ -42,8 +42,9 @@ async def test_api_workflow():
 
         # Test hybrid search
         search_query = {"query": "soup recipes", "limit": 2}
-        response = await client.post("/api/embeddings/search", json=search_query)
+        response = await client.post("/api/embeddings/hybrid-search", json=search_query)
         assert response.status_code == 200
         results = response.json()["results"]
         assert len(results) <= 2
-        assert all("scores" in r for r in results) 
+        assert all(isinstance(r["score"], float) for r in results)
+        assert all("metadata" in r for r in results) 

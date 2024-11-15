@@ -17,11 +17,14 @@ class EmbeddingsService:
             "path": "sentence-transformers/nli-mpnet-base-v2",
             "content": True,
             "backend": "faiss",
-            "hybrid": True,
-            "scoring": {
-                "method": "bm25",
-                "terms": True,
-                "normalize": True
+            "indexes": {
+                "sparse": {
+                    "bm25": {
+                        "terms": True,
+                        "normalize": True
+                    }
+                },
+                "dense": {}
             },
             "batch": 32,
             "normalize": True,
@@ -46,13 +49,21 @@ class EmbeddingsService:
 
     def hybrid_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
         """Perform hybrid search combining semantic and keyword matching"""
-        sql = f"""
-        SELECT text, score, metadata, hybrid('{query}') as hybrid_score
-        FROM txtai 
-        ORDER BY hybrid_score DESC
-        LIMIT {limit}
-        """
-        return self.process_results(self.embeddings.search(sql))
+        try:
+            sql = f"""
+            SELECT text, score, metadata
+            FROM txtai 
+            WHERE similar('{query}') OR bm25('{query}')
+            ORDER BY score DESC
+            LIMIT {limit}
+            """
+            logger.info(f"Executing hybrid search SQL: {sql}")
+            results = self.embeddings.search(sql)
+            logger.info(f"Raw search results: {results}")
+            return self.process_results(results)
+        except Exception as e:
+            logger.error(f"Error in hybrid search: {str(e)}")
+            raise
 
     @staticmethod
     def add_documents(index: Embeddings, documents: List[Dict[str, Any]]) -> int:
@@ -94,7 +105,7 @@ class EmbeddingsService:
             # Create new result dict
             processed_result = {
                 "text": result["text"],
-                "score": result.get("hybrid_score", result.get("score", 0.0)),
+                "score": float(result.get("score", 0.0)),  # Ensure score is float
                 "metadata": {}
             }
             
