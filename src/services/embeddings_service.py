@@ -40,43 +40,74 @@ class EmbeddingsService:
         results = self.embeddings.search("select count(*) as total from txtai")
         return results[0]["total"] if results else 0
 
-    def search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    def semantic_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
         """Search the default index"""
-        return self.semantic_search(self.embeddings, query, limit)
+        return self._semantic_search(self.embeddings, query, limit)
+
+    def hybrid_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Perform hybrid search combining semantic and keyword matching"""
+        sql = f"""
+        SELECT text, score, metadata, hybrid('{query}') as hybrid_score
+        FROM txtai 
+        ORDER BY hybrid_score DESC
+        LIMIT {limit}
+        """
+        return self.process_results(self.embeddings.search(sql))
 
     @staticmethod
     def add_documents(index: Embeddings, documents: List[Dict[str, Any]]) -> int:
         """Add documents to index while preserving metadata"""
         indexed_docs = []
         for i, doc in enumerate(documents):
+            # Ensure metadata is a dict and JSON serializable
+            metadata = doc.get("metadata", {})
+            if not isinstance(metadata, dict):
+                metadata = {}
+                
             indexed_docs.append({
                 "id": str(i),
                 "text": doc["text"],
-                "metadata": doc.get("metadata", {})
+                "metadata": json.dumps(metadata)  # Serialize metadata
             })
         
         index.index(indexed_docs)
         return len(documents)
 
     @staticmethod
-    def semantic_search(index: Embeddings, query: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Perform semantic search with metadata preservation"""
+    def _semantic_search(index: Embeddings, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Internal method for semantic search with metadata preservation"""
+        # Use SQL query to ensure metadata is returned properly
         sql = f"""
-        SELECT text, score, metadata 
+        SELECT text, score, metadata
         FROM txtai 
         WHERE similar('{query}')
         LIMIT {limit}
         """
-        
         results = index.search(sql)
-        
+        return EmbeddingsService.process_results(results)
+
+    @staticmethod
+    def process_results(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Process and normalize search results"""
+        processed = []
         for result in results:
-            if isinstance(result.get("metadata"), str):
+            # Create new result dict
+            processed_result = {
+                "text": result["text"],
+                "score": result.get("hybrid_score", result.get("score", 0.0)),
+                "metadata": {}
+            }
+            
+            # Handle metadata
+            metadata = result.get("metadata")
+            if isinstance(metadata, str):
                 try:
-                    result["metadata"] = json.loads(result["metadata"])
+                    processed_result["metadata"] = json.loads(metadata)
                 except (json.JSONDecodeError, TypeError):
-                    result["metadata"] = {}
-            elif "metadata" not in result:
-                result["metadata"] = {}
+                    pass
+            elif isinstance(metadata, dict):
+                processed_result["metadata"] = metadata
                 
-        return results
+            processed.append(processed_result)
+                
+        return processed

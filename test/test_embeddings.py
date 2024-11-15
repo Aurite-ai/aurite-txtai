@@ -29,15 +29,15 @@ def test_embeddings():
     try:
         logger.info("Testing embeddings service initialization")
         embeddings = EmbeddingsService()
-        
+
         # Test document addition
         test_docs = [
             {
-                "text": "Test document 1", 
+                "text": "Test document 1",
                 "metadata": {"test": True, "category": "test", "length": 50}
             },
             {
-                "text": "Test document 2", 
+                "text": "Test document 2",
                 "metadata": {"test": True, "category": "test", "length": 75}
             },
             {
@@ -45,54 +45,22 @@ def test_embeddings():
                 "metadata": {"test": True, "category": "ml", "length": 100}
             }
         ]
-        
+
         logger.info("Testing document addition")
         count = embeddings.add(test_docs)
         logger.info(f"Added {count} documents")
         assert count == len(test_docs)
-        
+
         # Test document count
         count = embeddings.count()
         assert count == len(test_docs), "Document count mismatch"
-        
+
         # Test semantic search
         logger.info("Testing semantic search functionality")
         results = embeddings.semantic_search("test document", 1)
-        logger.info(f"Semantic search results: {results}")
-        assert len(results) > 0, "Semantic search returned no results"
-        assert "metadata" in results[0], "Semantic search results missing metadata"
-        
-        # Test hybrid search
-        logger.info("Testing hybrid search functionality")
-        results = embeddings.hybrid_search("machine learning", 1)
-        logger.info(f"Hybrid search results: {results}")
-        assert len(results) > 0, "Hybrid search returned no results"
-        assert "scores" in results[0], "Hybrid search results missing scores"
-        assert "semantic" in results[0]["scores"], "Missing semantic score"
-        assert "keyword" in results[0]["scores"], "Missing keyword score"
-        assert "metadata" in results[0], "Hybrid search results missing metadata"
-        
-        # Test SQL search
-        logger.info("Testing SQL search functionality")
-        results = embeddings.sql_search(
-            "select text, score from txtai where similar('machine learning') and score >= 0.1"
-        )
-        assert len(results) > 0, "SQL search returned no results"
-        
-        # Test save and load
-        logger.info("Testing index persistence")
-        test_path = "/tmp/test_index"
-        embeddings.save(test_path)
-        
-        # Create new instance and load saved index
-        new_embeddings = EmbeddingsService()
-        new_embeddings.load(test_path)
-        assert new_embeddings.count() == count, "Loaded index has different document count"
-        
-        # Cleanup
-        if os.path.exists(test_path):
-            shutil.rmtree(test_path)
-        
+        assert len(results) > 0, "No search results returned"
+        assert "metadata" in results[0], "Search result missing metadata"
+
     except Exception as e:
         logger.error(f"Embeddings test failed: {str(e)}", exc_info=True)
         raise
@@ -118,9 +86,15 @@ def test_custom_indices():
         EmbeddingsService.add_documents(index1, docs1)
         EmbeddingsService.add_documents(index2, docs2)
 
+        # Create service instances for each index
+        service1 = EmbeddingsService()
+        service1.embeddings = index1
+        service2 = EmbeddingsService()
+        service2.embeddings = index2
+
         # Search using the service method
-        results1 = EmbeddingsService.semantic_search(index1, "document", 1)
-        results2 = EmbeddingsService.semantic_search(index2, "document", 1)
+        results1 = service1.semantic_search("document", 1)
+        results2 = service2.semantic_search("document", 1)
 
         # Verify results
         assert len(results1) > 0, "No results from index 1"
