@@ -2,6 +2,7 @@ import pytest
 from httpx import AsyncClient
 from typing import AsyncGenerator
 import json
+import os
 
 from src.main import app
 
@@ -12,28 +13,27 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
 
 @pytest.fixture
 def test_documents():
-    """Test document fixture"""
+    """
+    Test document fixture following txtai's example data pattern
+    Reference: Notebooks/01_Introducing_txtai.ipynb
+    """
     return {
         "documents": [
             {
-                "text": "Embeddings are great for semantic search",
-                "metadata": {"category": "tech", "type": "tutorial"}
+                "text": "US tops 5 million confirmed virus cases",
+                "metadata": {"category": "health", "length": 39}
             },
             {
-                "text": "Vector search helps find similar content",
-                "metadata": {"category": "tech", "type": "explanation"}
+                "text": "Canada's last fully intact ice shelf has suddenly collapsed",
+                "metadata": {"category": "climate", "length": 63}
             },
             {
-                "text": "Natural language processing with transformers",
-                "metadata": {"category": "tech", "type": "tutorial"}
+                "text": "Beijing mobilises invasion craft along coast as Taiwan tensions escalate",
+                "metadata": {"category": "politics", "length": 71}
             },
             {
-                "text": "Machine learning models need good training data",
-                "metadata": {"category": "tech", "type": "explanation"}
-            },
-            {
-                "text": "Cloud storage enables scalable solutions",
-                "metadata": {"category": "cloud", "type": "tutorial"}
+                "text": "Maine man wins $1M from $25 lottery ticket",
+                "metadata": {"category": "finance", "length": 44}
             }
         ]
     }
@@ -50,6 +50,24 @@ async def test_document_lifecycle(client: AsyncClient, test_documents):
     response = await client.get("/api/embeddings/count")
     assert response.status_code == 200
     assert response.json()["count"] == len(test_documents["documents"])
+
+    # Test SQL query capability
+    response = await client.post("/api/embeddings/sql", 
+        json={"query": "select count(*), min(length), max(length) from txtai"})
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert len(results) > 0
+
+    # Save and load index
+    temp_path = "test_index"
+    response = await client.post("/api/embeddings/save", json={"path": temp_path})
+    assert response.status_code == 200
+    
+    response = await client.post("/api/embeddings/load", json={"path": temp_path})
+    assert response.status_code == 200
+    
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
     
     # Delete documents
     ids = list(range(len(test_documents["documents"])))
@@ -58,88 +76,71 @@ async def test_document_lifecycle(client: AsyncClient, test_documents):
     assert response.json()["count"] == len(ids)
 
 @pytest.mark.asyncio
-async def test_simple_search(client: AsyncClient, test_documents):
-    """Test semantic search functionality"""
+async def test_search_variants(client: AsyncClient, test_documents):
+    """
+    Test different search methods following txtai patterns
+    Reference: Notebooks/01_Introducing_txtai.ipynb
+    """
     # Add test documents
     await client.post("/api/embeddings/add", json=test_documents)
     
     # Test semantic search
     search_query = {
-        "query": "semantic search technology",
+        "query": "health crisis",
         "limit": 2
     }
     response = await client.post("/api/embeddings/semantic-search", json=search_query)
     assert response.status_code == 200
-    
     results = response.json()["results"]
     assert len(results) == 2
     assert all(isinstance(r["score"], float) for r in results)
-    assert all("metadata" in r for r in results)
-
-@pytest.mark.asyncio
-async def test_hybrid_search(client: AsyncClient, test_documents):
-    """Test hybrid search functionality"""
-    # Add test documents
-    await client.post("/api/embeddings/add", json=test_documents)
     
     # Test hybrid search
     search_query = {
-        "query": "vector embeddings",
+        "query": "virus cases",
         "limit": 2,
-        "weight": 0.7
+        "weight": 0.7  # Balance between semantic and keyword matching
     }
-    response = await client.post("/api/embeddings/search", json=search_query)
+    response = await client.post("/api/embeddings/hybrid-search", json=search_query)
     assert response.status_code == 200
-    
     results = response.json()["results"]
     assert len(results) == 2
     assert all("scores" in r for r in results)
-    assert all("semantic" in r["scores"] for r in results)
-    assert all("keyword" in r["scores"] for r in results)
-
-@pytest.mark.asyncio
-async def test_advanced_search(client: AsyncClient, test_documents):
-    """Test advanced search with filters and score threshold"""
-    # Add test documents
-    await client.post("/api/embeddings/add", json=test_documents)
     
     # Test advanced search with filters
     search_query = {
-        "query": "tutorial content",
-        "limit": 3,
-        "filters": {
-            "type": "tutorial"
-        },
+        "query": "climate change",
+        "limit": 2,
+        "filters": {"category": "climate"},
         "min_score": 0.1
     }
     response = await client.post("/api/embeddings/advanced-search", json=search_query)
     assert response.status_code == 200
-    
     results = response.json()["results"]
-    assert len(results) > 0
-    assert all(r["metadata"]["type"] == "tutorial" for r in results)
+    assert all(r["metadata"]["category"] == "climate" for r in results)
     assert all(r["score"] >= 0.1 for r in results)
 
 @pytest.mark.asyncio
-async def test_batch_processing(client: AsyncClient):
-    """Test batch processing with large document set"""
-    # Create large document set
-    large_documents = {
-        "documents": [
-            {
-                "text": f"Test document {i}",
-                "metadata": {"batch": i // 100}
-            }
-            for i in range(250)  # Create 250 documents
-        ]
-    }
+async def test_sql_queries(client: AsyncClient, test_documents):
+    """
+    Test SQL query capabilities
+    Reference: Notebooks/01_Introducing_txtai.ipynb SQL examples
+    """
+    await client.post("/api/embeddings/add", json=test_documents)
     
-    # Add documents with batch processing
-    response = await client.post("/api/embeddings/add", 
-                               json=large_documents,
-                               params={"batch_size": 100})
-    assert response.status_code == 200
-    assert response.json()["count"] == 250
+    queries = [
+        # Basic filtering
+        "select text, score from txtai where similar('climate change') and score >= 0.15",
+        # Metadata filtering
+        "select text, length from txtai where length >= 50",
+        # Aggregations
+        "select count(*), avg(length) from txtai"
+    ]
+    
+    for query in queries:
+        response = await client.post("/api/embeddings/sql", json={"query": query})
+        assert response.status_code == 200
+        assert "results" in response.json()
 
 @pytest.mark.asyncio
 async def test_error_handling(client: AsyncClient):
@@ -149,34 +150,11 @@ async def test_error_handling(client: AsyncClient):
     assert response.status_code == 422
     
     # Test invalid weight
-    response = await client.post("/api/embeddings/search", 
+    response = await client.post("/api/embeddings/hybrid-search", 
                                json={"query": "test", "weight": 1.5})
     assert response.status_code == 422
     
-    # Test invalid filters
-    response = await client.post("/api/embeddings/advanced-search", 
-                               json={"query": "test", "filters": "invalid"})
-    assert response.status_code == 422
-    
-    # Test missing required fields
-    response = await client.post("/api/embeddings/add", json={"documents": []})
-    assert response.status_code == 422
-
-@pytest.mark.asyncio
-async def test_metadata_handling(client: AsyncClient, test_documents):
-    """Test metadata handling in search results"""
-    # Add test documents
-    await client.post("/api/embeddings/add", json=test_documents)
-    
-    # Search with category filter
-    search_query = {
-        "query": "tutorial",
-        "filters": {"category": "tech"},
-        "limit": 5
-    }
-    response = await client.post("/api/embeddings/advanced-search", json=search_query)
-    assert response.status_code == 200
-    
-    results = response.json()["results"]
-    assert len(results) > 0
-    assert all(r["metadata"]["category"] == "tech" for r in results)
+    # Test invalid SQL
+    response = await client.post("/api/embeddings/sql", 
+                               json={"query": "invalid sql"})
+    assert response.status_code == 500

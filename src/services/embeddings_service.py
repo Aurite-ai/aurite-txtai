@@ -24,7 +24,8 @@ class EmbeddingsService:
 
         References:
             Notebooks/01_Introducing_txtai.ipynb:            ```python
-            embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2")            ```
+            # Create embeddings with content enabled for large document collections
+            embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2", content=True)            ```
         """
         try:
             self.embeddings = Embeddings(config_service.embeddings_config)
@@ -218,4 +219,48 @@ class EmbeddingsService:
             return len(self.embeddings)
         except Exception as e:
             logger.error("Failed to get document count: %s", str(e), exc_info=True)
+            raise HTTPException(status_code=500, detail=str(e))
+
+    def sql_search(self, query: str) -> List[Dict[str, Any]]:
+        """
+        Execute direct SQL queries against the embeddings database.
+        
+        References:
+            Notebooks/01_Introducing_txtai.ipynb:        ```python
+            # Run aggregate queries
+            embeddings.search("select count(*), min(length), max(length), sum(length) from txtai")        ```
+        """
+        try:
+            return self.embeddings.search(query)
+        except Exception as e:
+            logger.error(f"SQL search failed: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(e))
+
+    def save(self, path: str) -> None:
+        """
+        Save embeddings index to specified path.
+        
+        References:
+            Notebooks/01_Introducing_txtai.ipynb:        ```python
+            embeddings.save("index")        ```
+        """
+        try:
+            self.embeddings.save(path)
+        except Exception as e:
+            logger.error(f"Failed to save index: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(e))
+
+    def load(self, path: str) -> None:
+        """
+        Load embeddings index from specified path.
+        
+        References:
+            Notebooks/01_Introducing_txtai.ipynb:        ```python
+            embeddings = Embeddings()
+            embeddings.load("index")        ```
+        """
+        try:
+            self.embeddings.load(path)
+        except Exception as e:
+            logger.error(f"Failed to load index: {str(e)}", exc_info=True)
             raise HTTPException(status_code=500, detail=str(e))
