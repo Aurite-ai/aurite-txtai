@@ -3,7 +3,7 @@
 # Create examples directory if it doesn't exist
 mkdir -p info/examples
 
-# GitHub API token from environment (optional but recommended)
+# GitHub API token from environment
 if [ -n "$GITHUB_TOKEN" ]; then
     AUTH_HEADER="Authorization: token $GITHUB_TOKEN"
 else

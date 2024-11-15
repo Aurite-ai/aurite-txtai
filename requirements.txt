@@ -1,5 +1,5 @@
 # Core dependencies
-txtai>=6.0.0
+txtai[ann,pipeline]>=6.0.0
 fastapi>=0.109.0
 uvicorn>=0.27.0
 python-dotenv>=1.0.0
@@ -8,8 +8,7 @@ pydantic-settings>=2.0.0
 rank-bm25>=0.2.2
 
 # txtai extensions
-txtai[pipeline]
-txtai[faiss]  # Add this for FAISS backend
+txtai[faiss]
 
 # GCP dependencies
 google-cloud-storage>=2.14.0

@@ -9,7 +9,7 @@ from google.cloud import storage
 import logging
 import pytest
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 def test_gcs_connection():
@@ -97,8 +97,44 @@ def test_embeddings():
         logger.error(f"Embeddings test failed: {str(e)}", exc_info=True)
         raise
 
+def test_custom_indices():
+    """Test creation and usage of custom indices."""
+    try:
+        # Create two separate indices
+        index1 = EmbeddingsService.create_index("test-index-1")
+        index2 = EmbeddingsService.create_index("test-index-2")
+
+        # Add documents with metadata
+        docs1 = [{
+            "text": "Document for index 1",
+            "metadata": {"index": "1"}
+        }]
+        docs2 = [{
+            "text": "Document for index 2", 
+            "metadata": {"index": "2"}
+        }]
+
+        # Add documents using the service method
+        EmbeddingsService.add_documents(index1, docs1)
+        EmbeddingsService.add_documents(index2, docs2)
+
+        # Search using the service method
+        results1 = EmbeddingsService.semantic_search(index1, "document", 1)
+        results2 = EmbeddingsService.semantic_search(index2, "document", 1)
+
+        # Verify results
+        assert len(results1) > 0, "No results from index 1"
+        assert len(results2) > 0, "No results from index 2"
+        assert results1[0]["metadata"].get("index") == "1", "Index 1 returned wrong document"
+        assert results2[0]["metadata"].get("index") == "2", "Index 2 returned wrong document"
+
+    except Exception as e:
+        logger.error(f"Custom indices test failed: {e}", exc_info=True)
+        raise
+
 if __name__ == "__main__":
     logger.info("Starting embeddings tests")
     test_gcs_connection()
     test_embeddings()
+    test_custom_indices()
     logger.info("All tests passed successfully") 

@@ -14,3 +14,8 @@ gcloud iam service-accounts keys create ./config/service-account.json \
 
 # Run the diagnostic script again to verify
 python scripts/check_gcp_auth.py
+
+# From notebook 46: Custom indices need defaults=False
+# From notebook 30: SQL queries are the preferred way to handle metadata
+# From notebook 45: The document format should use standard field names
+# From notebook 61: Proper metadata handling is critical for search results

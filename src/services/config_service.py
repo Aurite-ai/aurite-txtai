@@ -32,6 +32,7 @@ class ConfigService:
         return {
             "path": self.settings.EMBEDDINGS_MODEL,
             "content": True,
+            "backend": "faiss",
             "hybrid": True,
             "scoring": {
                 "method": "bm25",
@@ -39,7 +40,6 @@ class ConfigService:
                 "normalize": True
             },
             "batch": 32,
-            "backend": "faiss",
             "normalize": True,
             "cloud": {
                 "provider": "gcs",
