@@ -1,0 +1,41 @@
+# Development tools
+black
+isort
+mypy
+pylint
+pre-commit
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+
+# Type checking
+types-requests
+types-python-dateutil
+
+# Database
+psycopg2-binary>=2.9.9
+SQLAlchemy>=2.0.32
+alembic>=1.13.1
+
+# API and Services
+uvicorn>=0.30.6
+fastapi>=0.112.1
+newsapi-python>=0.2.7
+txtai>=7.5.1
+python-dotenv>=1.0.1
+httpx>=0.27.0
+
+# Data Processing
+nltk>=3.8.1
+textblob>=0.18.0
+
+# Logging
+loguru>=0.7.2
+praw
+prawcore
+txtai[pipeline]>=7.5.1
+sentence-transformers>=2.5.1
+torch>=2.2.0
+transformers>=4.38.1
