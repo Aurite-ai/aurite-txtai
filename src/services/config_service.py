@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic_settings import BaseSettings
+from txtai.api import API
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
@@ -11,6 +12,7 @@ class Settings(BaseSettings):
     # API Settings
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
+    API_KEY: str
     
     # Embeddings Settings
     EMBEDDINGS_MODEL: str = "sentence-transformers/nli-mpnet-base-v2"
@@ -25,6 +27,19 @@ class ConfigService:
     
     def __init__(self):
         self.settings = Settings()
+        self._api_config = None
+        self.initialize_api()
+    
+    def initialize_api(self):
+        """Initialize the txtai API configuration"""
+        self._api_config = API({
+            "embeddings": {
+                "path": self.settings.EMBEDDINGS_MODEL,
+                "content": True,
+                "backend": "faiss"
+            },
+            "token": self.settings.API_KEY  # Token goes in config dict
+        })
     
     @property
     def embeddings_config(self) -> dict:
@@ -47,6 +62,11 @@ class ConfigService:
                 "prefix": self.settings.EMBEDDINGS_PREFIX
             }
         }
-
+    
+    @property
+    def api_config(self) -> dict:
+        """Get API configuration for txtai"""
+        return self._api_config
+    
 # Global config service instance
 config_service = ConfigService()

@@ -1,37 +1,22 @@
-from fastapi import APIRouter, HTTPException
+import os
+from fastapi import APIRouter, HTTPException, Security
 from typing import Dict, List, Optional
 from pydantic import BaseModel
 import logging
 
 from src.services.embeddings_service import EmbeddingsService
+from src.middleware.auth import get_api_key
+from src.services.config_service import config_service
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+
+api = config_service.api_config
+
 # Initialize embeddings service
 embeddings = EmbeddingsService()
 
-# Initialize txtai API with config
-from txtai.api import API
-api = API({
-    "embeddings": {
-        "path": "sentence-transformers/nli-mpnet-base-v2",
-        "content": True,
-        "backend": "faiss",
-        "indexes": {
-            "sparse": {
-                "bm25": {
-                    "terms": True,
-                    "normalize": True
-                }
-            },
-            "dense": {}
-        },
-        "batch": 32,
-        "normalize": True,
-        "defaults": False
-    }
-})
 
 # Register our embeddings instance
 api.embeddings = embeddings.embeddings
@@ -48,7 +33,10 @@ class SearchQuery(BaseModel):
     limit: Optional[int] = 10
 
 @router.post("/add")
-async def add_documents(documents: Documents):
+async def add_documents(
+    documents: Documents,
+    api_key: str = Security(get_api_key)
+):
     """Add documents to the embeddings index"""
     try:
         # Convert to list of dicts format
