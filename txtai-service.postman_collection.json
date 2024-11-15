@@ -1,0 +1,92 @@
+{
+  "info": {
+    "name": "txtai Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": ["{{base_url}}"]
+        }
+      }
+    },
+    {
+      "name": "Add Documents",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/embeddings/add",
+          "host": ["{{base_url}}"],
+          "path": ["api", "embeddings", "add"]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": [
+            {
+              "text": "Embeddings are great for semantic search",
+              "metadata": {
+                "source": "documentation",
+                "category": "search"
+              }
+            },
+            {
+              "text": "Vector search helps find similar content",
+              "metadata": {
+                "source": "blog",
+                "category": "search"
+              }
+            },
+            {
+              "text": "Natural language processing with transformers",
+              "metadata": {
+                "source": "tutorial",
+                "category": "nlp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Search Documents",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/embeddings/search",
+          "host": ["{{base_url}}"],
+          "path": ["api", "embeddings", "search"]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": {
+            "query": "semantic search",
+            "limit": 2
+          }
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ]
+}
