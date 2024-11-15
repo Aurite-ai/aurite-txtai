@@ -1,131 +1,144 @@
 txtai Service Documentation body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; max-width: 1000px; margin: 0 auto; padding: 20px; color: #333; } pre { background-color: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; } code { font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; font-size: 85%; } h1, h2, h3 { border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; } .note { background-color: #f8f9fa; border-left: 4px solid #007bff; padding: 15px; margin: 10px 0; }
 
-# txtai Service
+# txtai Service with GCS Storage
 
-A FastAPI service implementing hybrid search capabilities using txtai embeddings and BM25 keyword search.
+A FastAPI service that provides semantic search and document embeddings using txtai with Google Cloud Storage integration.
 
-## Features
+## Overview
 
-- Semantic search using txtai embeddings
-- Keyword search using BM25 algorithm
-- Hybrid search combining both approaches with configurable weights
-- Document metadata support
-- RESTful API endpoints
+This service implements a production-ready wrapper around txtai's core functionality, providing:
 
-## Prerequisites
+- Document indexing with metadata support
+- Semantic search
+- Hybrid search (semantic + keyword)
+- SQL-based querying
+- Cloud storage persistence
+- REST API endpoints
 
-- Python 3.8+
-- just (command runner)
-- Newman (for API testing)
+## Core Components
 
-## Installation
+### Embeddings Service (`src/services/embeddings_service.py`)
 
-    git clone [repository-url]
-    cd [repository-name]
-    just pip-install
+The core service layer that wraps txtai functionality:
 
-## Available Commands
+- Document management (add, delete)
+- Search operations (semantic, hybrid, SQL)
+- Index persistence (save/load)
+- Cloud storage integration
+- Metadata handling
+- Error handling and logging
 
-    just --list          # Show available commands
-    just pip-install     # Install dependencies
-    just dev            # Start development server
-    just postman        # Run Postman collection tests
-    just test-api       # Run server and tests
-    just clean          # Clean Python cache files
+### API Routes (`src/routes/embeddings.py`)
 
-## API Endpoints
+REST endpoints exposing the embeddings functionality:
 
-### Health Check
+- `POST /api/embeddings/add` - Add documents with metadata
+- `POST /api/embeddings/search` - Hybrid semantic + keyword search
+- `POST /api/embeddings/semantic-search` - Pure semantic search
+- `POST /api/embeddings/advanced-search` - Search with metadata filtering
 
-    GET /
-    Response: {"status": "healthy"}
+### Main Application (`src/main.py`)
 
-### Add Documents
+FastAPI application setup with:
 
-    POST /api/embeddings/add
-    Content-Type: application/json
-
-    {
-        "documents": [
-            {
-                "text": "Document text content",
-                "metadata": {
-                    "category": "example",
-                    "type": "document"
-                }
-            }
-        ]
-    }
-
-### Search Documents
-
-    POST /api/embeddings/search
-    Content-Type: application/json
-
-    {
-        "query": "search query text",
-        "limit": 3,
-        "hybrid_weight": 0.7
-    }
-
-**Note:** The hybrid_weight parameter controls the balance between semantic and keyword search:
-
-- 1.0: Pure semantic search
-- 0.0: Pure keyword search
-- 0.5: Equal combination (default)
-
-## Response Format
-
-Search results include combined scores and individual scores for both semantic and keyword matching:
-
-    {
-        "results": [
-            {
-                "score": 0.6869,
-                "document": {
-                    "text": "Document content",
-                    "metadata": { ... }
-                },
-                "scores": {
-                    "semantic": 0.5527,
-                    "keyword": 1.0000,
-                    "combined": 0.6869
-                }
-            }
-        ]
-    }
+- API documentation
+- Health check endpoint
+- Route registration
+- Logging configuration
 
 ## Testing
 
-The service includes a Postman collection for API testing. The collection tests various search scenarios:
+The service includes comprehensive tests:
 
-- Health check verification
+### API Tests (`test/test_api.py`)
+
+Tests the REST endpoints:
+
 - Document addition
-- Italian cuisine search
-- Soup dishes search
-- Easy recipes search
-- Hybrid weight search
+- Search operations
+- Response formats
+- Error handling
+
+### Embeddings Tests (`test/test_embeddings.py`)
+
+Tests the core embeddings functionality:
+
+- GCS connectivity
+- Document operations
+- Search accuracy
+- Metadata handling
+- Index persistence
+
+## Features
+
+1. **Document Management**
+
+   - Batch document addition
+   - Metadata support
+   - Document deletion
+
+2. **Search Capabilities**
+
+   - Pure semantic search
+   - Hybrid search with configurable weights
+   - SQL-based querying
+   - Metadata filtering
+
+3. **Cloud Integration**
+
+   - Google Cloud Storage support
+   - Automatic index persistence
+   - Cloud configuration management
+
+4. **Production Features**
+   - Error handling
+   - Logging
+   - Input validation
+   - API documentation
+   - Health monitoring
+
+## Usage
+
+1. **Add Documents**
+
+```python
+documents = {
+    "documents": [
+        {
+            "text": "Sample document text",
+            "metadata": {"category": "example", "type": "document"}
+        }
+    ]
+}
+response = await client.post("/api/embeddings/add", json=documents)
+```
+
+2. **Search Documents**
+
+```python
+query = {
+    "query": "search terms",
+    "limit": 5,
+    "weight": 0.7  # For hybrid search
+}
+response = await client.post("/api/embeddings/search", json=query)
+```
+
+## Configuration
+
+The service uses a configuration service for managing:
+
+- API settings
+- Cloud storage credentials
+- Embeddings parameters
+- Index persistence options
 
 ## Development
 
-The service is built with:
+Built using:
 
-- FastAPI - Web framework
-- txtai - Embeddings and semantic search
-- rank-bm25 - Keyword search implementation
-- Pydantic - Data validation
-
-## Project Structure
-
-    .
-    ├── src/
-    │   ├── main.py              # FastAPI application
-    │   ├── routers/
-    │   │   └── embeddings.py    # API endpoints
-    │   └── services/
-    │       └── embeddings_service.py  # Search implementation
-    ├── test/
-    │   └── embeddings.test.py   # Unit tests
-    ├── requirements.txt         # Dependencies
-    ├── justfile                # Command runner
-    └── txtai-service.postman_collection.json  # API tests
+- Python 3.12
+- FastAPI
+- txtai 6.0+
+- Google Cloud Storage
+- pytest for testing

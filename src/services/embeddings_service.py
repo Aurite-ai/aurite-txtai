@@ -23,14 +23,26 @@ class EmbeddingsService:
         Initialize embeddings with configuration and cloud storage.
 
         References:
-            Notebooks/01_Introducing_txtai.ipynb:            ```python
-            # Create embeddings with content enabled for large document collections
-            embeddings = Embeddings(path="sentence-transformers/nli-mpnet-base-v2", content=True)            ```
+            Notebooks/46_Whats_new_in_txtai_6_0.ipynb:
+            ```python
+            # Create embeddings with content storage enabled
+            embeddings = Embeddings({
+                "path": "sentence-transformers/nli-mpnet-base-v2",
+                "content": True,  # Enable content storage for metadata
+                "contentpath": "txtai-sqlite"  # Optional: specify SQLite storage path
+            })
+            ```
         """
         try:
-            self.embeddings = Embeddings(config_service.embeddings_config)
+            # Ensure content storage is enabled for metadata
+            config = config_service.embeddings_config
+            if not config.get("content"):
+                config["content"] = True
+                logger.info("Enabled content storage for metadata support")
+            
+            self.embeddings = Embeddings(config)
             logger.info("Embeddings service initialized with config: %s", 
-                       {k: v for k, v in config_service.embeddings_config.items() if k != 'cloud'})
+                       {k: v for k, v in config.items() if k != 'cloud'})
         except Exception as e:
             logger.error("Failed to initialize embeddings: %s", str(e), exc_info=True)
             raise
@@ -38,9 +50,9 @@ class EmbeddingsService:
     def _format_result(self, result: Dict[str, Any], include_hybrid_scores: bool = False, weight: float = None) -> Dict[str, Any]:
         """Format a single search result with optional hybrid scoring"""
         formatted = {
-            "text": result["text"],
-            "score": result["score"],
-            "metadata": result.get("metadata")
+            "text": result.get("text", ""),
+            "score": result.get("score", 0.0),
+            "metadata": result.get("data", {}).get("metadata", {}) if result.get("data") else {}
         }
         
         if include_hybrid_scores and weight is not None:
@@ -58,7 +70,7 @@ class EmbeddingsService:
     def _execute_search(self, query: str, limit: int = 5, **kwargs) -> List[Dict[str, Any]]:
         """Execute search with error handling and cloud storage support"""
         try:
-            return self.embeddings.search(query, limit, **kwargs)
+            return self.embeddings.search(query, limit)
         except Exception as e:
             logger.error(f"Search failed: {str(e)}", exc_info=True)
             raise HTTPException(status_code=500, detail=str(e))
@@ -174,49 +186,18 @@ class EmbeddingsService:
         results = self._execute_search(query, limit, weights=(weight, 1.0 - weight))
         return self._format_results(results, include_hybrid_scores=True, weight=weight)
 
-    def advanced_search(self, 
-                       query: str, 
-                       filters: Optional[Dict[str, Any]] = None, 
-                       limit: int = 5,
-                       min_score: float = 0.0) -> List[Dict[str, Any]]:
-        """
-        Perform advanced search with metadata filtering and score threshold.
-        Supports cloud storage and complex filtering expressions.
-
-        References:
-            Notebooks/01_Introducing_txtai.ipynb:            ```python
-            # Filter by metadata field 'length'
-            embeddings.search("select text, length, score from txtai where similar('feel good story') 
-                             and score >= 0.05 and length >= 40")            ```
-        """
-        filter_expr = None
-        if filters:
-            filter_expr = " and ".join([
-                f"metadata.{key} = '{value}'"
-                for key, value in filters.items()
-            ])
-            
-        results = self._execute_search(query, limit, filter=filter_expr)
-        
-        # Apply score threshold
-        filtered_results = [
-            r for r in results 
-            if r["score"] >= min_score
-        ]
-        
-        return self._format_results(filtered_results)
-
     def count(self) -> int:
         """
         Get total number of documents in the index.
 
         References:
-            Notebooks/64_Embeddings_index_format_for_open_data_access.ipynb:            ```python
-            # Get total number of records
-            print(f"Total records {len(embeddings)}")            ```
+            Notebooks/37_Embeddings_index_components.ipynb:        ```python
+            # Get total number of records using SQL count
+            embeddings.search("select count(*) from txtai")[0]["count(*)"]        ```
         """
         try:
-            return len(self.embeddings)
+            result = self.embeddings.search("select count(*) from txtai")
+            return result[0]["count(*)"] if result else 0
         except Exception as e:
             logger.error("Failed to get document count: %s", str(e), exc_info=True)
             raise HTTPException(status_code=500, detail=str(e))

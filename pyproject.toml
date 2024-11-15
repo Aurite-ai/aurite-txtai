@@ -29,4 +29,10 @@ filterwarnings = [
     "ignore::DeprecationWarning:tika.*:",
     "ignore::DeprecationWarning:txtai.*:",
     "ignore::DeprecationWarning:litellm.*:",
+]
+
+[tool.pytest]
+pythonpath = [
+    ".",
+    "src"
 ] 

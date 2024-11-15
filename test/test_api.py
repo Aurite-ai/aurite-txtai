@@ -1,6 +1,11 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.main import app
+
 import pytest
 from httpx import AsyncClient, ASGITransport
-from src.main import app
 
 @pytest.mark.asyncio
 async def test_api_workflow():
