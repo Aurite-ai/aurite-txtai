@@ -31,12 +31,21 @@ class ConfigService:
         """Get embeddings configuration for txtai"""
         return {
             "path": self.settings.EMBEDDINGS_MODEL,
+            "content": True,
+            "hybrid": True,
+            "scoring": {
+                "method": "bm25",
+                "terms": True,
+                "normalize": True
+            },
+            "batch": 32,
+            "backend": "faiss",
+            "normalize": True,
             "cloud": {
                 "provider": "gcs",
                 "container": self.settings.GOOGLE_CLOUD_BUCKET,
                 "prefix": self.settings.EMBEDDINGS_PREFIX
-            },
-            "content": True  # Enable content storage
+            }
         }
 
 # Global config service instance

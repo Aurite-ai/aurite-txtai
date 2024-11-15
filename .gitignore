@@ -32,3 +32,6 @@ coverage.xml
 # Local development
 *.log
 .DS_Store
+
+# Data directory
+data/

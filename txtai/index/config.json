@@ -1,0 +1,30 @@
+{
+  "path": "sentence-transformers/nli-mpnet-base-v2",
+  "content": true,
+  "hybrid": true,
+  "scoring": {
+    "method": "bm25",
+    "terms": true,
+    "normalize": true
+  },
+  "batch": 32,
+  "backend": "faiss",
+  "normalize": true,
+  "cloud": {
+    "provider": "gcs",
+    "container": "aurite-dev-embeddings",
+    "prefix": "txtai"
+  },
+  "dimensions": 768,
+  "offset": 2,
+  "build": {
+    "create": "2024-11-15T04:35:18Z",
+    "python": "3.12.3",
+    "settings": {
+      "components": "IDMap,Flat"
+    },
+    "system": "Linux (x86_64)",
+    "txtai": "7.5.1"
+  },
+  "update": "2024-11-15T04:35:18Z"
+}

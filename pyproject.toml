@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "txtai-service"
+version = "0.1.0"
+description = "txtai Service with GCS Storage"
+dependencies = [
+    "txtai[ann,pipeline]>=6.0.0",
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "google-cloud-storage>=2.14.0"
+]
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+# Set default fixture loop scope to function
+asyncio_fixture_loop_scope = "function"
+# Filter warnings from dependencies
+filterwarnings = [
+    "ignore::DeprecationWarning:numpy.*:",
+    "ignore::DeprecationWarning:pkg_resources.*:",
+    "ignore::DeprecationWarning:tika.*:",
+    "ignore::DeprecationWarning:txtai.*:",
+    "ignore::DeprecationWarning:litellm.*:",
+] 
