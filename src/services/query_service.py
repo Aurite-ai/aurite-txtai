@@ -83,7 +83,7 @@ class QueryService:
         # Add metadata filters
         if metadata_filters:
             where_clause = " AND ".join(
-                f"json_extract(metadata, '$.{key}') = '{value}'"
+                f"metadata LIKE '%{key}\": \"{value}%'"  # Match JSON string pattern
                 for key, value in metadata_filters.items()
             )
             if "WHERE" in query.upper():
@@ -92,7 +92,8 @@ class QueryService:
                 query += f" WHERE {where_clause}"
 
         # Add limit
-        query += f" LIMIT {limit}"
+        if not "LIMIT" in query.upper():
+            query += f" LIMIT {limit}"
 
         logger.info(f"Executing SQL query: {query}")
         return self.embeddings._embeddings.search(query)

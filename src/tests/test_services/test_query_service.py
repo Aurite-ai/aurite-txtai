@@ -25,7 +25,7 @@ def test_semantic_search(query_service):
 def test_sql_search(query_service):
     """Test SQL search with metadata filters"""
     results = query_service.search(
-        "SELECT * FROM txtai WHERE json_extract(metadata, '$.category') = 'tech'",
+        "SELECT * FROM txtai WHERE metadata LIKE '%category\": \"tech%'",
         query_type="sql",
         limit=1,
     )
