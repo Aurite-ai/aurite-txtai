@@ -13,27 +13,38 @@ check-python:
     fi
     if ! conda env list | grep -q txtai; then
         echo "Creating conda environment 'txtai' with Python 3.11..."
-        conda env create -f environment.yml
+        conda env create --file=environment.yml
     fi
 
 # Setup development environment
 setup: check-python
     #!/usr/bin/env bash
+    sudo apt-get install libomp-dev
+    # Create symlink if it doesn't exist
+    sudo ln -sf /usr/lib/x86_64-linux-gnu/libgomp.so.1 /home/wilcoxr/miniconda3/envs/txtai/lib/libgomp.so.1
+    # Set environment variables for OpenMP
+    export CC=$(which gcc)
+    export CXX=$(which g++)
+    export CFLAGS="-fopenmp"
+    export CXXFLAGS="-fopenmp"
     echo "Please run: conda activate txtai"
     echo "Then run: just install"
 
 # Install dependencies in development mode
 install:
-    pip install -e .
+    CFLAGS="-fopenmp" CXXFLAGS="-fopenmp" pip install -e .
     pip install -r requirements.dev.txt
 
 # Update conda environment
 update:
-    conda env update -f environment.yml
+    conda env update --file=environment.yml
 
 # Run tests
 test:
     pytest -v
+
+test-embeddings:
+    pytest -v test/embeddings/
 
 # Start API server
 serve:
@@ -53,9 +64,6 @@ check-auth:
 init-data:
     python scripts/init_search.py
 
-# Run embeddings tests
-test-embeddings:
-    python scripts/test_embeddings.py
 
 # Clean up Python cache files
 clean:

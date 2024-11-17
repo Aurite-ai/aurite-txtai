@@ -36,7 +36,7 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     from src.services.config_service import config_service
-    
+
     uvicorn.run(
         "src.main:app",
         host=config_service.settings.API_HOST,

@@ -1,25 +1,25 @@
 {
   "path": "sentence-transformers/nli-mpnet-base-v2",
   "content": true,
+  "contentpath": "txtai/test/content.db",
+  "backend": "faiss",
   "hybrid": true,
+  "normalize": true,
   "scoring": {
     "method": "bm25",
     "terms": true,
     "normalize": true
   },
-  "autoid": 3,
   "dimensions": 768,
-  "backend": "faiss",
-  "offset": 3,
+  "offset": 2,
   "build": {
-    "create": "2024-11-15T07:10:41Z",
-    "python": "3.12.3",
+    "create": "2024-11-17T19:15:31Z",
+    "python": "3.11.10",
     "settings": {
       "components": "IDMap,Flat"
     },
     "system": "Linux (x86_64)",
     "txtai": "7.5.1"
   },
-  "update": "2024-11-15T07:10:41Z",
-  "format": "json"
+  "update": "2024-11-17T19:15:31Z"
 }

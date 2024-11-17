@@ -1,1 +1,1 @@
-/home/wilcoxr/.bashrc
+/home/wilcoxr/dotfiles/bash/.bashrc

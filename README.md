@@ -1,5 +1,3 @@
-txtai Service Documentation body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; max-width: 1000px; margin: 0 auto; padding: 20px; color: #333; } pre { background-color: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; } code { font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; font-size: 85%; } h1, h2, h3 { border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; } .note { background-color: #f8f9fa; border-left: 4px solid #007bff; padding: 15px; margin: 10px 0; }
-
 # txtai Service with GCS Storage
 
 A FastAPI service that provides semantic search and document embeddings using txtai with Google Cloud Storage integration.
@@ -96,42 +94,6 @@ Tests the core embeddings functionality:
    - Input validation
    - API documentation
    - Health monitoring
-
-## Usage
-
-1. **Add Documents**
-
-```python
-documents = {
-    "documents": [
-        {
-            "text": "Sample document text",
-            "metadata": {"category": "example", "type": "document"}
-        }
-    ]
-}
-response = await client.post("/api/embeddings/add", json=documents)
-```
-
-2. **Search Documents**
-
-```python
-query = {
-    "query": "search terms",
-    "limit": 5,
-    "weight": 0.7  # For hybrid search
-}
-response = await client.post("/api/embeddings/search", json=query)
-```
-
-## Configuration
-
-The service uses a configuration service for managing:
-
-- API settings
-- Cloud storage credentials
-- Embeddings parameters
-- Index persistence options
 
 ## Development
 

@@ -12,7 +12,18 @@ dependencies = [
     "uvicorn>=0.27.0",
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
-    "google-cloud-storage>=2.14.0"
+    "pydantic-settings>=2.0.0",
+    "google-cloud-storage>=2.14.0",
+    "python-multipart"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=24.10.0",
+    "pytest>=8.3.3",
+    "pytest-asyncio>=0.24.0",
+    "ipykernel",
+    "jupyter"
 ]
 
 [tool.setuptools]
@@ -20,19 +31,18 @@ packages = ["src"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "strict"
-# Set default fixture loop scope to function
-asyncio_fixture_loop_scope = "function"
-# Filter warnings from dependencies
+asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
     "ignore::DeprecationWarning:numpy.*:",
     "ignore::DeprecationWarning:pkg_resources.*:",
     "ignore::DeprecationWarning:tika.*:",
     "ignore::DeprecationWarning:txtai.*:",
     "ignore::DeprecationWarning:litellm.*:",
+    "ignore::DeprecationWarning:faiss.*:",
+    "ignore::DeprecationWarning:accelerate.*:",
+    "ignore::DeprecationWarning:pydantic.*:",
 ]
-
-[tool.pytest]
 pythonpath = [
     ".",
     "src"
-] 
+]

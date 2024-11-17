@@ -51,4 +51,4 @@ async def hybrid_search(
         return {"results": results}
     except Exception as e:
         logger.error(f"Search failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))

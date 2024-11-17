@@ -3,6 +3,7 @@ fastapi>=0.115.5
 uvicorn>=0.27.0
 python-dotenv>=1.0.0
 pydantic>=2.0.0
+pydantic-settings>=2.0.0
 google-cloud-storage>=2.18.2
 numpy
 pandas
@@ -13,3 +14,5 @@ scikit-learn
 onnxruntime
 onnxmltools
 sentence-transformers
+llama-cpp-python[server]
+nltk

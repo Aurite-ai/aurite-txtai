@@ -6,77 +6,97 @@ This project uses a combination of Conda and pip to manage dependencies. The set
 
 ## Key Files
 
-### 1\. environment.yml
+### 1. environment.yml
 
 The main Conda environment configuration:
 
+```yaml
 name: txtai
 channels:
 
 - conda-forge
-- defaults
-  dependencies:
-- python=3.11
-- pip
-- pip: - -r requirements.txt - -r requirements.dev.txt
+  - defaults
+    dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - -r requirements.txt
+      - -r requirements.dev.txt
+```
 
 This file creates our Conda environment and installs all required dependencies.
 
-### 2\. pyproject.toml
+### 2. pyproject.toml
 
 Defines core package dependencies:
 
-\[project\]
-dependencies = \[
-"txtai\[ann,pipeline\]>=6.0.0",
-"fastapi>=0.109.0",
-"uvicorn>=0.27.0",
-"python-dotenv>=1.0.0",
-"pydantic>=2.0.0",
-"google-cloud-storage>=2.14.0"
-\]
+```toml
+[project]
+dependencies = [
+  "txtai[ann,pipeline]>=6.0.0",
+  "fastapi>=0.109.0",
+  "uvicorn>=0.27.0",
+  "python-dotenv>=1.0.0",
+  "pydantic>=2.0.0",
+  "google-cloud-storage>=2.14.0"
+]
+```
 
 These are the minimum requirements for the package to function.
 
-### 3\. requirements.txt
+### 3. requirements.txt
 
 Production dependencies including:
 
+```plaintext
 - Core dependencies from pyproject.toml
 - ML/AI libraries needed for txtai functionality
 - Production server components
+```
 
-### 4\. requirements.dev.txt
+### 4. requirements.dev.txt
 
 Development-only dependencies including:
 
+```plaintext
 - Testing tools (pytest)
 - Code formatting (black)
 - Jupyter notebook development tools
+```
 
 ## Getting Started
 
-1.  Install Miniconda if not already installed:
+1. Install Miniconda if not already installed:
 
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86\_64.sh
+   ```bash
+   wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 
-    bash Miniconda3-latest-Linux-x86_64.sh
+   bash Miniconda3-latest-Linux-x86_64.sh
+   ```
 
-2.  Create the environment:
+2. Create the environment:
 
-    conda env create -f environment.yml
+   ```bash
+   conda env create -f environment.yml
+   ```
 
-3.  Activate the environment:
+3. Activate the environment:
 
-    conda activate txtai
+   ```bash
+   conda activate txtai
+   ```
 
-4.  Install the package in development mode:
+4. Install the package in development mode:
 
-    pip install -e .
+   ```bash
+   pip install -e .
+   ```
 
 **Note:** Always activate the Conda environment before working on the project:
 
+```bash
 conda activate txtai
+```
 
 ## Dependency Management
 
@@ -89,18 +109,28 @@ The dependency hierarchy works as follows:
 
 ## Common Tasks
 
-# Update all dependencies
+### Update all dependencies
 
+```bash
 conda env update -f environment.yml
+```
 
-# Add a new production dependency
+### Add a new production dependency
 
-# 1. Add to requirements.txt
+1. Add to requirements.txt
 
-# 2. Run: pip install -r requirements.txt
+2. Run:
 
-# Add a new development dependency
+```bash
+pip install -r requirements.txt
+```
 
-# 1. Add to requirements.dev.txt
+### Add a new development dependency
 
-# 2. Run: pip install -r requirements.dev.txt
+1. Add to requirements.dev.txt
+
+2. Run:
+
+```bash
+pip install -r requirements.dev.txt
+```
