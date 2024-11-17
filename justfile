@@ -2,9 +2,34 @@
 default:
     @just --list
 
-# Install dependencies
+# Check conda installation and setup Python environment
+check-python:
+    #!/usr/bin/env bash
+    if ! command -v conda &> /dev/null; then
+        echo "Conda not found. Please install Miniconda first:"
+        echo "wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+        echo "bash Miniconda3-latest-Linux-x86_64.sh"
+        exit 1
+    fi
+    if ! conda env list | grep -q txtai; then
+        echo "Creating conda environment 'txtai' with Python 3.11..."
+        conda env create -f environment.yml
+    fi
+
+# Setup development environment
+setup: check-python
+    #!/usr/bin/env bash
+    echo "Please run: conda activate txtai"
+    echo "Then run: just install"
+
+# Install dependencies in development mode
 install:
     pip install -e .
+    pip install -r requirements.dev.txt
+
+# Update conda environment
+update:
+    conda env update -f environment.yml
 
 # Run tests
 test:
@@ -43,9 +68,3 @@ clean:
     find . -type d -name ".pytest_cache" -exec rm -r {} +
     find . -type d -name ".coverage" -exec rm -r {} +
     find . -type f -name ".coverage" -delete
-
-# Reset environment
-reset: clean
-    rm -rf .venv
-    python3 -m venv .venv
-    . .venv/bin/activate && pip install -r requirements.txt
