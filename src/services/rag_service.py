@@ -25,7 +25,7 @@ class RAGService:
                 logger.info("Initialized embeddings service")
 
             # Define template for RAG pipeline
-            template = """Answer the following question using only the context below. Only include information specifically discussed.
+            template = """Answer this question using ONLY the context below. If the answer cannot be found in the context, clearly state that.
 
 Context: {context}
 
@@ -51,7 +51,7 @@ Answer:"""
             logger.error(f"Failed to initialize RAG service: {str(e)}", exc_info=True)
             raise
 
-    def search_context(self, query: str, limit: int = 3) -> List[Dict]:
+    def search_context(self, query: str, limit: int = 3, min_score: float = 0.3) -> List[Dict]:
         """Search for relevant context using embeddings"""
         try:
             logger.info(f"\n=== Context Search ===")
@@ -60,6 +60,9 @@ Answer:"""
 
             # Use embeddings service for search
             results = embeddings_service.hybrid_search(query, limit)
+
+            # Filter by minimum score
+            results = [r for r in results if r.get("score", 0) >= min_score]
             logger.info(f"Found {len(results)} relevant documents")
 
             return results
@@ -70,11 +73,28 @@ Answer:"""
     def generate(self, question: str, limit: int = 3) -> Dict[str, Any]:
         """Generate response using RAG pipeline"""
         try:
+            if not question or not question.strip():
+                raise ValueError("Question cannot be empty")
+
             logger.info("\n=== RAG Generation ===")
             logger.info(f"Question: {question}")
 
+            # First get relevant context
+            context = self.search_context(question, limit)
+            if not context:
+                return {
+                    "answer": "No relevant context found to answer this question.",
+                    "context": [],
+                    "citations": [],
+                }
+
             # Format prompt for RAG pipeline
-            prompt = {"query": question, "question": question, "limit": limit}
+            prompt = {
+                "query": question,
+                "question": question,
+                "context": " ".join([doc["text"] for doc in context]),
+                "limit": limit,
+            }
 
             # Generate response
             result = self.rag([prompt])[0]
@@ -82,11 +102,8 @@ Answer:"""
 
             return {
                 "answer": result["answer"],
-                "context": result.get("context", []),
-                "citations": [
-                    {"text": c["text"], "score": c.get("score", 0)}
-                    for c in result.get("context", [])
-                ],
+                "context": context,
+                "citations": [{"text": c["text"], "score": c.get("score", 0)} for c in context],
             }
 
         except Exception as e:
