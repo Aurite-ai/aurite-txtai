@@ -3,8 +3,10 @@ from pydantic_settings import BaseSettings
 from txtai.api import API
 import os
 
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
+
     # GCP Settings
     GOOGLE_CLOUD_PROJECT: str = "aurite-dev"
     GOOGLE_CLOUD_BUCKET: str = "aurite-txtai-dev"
@@ -29,9 +31,14 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     LLM_PROVIDER: str = "anthropic"  # or "openai"
 
+    # Python Settings
+    PYTHONPATH: Optional[str] = None
+
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"
+
 
 class ConfigService:
     """Service for managing application configuration"""
@@ -43,14 +50,16 @@ class ConfigService:
 
     def initialize_api(self):
         """Initialize the txtai API configuration"""
-        self._api_config = API({
-            "embeddings": {
-                "path": self.settings.EMBEDDINGS_MODEL,
-                "content": True,
-                "backend": "faiss"
-            },
-            "token": self.settings.API_KEY  # Token goes in config dict
-        })
+        self._api_config = API(
+            {
+                "embeddings": {
+                    "path": self.settings.EMBEDDINGS_MODEL,
+                    "content": True,
+                    "backend": "faiss",
+                },
+                "token": self.settings.API_KEY,  # Token goes in config dict
+            }
+        )
 
     @property
     def embeddings_config(self) -> dict:
@@ -60,24 +69,22 @@ class ConfigService:
             "content": True,
             "backend": "faiss",
             "hybrid": True,
-            "scoring": {
-                "method": "bm25",
-                "terms": True,
-                "normalize": True
-            },
+            "scoring": {"method": "bm25", "terms": True, "normalize": True},
             "batch": self.settings.EMBEDDINGS_BATCH_SIZE,
             "normalize": True,
         }
 
         # Add storage-specific config based on type
         if self.settings.EMBEDDINGS_STORAGE_TYPE == "cloud":
-            base_config.update({
-                "cloud": {
-                    "provider": "gcs",
-                    "container": self.settings.GOOGLE_CLOUD_BUCKET,
-                    "prefix": self.settings.EMBEDDINGS_PREFIX
+            base_config.update(
+                {
+                    "cloud": {
+                        "provider": "gcs",
+                        "container": self.settings.GOOGLE_CLOUD_BUCKET,
+                        "prefix": self.settings.EMBEDDINGS_PREFIX,
+                    }
                 }
-            })
+            )
         elif self.settings.EMBEDDINGS_STORAGE_TYPE == "sqlite":
             base_config["contentpath"] = self.settings.EMBEDDINGS_CONTENT_PATH
 
@@ -87,6 +94,7 @@ class ConfigService:
     def api_config(self) -> dict:
         """Get API configuration for txtai"""
         return self._api_config
+
 
 # Global config service instance
 config_service = ConfigService()

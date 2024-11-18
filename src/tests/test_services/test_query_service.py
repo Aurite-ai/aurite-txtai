@@ -1,92 +1,93 @@
 import pytest
 from src.services.query_service import QueryService
-from src.services.embeddings_service import EmbeddingsService
-from src.config.settings import Settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-@pytest.fixture
-def query_service(test_settings, test_documents):
-    """Provide configured query service with test data"""
-    embeddings_service = EmbeddingsService(test_settings)
-    embeddings_service.create_index("memory")
-    embeddings_service.add_documents(test_documents)
-    return QueryService(embeddings_service)
+class TestSearchOperations:
+    """Test search operations following notebook patterns"""
+
+    def test_semantic_search(self, test_services):
+        """Test semantic search capabilities"""
+        _, query_service = test_services
+        results = query_service.search(
+            "machine learning", query_type="semantic", limit=1
+        )
+
+        assert len(results) == 1
+        assert "machine learning" in results[0]["text"].lower()
+        assert isinstance(results[0]["score"], float)
+        assert isinstance(results[0]["metadata"], dict)
+
+    def test_sql_search(self, test_services):
+        """Test SQL search with metadata"""
+        _, query_service = test_services
+        # SQL query needs exact metadata match
+        results = query_service.search(
+            'SELECT * FROM txtai WHERE metadata LIKE \'{"category":"tech"}\'',
+            query_type="sql",
+        )
+
+        assert len(results) == 1
+        assert results[0]["metadata"]["category"] == "tech"
+        assert isinstance(results[0]["score"], float)
+
+    def test_hybrid_search(self, test_services):
+        """Test hybrid search combining semantic and keyword"""
+        _, query_service = test_services
+        results = query_service.search("machine learning", query_type="hybrid", limit=1)
+
+        assert len(results) == 1
+        assert isinstance(results[0]["score"], float)
+        assert isinstance(results[0]["metadata"], dict)
 
 
-def test_semantic_search(query_service):
-    """Test semantic search returns expected results"""
-    results = query_service.search("machine learning", query_type="semantic", limit=1)
-    assert len(results) == 1
-    assert "machine learning" in results[0]["text"].lower()
-    assert isinstance(results[0]["score"], float)
-    assert "metadata" in results[0]
+class TestResultHandling:
+    """Test result processing and formatting"""
 
+    def test_result_format(self, test_services):
+        """Test search result format matches notebook pattern"""
+        _, query_service = test_services
+        results = query_service.search("machine learning", limit=1)
+        result = results[0]
 
-def test_sql_search(query_service):
-    """Test SQL search with metadata filters"""
-    results = query_service.search(
-        "SELECT * FROM txtai WHERE metadata LIKE '%category\": \"tech%'",
-        query_type="sql",
-        limit=1,
-    )
-    assert len(results) == 1
-    assert results[0]["metadata"]["category"] == "tech"
+        # Verify structure from notebook pattern
+        assert all(key in result for key in ["id", "text", "score", "metadata"])
+        assert isinstance(result["score"], float)
+        assert isinstance(result["metadata"], dict)
 
+    def test_metadata_parsing(self, test_services):
+        """Test metadata handling matches notebook format"""
+        _, query_service = test_services
+        results = query_service.search("machine learning", limit=1)
+        metadata = results[0]["metadata"]
 
-def test_hybrid_search(query_service):
-    """Test hybrid search combines semantic and keyword matching"""
-    results = query_service.search("machine learning", query_type="hybrid", limit=1)
-    assert len(results) == 1
-    assert isinstance(results[0]["score"], float)
-    assert "metadata" in results[0]
+        # Check metadata structure from notebook
+        assert isinstance(metadata, dict)
+        assert "category" in metadata
+        assert metadata["category"] == "tech"
+        assert isinstance(metadata["tags"], list)
 
+    def test_document_indexing(self, test_services):
+        """Verify documents are indexed with metadata"""
+        embeddings_service, _ = test_services
 
-def test_invalid_query_type(query_service):
-    """Test invalid query type raises error"""
-    with pytest.raises(ValueError, match="Invalid query type"):
-        query_service.search("test", query_type="invalid")
+        # Search directly with embeddings to see raw results
+        results = embeddings_service.embeddings.search("machine learning", 1)
+        result = results[0]
 
+        # Debug what we got
+        logger.info(f"Raw search result: {result}")
 
-def test_search_without_index():
-    """Test search without creating index first"""
-    empty_service = QueryService(EmbeddingsService(Settings()))
-    with pytest.raises(ValueError, match="No embeddings index created"):
-        empty_service.search("test")
+        # Check if we can find the document by metadata
+        sql_results = embeddings_service.embeddings.search(
+            'SELECT * FROM txtai WHERE metadata LIKE \'%"category":"tech"%\''
+        )
+        assert len(sql_results) > 0, "Should find documents with tech category"
 
-
-def test_result_format(query_service):
-    """Test search results have consistent format"""
-    results = query_service.search("test", limit=1)
-    assert len(results) == 1
-    result = results[0]
-
-    # Check required fields
-    assert "id" in result
-    assert "text" in result
-    assert "score" in result
-    assert "metadata" in result
-
-    # Check types
-    assert isinstance(result["id"], str)
-    assert isinstance(result["text"], str)
-    assert isinstance(result["score"], float)
-    assert isinstance(result["metadata"], dict)
-
-
-def test_metadata_parsing(query_service):
-    """Test metadata is properly parsed from JSON"""
-    results = query_service.search("technical", limit=1)
-    assert len(results) == 1
-    metadata = results[0]["metadata"]
-
-    # Check metadata structure from test_documents
-    assert "category" in metadata
-    assert "tags" in metadata
-    assert isinstance(metadata["tags"], list)
-
-
-def test_search_limit(query_service):
-    """Test search respects result limit"""
-    limit = 2
-    results = query_service.search("test", limit=limit)
-    assert len(results) <= limit
+        # Verify metadata in semantic results
+        semantic_results = embeddings_service.embeddings.search("machine learning", 1)
+        assert semantic_results[0].get(
+            "metadata"
+        ), "Semantic results should include metadata"

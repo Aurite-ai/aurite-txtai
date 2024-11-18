@@ -1,31 +1,49 @@
 import pytest
-from pathlib import Path
+from src.services.embeddings_service import EmbeddingsService
+from src.services.query_service import QueryService
 from src.config.settings import Settings
+import json
+import os
 
 
 @pytest.fixture
 def test_settings():
-    """Provide test settings with memory storage"""
+    """Test settings with memory storage"""
     return Settings(
-        EMBEDDINGS_MODEL="sentence-transformers/nli-mpnet-base-v2",
         EMBEDDINGS_STORAGE_TYPE="memory",
-        EMBEDDINGS_CONTENT_PATH=":memory:",
-        EMBEDDINGS_PREFIX="test",
+        EMBEDDINGS_CONTENT_PATH="txtai/test/content.db",
     )
 
 
 @pytest.fixture
 def test_documents():
-    """Provide test documents for embeddings"""
+    """Test documents with metadata matching notebook format"""
     return [
         {
-            "id": "test1",
-            "text": "Technical document about machine learning",
-            "metadata": {"type": "technical", "tags": ["ML", "AI"]},
+            "id": "doc1",
+            "text": "Machine learning models require significant computational resources",
+            "metadata": {
+                "category": "tech",
+                "tags": ["ML", "computing"],
+                "priority": 1,
+            },
         },
         {
-            "id": "test2",
-            "text": "Guide to cloud storage systems",
-            "metadata": {"type": "guide", "tags": ["cloud", "storage"]},
+            "id": "doc2",
+            "text": "Natural language processing advances with transformer models",
+            "metadata": {"category": "tech", "tags": ["NLP", "ML"], "priority": 2},
         },
     ]
+
+
+@pytest.fixture
+def test_services(test_settings, test_documents):
+    """Create test instances of embeddings and query services"""
+    embeddings_service = EmbeddingsService(test_settings)
+    embeddings_service.create_index()
+
+    # Add documents using the service method instead of direct indexing
+    embeddings_service.add_documents(test_documents)
+
+    query_service = QueryService(embeddings_service.embeddings, test_settings)
+    return embeddings_service, query_service
