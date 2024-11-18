@@ -20,9 +20,7 @@ class Settings(BaseSettings):
     STORAGE_PREFIX: str = "txtai"
     EMBEDDINGS_CONTENT_PATH: str = "txtai/content.db"
     EMBEDDINGS_PREFIX: str = "txtai"
-    EMBEDDINGS_BATCH_SIZE: int = Field(
-        default=32, description="Batch size for document indexing"
-    )
+    EMBEDDINGS_BATCH_SIZE: int = Field(default=32, description="Batch size for document indexing")
 
     # Search Settings
     DEFAULT_QUERY_TYPE: QueryType = Field(

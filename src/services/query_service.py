@@ -124,29 +124,14 @@ class QueryService:
             raise
 
     def hybrid_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Perform hybrid search combining semantic and term-based scoring
-
-        Args:
-            query: Search query text
-            limit: Maximum number of results to return
-
-        Returns:
-            List of results with scores and metadata
-        """
+        """Perform hybrid search combining semantic and term-based scoring"""
         try:
             logger.info("\n=== Hybrid Search ===")
             logger.info(f"Query: {query}")
             logger.info(f"Limit: {limit}")
 
-            # Perform hybrid search with weights from config
-            results = self.embeddings.search(
-                query,
-                limit=limit,
-                weights={
-                    "hybrid": 0.7,  # Semantic similarity weight
-                    "terms": 0.3,  # Term matching weight
-                },
-            )
+            # Use default search which is hybrid mode from config
+            results = self.embeddings.search(query, limit)
             logger.info(f"Raw results: {json.dumps(results, indent=2)}")
 
             # Get full documents with metadata
@@ -231,10 +216,11 @@ if __name__ == "__main__":
 
             logger.info("Creating embeddings service...")
             embeddings_service = EmbeddingsService(settings)
-            embeddings_service.create_index()
+            logger.info("Initializing embeddings...")
+            embeddings_service.initialize()
 
             logger.info("Adding test documents...")
-            embeddings_service.add_documents(test_docs)
+            embeddings_service.add(test_docs)
 
             # Create query service
             query_service = QueryService(embeddings_service.embeddings, settings)
@@ -246,21 +232,15 @@ if __name__ == "__main__":
 
             logger.info("\nTesting SQL search:")
             sql_query = """
-                SELECT text, score, metadata
+                SELECT id, text, tags
                 FROM txtai
-                WHERE metadata LIKE '%"category":"tech"%'
-                ORDER BY score DESC
+                WHERE tags LIKE '%"category": "tech"%'
             """
             sql_results = query_service.sql_search(sql_query)
             logger.info(f"SQL results: {json.dumps(sql_results, indent=2)}")
 
-            logger.info("\nTesting hybrid search with metadata filter:")
-            hybrid_results = query_service.search(
-                "machine learning",
-                query_type="hybrid",
-                limit=1,
-                metadata_filters={"category": "tech"},
-            )
+            logger.info("\nTesting hybrid search:")
+            hybrid_results = query_service.hybrid_search("machine learning", limit=1)
             logger.info(f"Hybrid results: {json.dumps(hybrid_results, indent=2)}")
 
         except Exception as e:
