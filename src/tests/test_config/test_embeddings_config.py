@@ -33,11 +33,10 @@ def test_memory_storage_config(test_settings):
 def test_cloud_storage_config(test_settings):
     """Test cloud storage configuration"""
     test_settings.EMBEDDINGS_STORAGE_TYPE = "cloud"
-    test_settings.GOOGLE_CLOUD_BUCKET = "test-bucket"
+    test_settings.GOOGLE_CLOUD_BUCKET = "aurite-txtai-dev"
 
     config = create_embeddings_config(test_settings)
 
-    assert config["cloud"]["provider"] == "gcs"
-    assert config["cloud"]["container"] == "test-bucket"
-    assert config["cloud"]["prefix"] == test_settings.EMBEDDINGS_PREFIX
-    assert config["contentpath"] == test_settings.EMBEDDINGS_CONTENT_PATH
+    # Cloud storage config should match notebook structure
+    assert config["cloud"] == {"provider": "gcs", "container": "aurite-txtai-dev"}
+    assert config["contentpath"] == "gcs://aurite-txtai-dev"

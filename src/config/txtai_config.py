@@ -33,6 +33,9 @@ def create_embeddings_config(settings: Settings) -> dict:
     # Add storage config
     if settings.EMBEDDINGS_STORAGE_TYPE == "memory":
         config["contentpath"] = ":memory:"
+    elif settings.EMBEDDINGS_STORAGE_TYPE == "cloud":
+        config["cloud"] = {"provider": "gcs", "container": settings.GOOGLE_CLOUD_BUCKET}
+        config["contentpath"] = f"gcs://{settings.GOOGLE_CLOUD_BUCKET}"
     else:
         config["contentpath"] = settings.EMBEDDINGS_CONTENT_PATH
 
