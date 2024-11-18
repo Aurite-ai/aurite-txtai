@@ -7,6 +7,7 @@ The txtai service architecture consists of three core components:
 - `embeddings_service.py` - Core document management and indexing
 - `query_service.py` - Search operations (semantic, SQL, hybrid)
 - `config_service.py` - Configuration management
+- `llm_service.py` - LLM functionality through txtai
 
 ## Component Details
 
@@ -60,6 +61,10 @@ results = query_service.sql_search(sql_query)
 # Combines semantic and term matching (configured in txtai_config.py)
 results = query_service.hybrid_search("machine learning", limit=10)
 ```
+
+### 3. LLM Service (llm_service.py)
+
+Provides LLM functionality through txtai:
 
 ## Critical Implementation Details
 
