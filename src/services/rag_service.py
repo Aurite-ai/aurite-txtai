@@ -25,7 +25,7 @@ class RAGService:
                 logger.info("Initialized embeddings service")
 
             # Define template for RAG pipeline
-            template = """Answer this question using ONLY the context below. If the answer cannot be found in the context, clearly state that.
+            template = """Answer the following question using only the context below. Only include information specifically discussed.
 
 Context: {context}
 
@@ -43,6 +43,7 @@ Answer:"""
                     else config_service.settings.OPENAI_API_KEY
                 ),
                 template=template,
+                system=config_service.settings.SYSTEM_PROMPTS["rag"],
             )
             logger.info("RAG service initialized successfully")
 
