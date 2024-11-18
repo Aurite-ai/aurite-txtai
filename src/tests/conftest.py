@@ -4,7 +4,6 @@ import json
 from src.services.embeddings_service import EmbeddingsService
 from src.services.query_service import QueryService
 from src.config.settings import Settings
-from src.config.txtai_config import create_embeddings_config
 
 
 @pytest.fixture
@@ -38,12 +37,6 @@ def test_documents():
             "metadata": {"category": "tech", "tags": ["NLP", "ML"], "priority": 2},
         },
     ]
-
-
-@pytest.fixture
-def test_embeddings_config(test_settings):
-    """Create test embeddings configuration"""
-    return create_embeddings_config(test_settings)
 
 
 @pytest.fixture
