@@ -199,3 +199,39 @@ pytest src/tests/test_services/
 3. **Search Configuration**:
    - ✅ Configure hybrid search in txtai_config.py
    - ❌ Don't set weights in search calls
+
+## LLM SERVICE
+
+Basic generation
+
+```python
+response = llm_service.generate("What is machine learning?")
+```
+
+Context-based generation
+
+```python
+response = llm_service.generate_with_context(
+    question="What is ML?",
+    context="Machine learning is..."
+)
+```
+
+Key responsibilities:
+
+```plaintext
+- Text generation
+- RAG-style context-based responses
+- Message formatting
+- Error handling
+```
+
+## LLM Configuration
+
+LLM settings in settings.py:
+
+```python
+LLM_PROVIDER="anthropic" # or "openai"
+ANTHROPIC_API_KEY="..."
+OPENAI_API_KEY="..."
+```
