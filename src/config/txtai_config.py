@@ -15,14 +15,21 @@ def create_embeddings_config(settings: Settings) -> dict:
             "normalize": True,
             "weights": {"hybrid": 0.7, "terms": 0.3},
         },
+        "batch": settings.EMBEDDINGS_BATCH_SIZE,
     }
 
-    # Add storage configuration
+    # Add storage-specific config based on type
     if settings.EMBEDDINGS_STORAGE_TYPE == "memory":
         base_config["contentpath"] = ":memory:"
-    else:
+    elif settings.EMBEDDINGS_STORAGE_TYPE == "sqlite":
         base_config["contentpath"] = settings.EMBEDDINGS_CONTENT_PATH
-        base_config["batch"] = 1000
+    elif settings.EMBEDDINGS_STORAGE_TYPE == "cloud":
+        base_config["cloud"] = {
+            "provider": "gcs",
+            "container": settings.GOOGLE_CLOUD_BUCKET,
+            "prefix": settings.EMBEDDINGS_PREFIX,
+        }
+        base_config["contentpath"] = settings.EMBEDDINGS_CONTENT_PATH
 
     return base_config
 

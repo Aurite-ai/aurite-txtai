@@ -6,7 +6,8 @@ from uuid import uuid4
 
 from txtai.embeddings import Embeddings
 
-from .config_service import config_service
+from .config_service import config_service, Settings
+from ..config.txtai_config import create_embeddings_config
 
 logger = logging.getLogger(__name__)
 
@@ -14,16 +15,26 @@ logger = logging.getLogger(__name__)
 class EmbeddingsService:
     """Service to manage txtai embeddings lifecycle"""
 
-    def __init__(self):
-        self.settings = config_service.settings
+    def __init__(self, settings: Optional[Settings] = None):
+        """Initialize service with optional settings override"""
+        self.settings = settings or config_service.settings
         self.embeddings: Optional[Embeddings] = None
-        self.initialize()
+        if settings:
+            self.initialize()
 
     def initialize(self):
         """Initialize embeddings with config"""
         try:
-            config = config_service.embeddings_config
+            # Use config_service if no settings override
+            config = (
+                create_embeddings_config(self.settings)
+                if hasattr(self, "settings")
+                else config_service.embeddings_config
+            )
+
             logger.info("Initializing embeddings...")
+            logger.info(f"Using config: {json.dumps(config, indent=2)}")
+
             self.embeddings = Embeddings(config)
             # Initialize empty index
             self.embeddings.index([])
@@ -38,31 +49,26 @@ class EmbeddingsService:
             raise ValueError("Embeddings not initialized")
 
         try:
-            # Log initial documents
             logger.info("\n=== Document Processing ===")
             logger.info(f"Input documents: {json.dumps(documents, indent=2)}")
 
             # Format documents for txtai indexing
             formatted_docs = []
             for doc in documents:
-                # Generate UUID if no id provided
                 doc_id = str(doc.get("id", str(uuid4())))
 
-                # Convert metadata to JSON string
-                metadata = json.dumps(doc.get("metadata", {}))
+                # Ensure metadata is stored in tags field per SERVICE.md
+                metadata_str = json.dumps(doc.get("metadata", {}))
 
-                # Create tuple of (id, text, metadata)
-                formatted_doc = (doc_id, doc["text"], metadata)
+                # Create tuple of (id, text, tags) as specified in SERVICE.md
+                formatted_doc = (doc_id, doc["text"], metadata_str)
                 formatted_docs.append(formatted_doc)
 
-                # Log each document's transformation
                 logger.info(f"\nDocument transformation:")
                 logger.info(f"Original: {json.dumps(doc, indent=2)}")
                 logger.info(f"Formatted: {formatted_doc}")
-                logger.info(f"Metadata (raw): {metadata}")
-                logger.info(f"Metadata (parsed): {json.loads(metadata)}")
+                logger.info(f"Tags (metadata): {metadata_str}")
 
-            # Log before indexing
             logger.info("\n=== Pre-Indexing State ===")
             logger.info(f"Number of documents to index: {len(formatted_docs)}")
             logger.info(f"Formatted documents: {formatted_docs}")
@@ -70,9 +76,9 @@ class EmbeddingsService:
             # Index the documents
             self.embeddings.index(formatted_docs)
 
-            # Verify indexing with a SQL query
+            # Verify indexing using SQL query as shown in SERVICE.md
             logger.info("\n=== Post-Indexing Verification ===")
-            verify_query = "SELECT id, text, metadata FROM txtai"
+            verify_query = "SELECT id, text, tags FROM txtai"
             results = self.embeddings.search(verify_query)
             logger.info(f"Indexed documents: {json.dumps(results, indent=2)}")
 
@@ -92,56 +98,49 @@ class EmbeddingsService:
             logger.info(f"Query: {query}")
             logger.info(f"Limit: {limit}")
 
-            # Perform hybrid search
-            logger.info("\nPerforming hybrid search:")
+            # Get semantic search results
             results = self.embeddings.search(query, limit)
             logger.info(f"Raw search results: {json.dumps(results, indent=2)}")
 
-            # Get full document data including tags (metadata)
-            doc_ids = [result["id"] for result in results]
-            id_list = ",".join([f"'{id}'" for id in doc_ids])  # Quote the IDs
-            sql_query = f"""
-                SELECT id, text, tags
+            # Get full documents with tags
+            doc_ids = [f"'{result['id']}'" for result in results]
+            if not doc_ids:
+                return []
+
+            # Create the joined doc_ids string
+            doc_ids_str = ','.join(doc_ids)
+
+            # Use triple quotes for SQL and double quotes for JSON patterns per SERVICE.md
+            sql_query = f'''
+                SELECT id, text, tags, score
                 FROM txtai
-                WHERE id IN ({id_list})
-            """
-            full_docs = self.embeddings.search(sql_query)  # Remove doc_ids parameter
-            logger.info(f"Full docs: {json.dumps(full_docs, indent=2)}")
+                WHERE id IN ({doc_ids_str})
+            '''
+            full_docs = self.embeddings.search(sql_query)
+            logger.info(f"Full documents: {json.dumps(full_docs, indent=2)}")
 
-            # Create id to tags mapping
-            id_to_tags = {doc["id"]: doc.get("tags") for doc in full_docs}
-
-            # Format results
+            # Format results with metadata from tags
             formatted_results = []
             for result in results:
-                logger.info(f"\nProcessing result: {json.dumps(result, indent=2)}")
+                # Find matching full document
+                full_doc = next((doc for doc in full_docs if doc["id"] == result["id"]), None)
 
-                # Get metadata from tags
-                metadata = {}
-                tags_str = id_to_tags.get(result["id"])
-                if tags_str:
-                    try:
-                        metadata = json.loads(tags_str)
-                        logger.info(
-                            f"Parsed metadata from tags: {json.dumps(metadata, indent=2)}"
-                        )
-                    except json.JSONDecodeError as e:
-                        logger.warning(f"Failed to parse tags as metadata: {str(e)}")
-                        logger.warning(f"Raw tags: {tags_str}")
-                else:
-                    logger.warning("No tags found for document")
+                if full_doc:
+                    # Parse metadata from tags per SERVICE.md
+                    metadata = {}
+                    if full_doc.get("tags"):
+                        try:
+                            metadata = json.loads(full_doc["tags"])
+                        except json.JSONDecodeError as e:
+                            logger.warning(f"Failed to parse tags: {e}")
 
-                # Format result
-                formatted_result = {
-                    "id": result["id"],
-                    "text": result["text"],
-                    "score": result["score"],
-                    "metadata": metadata,
-                }
-                formatted_results.append(formatted_result)
-                logger.info(
-                    f"Formatted result: {json.dumps(formatted_result, indent=2)}"
-                )
+                    formatted_result = {
+                        "id": result["id"],
+                        "text": result["text"],
+                        "score": result["score"],
+                        "metadata": metadata,
+                    }
+                    formatted_results.append(formatted_result)
 
             return formatted_results
 
@@ -158,9 +157,7 @@ if __name__ == "__main__":
     from pathlib import Path
 
     # Setup logging
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     logger = logging.getLogger(__name__)
 
     # Test documents matching notebook pattern
@@ -184,7 +181,9 @@ if __name__ == "__main__":
     def inspect_embeddings():
         """Debug function to inspect embeddings state"""
         try:
-            service = embeddings_service
+            # Create and initialize service
+            service = EmbeddingsService()
+            service.initialize()  # Make sure to initialize
 
             # Log config
             logger.info("\n=== Configuration ===")
@@ -196,9 +195,7 @@ if __name__ == "__main__":
             logger.info("\n=== Initial State ===")
             logger.info(f"Embeddings initialized: {service.embeddings is not None}")
             if service.embeddings:
-                logger.info(
-                    f"Embeddings config: {json.dumps(service.embeddings.config, indent=2)}"
-                )
+                logger.info(f"Embeddings config: {json.dumps(service.embeddings.config, indent=2)}")
 
             # Add documents
             logger.info("\n=== Adding Documents ===")
@@ -210,13 +207,22 @@ if __name__ == "__main__":
 
             # Direct SQL query
             logger.info("\nDirect SQL Query:")
-            sql_results = service.embeddings.search("SELECT * FROM txtai")
+            sql_results = service.embeddings.search(
+                '''
+                SELECT * FROM txtai
+            '''
+            )
             logger.info(f"SQL results: {json.dumps(sql_results, indent=2)}")
 
-            # Metadata SQL query
+            # Metadata SQL query - Using exact JSON pattern match
             logger.info("\nMetadata SQL Query:")
             metadata_results = service.embeddings.search(
-                'SELECT * FROM txtai WHERE metadata LIKE \'%"category":"tech"%\''
+                '''
+                SELECT id, text, tags
+                FROM txtai
+                WHERE tags LIKE '%"category": "tech"%'
+                ORDER BY id
+            '''
             )
             logger.info(f"Metadata results: {json.dumps(metadata_results, indent=2)}")
 

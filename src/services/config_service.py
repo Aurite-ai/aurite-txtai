@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     # LLM Settings
     LLM_MODEL: str = "TheBloke/Mistral-7B-OpenOrca-AWQ"
     LLM_DTYPE: str = "torch.bfloat16"
-    OPENAI_API_KEY: str = ""
-    ANTHROPIC_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""  # Add to your .env file
+    ANTHROPIC_API_KEY: str = ""  # Add to your .env file
     LLM_PROVIDER: str = "anthropic"  # or "openai"
 
     # Python Settings
@@ -69,24 +69,28 @@ class ConfigService:
             "content": True,
             "backend": "faiss",
             "hybrid": True,
-            "scoring": {"method": "bm25", "terms": True, "normalize": True},
-            "batch": self.settings.EMBEDDINGS_BATCH_SIZE,
             "normalize": True,
+            "scoring": {
+                "method": "bm25",
+                "terms": True,
+                "normalize": True,
+                "weights": {"hybrid": 0.7, "terms": 0.3},
+            },
+            "batch": self.settings.EMBEDDINGS_BATCH_SIZE,
         }
 
-        # Add storage-specific config based on type
-        if self.settings.EMBEDDINGS_STORAGE_TYPE == "cloud":
-            base_config.update(
-                {
-                    "cloud": {
-                        "provider": "gcs",
-                        "container": self.settings.GOOGLE_CLOUD_BUCKET,
-                        "prefix": self.settings.EMBEDDINGS_PREFIX,
-                    }
-                }
-            )
-        elif self.settings.EMBEDDINGS_STORAGE_TYPE == "sqlite":
+        # Add storage configuration
+        if self.settings.EMBEDDINGS_STORAGE_TYPE == "memory":
+            base_config["contentpath"] = ":memory:"
+        else:
             base_config["contentpath"] = self.settings.EMBEDDINGS_CONTENT_PATH
+
+            if self.settings.EMBEDDINGS_STORAGE_TYPE == "cloud":
+                base_config["cloud"] = {
+                    "provider": "gcs",
+                    "container": self.settings.GOOGLE_CLOUD_BUCKET,
+                    "prefix": self.settings.EMBEDDINGS_PREFIX,
+                }
 
         return base_config
 

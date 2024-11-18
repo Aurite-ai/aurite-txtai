@@ -8,7 +8,7 @@ def test_default_settings():
 
     # Test core settings
     assert settings.EMBEDDINGS_MODEL == "sentence-transformers/nli-mpnet-base-v2"
-    assert settings.EMBEDDINGS_STORAGE_TYPE == "cloud"
+    assert settings.EMBEDDINGS_STORAGE_TYPE == "memory"
     assert settings.STORAGE_PATH == "txtai/content.db"
 
     # Test API settings
