@@ -8,102 +8,189 @@ logger = logging.getLogger(__name__)
 
 
 class QueryService:
-    """Service for search operations"""
+    """Service for handling different types of txtai searches"""
 
     def __init__(self, embeddings: Embeddings, settings: Settings):
+        """Initialize with embeddings instance and settings"""
         self.embeddings = embeddings
         self.settings = settings
 
-    def search(
-        self,
-        query: str,
-        query_type: QueryType = "hybrid",
-        limit: int = 10,
-        metadata_filters: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
-        """Search using embeddings directly"""
-        try:
-            if query_type == "sql":
-                # Format SQL query with proper indentation
-                if not query.lower().startswith("select"):
-                    query = f"""
-                        SELECT *
-                        FROM txtai
-                        WHERE {query}
-                    """
-                results = self.embeddings.search(query)
-                return self._process_sql_results(results)
-            else:
-                # For semantic/hybrid searches
-                if metadata_filters:
-                    # Build metadata filter conditions
-                    conditions = [
-                        f"metadata LIKE '%{json.dumps({k:v})}%'"
-                        for k, v in metadata_filters.items()
-                    ]
-                    filter_clause = " AND ".join(conditions)
+    def semantic_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Perform semantic search using embeddings
 
-                    # Format full query
-                    search_query = f"""
-                        SELECT text, score, metadata
-                        FROM txtai
-                        WHERE {filter_clause}
-                        ORDER BY similarity('{query}') DESC
-                        LIMIT {limit}
-                    """
-                    results = self.embeddings.search(search_query)
-                else:
-                    results = self.embeddings.search(query, limit)
-                return self._process_semantic_results(results)
+        Args:
+            query: Search query text
+            limit: Maximum number of results to return
+
+        Returns:
+            List of results with scores and metadata
+        """
+        try:
+            logger.info("\n=== Semantic Search ===")
+            logger.info(f"Query: {query}")
+            logger.info(f"Limit: {limit}")
+
+            # Get semantic search results
+            results = self.embeddings.search(query, limit)
+            logger.info(f"Raw results: {json.dumps(results, indent=2)}")
+
+            # Get full documents with metadata
+            doc_ids = [f"'{result['id']}'" for result in results]
+            if not doc_ids:
+                return []
+
+            # Get complete documents with metadata
+            sql_query = f'''
+                SELECT id, text, tags
+                FROM txtai
+                WHERE id IN ({','.join(doc_ids)})
+            '''
+            full_docs = self.embeddings.search(sql_query)
+            logger.info(f"Full documents: {json.dumps(full_docs, indent=2)}")
+
+            # Format results
+            formatted_results = []
+            for result in results:
+                # Find matching full document
+                full_doc = next((doc for doc in full_docs if doc["id"] == result["id"]), None)
+
+                if full_doc:
+                    # Parse metadata from tags
+                    metadata = {}
+                    if full_doc.get("tags"):
+                        try:
+                            metadata = json.loads(full_doc["tags"])
+                        except json.JSONDecodeError as e:
+                            logger.warning(f"Failed to parse tags: {e}")
+
+                    formatted_result = {
+                        "id": result["id"],
+                        "text": result["text"],
+                        "score": result["score"],
+                        "metadata": metadata,
+                    }
+                    formatted_results.append(formatted_result)
+
+            return formatted_results
+
         except Exception as e:
-            logger.error(f"Search failed: {str(e)}")
+            logger.error(f"Semantic search failed: {str(e)}")
             raise
 
-    def _process_sql_results(
-        self, results: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """Process SQL query results"""
-        processed = []
-        for result in results:
-            metadata = self._parse_metadata(result.get("metadata", "{}"))
-            processed.append(
-                {
-                    "id": result.get("id", ""),
-                    "text": result.get("text", ""),
-                    "score": result.get("score", 1.0),
+    def sql_search(self, query: str) -> List[Dict[str, Any]]:
+        """Execute SQL query on embeddings index
+
+        Args:
+            query: SQL query string
+
+        Returns:
+            List of results with metadata
+        """
+        try:
+            logger.info("\n=== SQL Search ===")
+            logger.info(f"Query: {query}")
+
+            # Execute SQL query
+            results = self.embeddings.search(query)
+            logger.info(f"Raw results: {json.dumps(results, indent=2)}")
+
+            # Format results
+            formatted_results = []
+            for result in results:
+                # Parse metadata from tags if present
+                metadata = {}
+                if result.get("tags"):
+                    try:
+                        metadata = json.loads(result["tags"])
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Failed to parse tags: {e}")
+
+                formatted_result = {
+                    "id": result["id"],
+                    "text": result["text"],
                     "metadata": metadata,
                 }
-            )
-        return processed
 
-    def _process_semantic_results(
-        self, results: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """Process semantic/hybrid search results"""
-        processed = []
-        for result in results:
-            metadata = self._parse_metadata(result.get("metadata", "{}"))
-            processed.append(
-                {
-                    "id": result.get("id", ""),
-                    "text": result.get("text", ""),
-                    "score": result.get("score", 0.0),
-                    "metadata": metadata,
-                }
-            )
-        return processed
+                # Include score if present
+                if "score" in result:
+                    formatted_result["score"] = result["score"]
 
-    def _parse_metadata(self, metadata: Any) -> Dict:
-        """Parse metadata consistently"""
-        if isinstance(metadata, str):
-            try:
-                return json.loads(metadata)
-            except json.JSONDecodeError:
-                logger.warning(f"Failed to parse metadata: {metadata}")
-                return {}
-        elif isinstance(metadata, dict):
-            return metadata
-        return {}
+                formatted_results.append(formatted_result)
+
+            return formatted_results
+
+        except Exception as e:
+            logger.error(f"SQL search failed: {str(e)}")
+            raise
+
+    def hybrid_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Perform hybrid search combining semantic and term-based scoring
+
+        Args:
+            query: Search query text
+            limit: Maximum number of results to return
+
+        Returns:
+            List of results with scores and metadata
+        """
+        try:
+            logger.info("\n=== Hybrid Search ===")
+            logger.info(f"Query: {query}")
+            logger.info(f"Limit: {limit}")
+
+            # Perform hybrid search with weights from config
+            results = self.embeddings.search(
+                query,
+                limit=limit,
+                weights={
+                    "hybrid": 0.7,  # Semantic similarity weight
+                    "terms": 0.3,  # Term matching weight
+                },
+            )
+            logger.info(f"Raw results: {json.dumps(results, indent=2)}")
+
+            # Get full documents with metadata
+            doc_ids = [f"'{result['id']}'" for result in results]
+            if not doc_ids:
+                return []
+
+            # Get complete documents with metadata
+            sql_query = f'''
+                SELECT id, text, tags
+                FROM txtai
+                WHERE id IN ({','.join(doc_ids)})
+            '''
+            full_docs = self.embeddings.search(sql_query)
+            logger.info(f"Full documents: {json.dumps(full_docs, indent=2)}")
+
+            # Format results
+            formatted_results = []
+            for result in results:
+                # Find matching full document
+                full_doc = next((doc for doc in full_docs if doc["id"] == result["id"]), None)
+
+                if full_doc:
+                    # Parse metadata from tags
+                    metadata = {}
+                    if full_doc.get("tags"):
+                        try:
+                            metadata = json.loads(full_doc["tags"])
+                        except json.JSONDecodeError as e:
+                            logger.warning(f"Failed to parse tags: {e}")
+
+                    formatted_result = {
+                        "id": result["id"],
+                        "text": result["text"],
+                        "score": result["score"],
+                        "metadata": metadata,
+                    }
+                    formatted_results.append(formatted_result)
+
+            return formatted_results
+
+        except Exception as e:
+            logger.error(f"Hybrid search failed: {str(e)}")
+            raise
 
 
 if __name__ == "__main__":
@@ -113,9 +200,7 @@ if __name__ == "__main__":
     from .embeddings_service import EmbeddingsService
 
     # Setup logging
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     logger = logging.getLogger(__name__)
 
     # Test documents matching notebook pattern
@@ -156,9 +241,7 @@ if __name__ == "__main__":
 
             # Test different query types
             logger.info("\nTesting semantic search:")
-            semantic_results = query_service.search(
-                "machine learning", query_type="semantic", limit=1
-            )
+            semantic_results = query_service.semantic_search("machine learning", limit=1)
             logger.info(f"Semantic results: {json.dumps(semantic_results, indent=2)}")
 
             logger.info("\nTesting SQL search:")
@@ -168,7 +251,7 @@ if __name__ == "__main__":
                 WHERE metadata LIKE '%"category":"tech"%'
                 ORDER BY score DESC
             """
-            sql_results = query_service.search(sql_query, query_type="sql")
+            sql_results = query_service.sql_search(sql_query)
             logger.info(f"SQL results: {json.dumps(sql_results, indent=2)}")
 
             logger.info("\nTesting hybrid search with metadata filter:")

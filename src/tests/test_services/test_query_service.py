@@ -1,93 +1,145 @@
 import pytest
-from src.services.query_service import QueryService
+import json
 import logging
+
+from src.services.query_service import QueryService
 
 logger = logging.getLogger(__name__)
 
 
-class TestSearchOperations:
-    """Test search operations following notebook patterns"""
+class TestQueryService:
+    """Test query service functionality"""
 
     def test_semantic_search(self, test_services):
-        """Test semantic search capabilities"""
+        """Test semantic search functionality"""
         _, query_service = test_services
-        results = query_service.search(
-            "machine learning", query_type="semantic", limit=1
-        )
 
-        assert len(results) == 1
-        assert "machine learning" in results[0]["text"].lower()
-        assert isinstance(results[0]["score"], float)
-        assert isinstance(results[0]["metadata"], dict)
+        # Perform semantic search
+        results = query_service.semantic_search("machine learning", limit=2)
+
+        # Verify results structure
+        assert len(results) > 0
+        first_result = results[0]
+        assert all(k in first_result for k in ["id", "text", "score", "metadata"])
+
+        # Verify scoring
+        assert first_result["score"] > 0
+        assert "machine learning" in first_result["text"].lower()
+
+        # Verify metadata
+        assert first_result["metadata"]["category"] == "tech"
+        assert isinstance(first_result["metadata"]["tags"], list)
 
     def test_sql_search(self, test_services):
-        """Test SQL search with metadata"""
+        """Test SQL search functionality"""
         _, query_service = test_services
-        # SQL query needs exact metadata match
-        results = query_service.search(
-            'SELECT * FROM txtai WHERE metadata LIKE \'{"category":"tech"}\'',
-            query_type="sql",
-        )
 
+        # Basic SQL query
+        sql_query = '''
+            SELECT id, text, tags
+            FROM txtai
+            WHERE tags LIKE '%"category": "tech"%'
+        '''
+        results = query_service.sql_search(sql_query)
+
+        # Verify results
+        assert len(results) > 0
+        first_result = results[0]
+        assert all(k in first_result for k in ["id", "text", "metadata"])
+
+        # Verify metadata
+        assert first_result["metadata"]["category"] == "tech"
+        assert isinstance(first_result["metadata"]["tags"], list)
+
+    def test_sql_search_complex(self, test_services):
+        """Test complex SQL queries with multiple conditions"""
+        _, query_service = test_services
+
+        # Complex SQL query with multiple conditions
+        sql_query = '''
+            SELECT id, text, tags
+            FROM txtai
+            WHERE tags LIKE '%"category": "tech"%'
+            AND tags LIKE '%"priority": 1%'
+        '''
+        results = query_service.sql_search(sql_query)
+
+        # Verify filtered results
         assert len(results) == 1
         assert results[0]["metadata"]["category"] == "tech"
-        assert isinstance(results[0]["score"], float)
+        assert results[0]["metadata"]["priority"] == 1
+
+    def test_semantic_search_ranking(self, test_services):
+        """Test semantic search result ranking"""
+        _, query_service = test_services
+
+        # Search with specific term
+        results = query_service.semantic_search("machine learning")
+
+        # Verify score ordering
+        scores = [r["score"] for r in results]
+        assert scores == sorted(scores, reverse=True)
+
+        # Check best match
+        best_match = results[0]
+        assert "machine learning" in best_match["text"].lower()
+        assert best_match["score"] > 0.5
 
     def test_hybrid_search(self, test_services):
-        """Test hybrid search combining semantic and keyword"""
+        """Test hybrid search functionality"""
         _, query_service = test_services
-        results = query_service.search("machine learning", query_type="hybrid", limit=1)
 
-        assert len(results) == 1
-        assert isinstance(results[0]["score"], float)
-        assert isinstance(results[0]["metadata"], dict)
+        # Perform hybrid search
+        results = query_service.hybrid_search("machine learning", limit=2)
 
+        # Verify results structure
+        assert len(results) > 0
+        first_result = results[0]
+        assert all(k in first_result for k in ["id", "text", "score", "metadata"])
 
-class TestResultHandling:
-    """Test result processing and formatting"""
+        # Verify scoring
+        assert first_result["score"] > 0
+        assert "machine learning" in first_result["text"].lower()
 
-    def test_result_format(self, test_services):
-        """Test search result format matches notebook pattern"""
+        # Verify metadata
+        assert first_result["metadata"]["category"] == "tech"
+        assert isinstance(first_result["metadata"]["tags"], list)
+
+    def test_hybrid_search_ranking(self, test_services):
+        """Test hybrid search result ranking"""
         _, query_service = test_services
-        results = query_service.search("machine learning", limit=1)
-        result = results[0]
 
-        # Verify structure from notebook pattern
-        assert all(key in result for key in ["id", "text", "score", "metadata"])
-        assert isinstance(result["score"], float)
-        assert isinstance(result["metadata"], dict)
+        # Search with specific term
+        results = query_service.hybrid_search("machine learning")
 
-    def test_metadata_parsing(self, test_services):
-        """Test metadata handling matches notebook format"""
+        # Verify score ordering
+        scores = [r["score"] for r in results]
+        assert scores == sorted(scores, reverse=True)
+
+        # Check best match combines semantic and term matching
+        best_match = results[0]
+        assert "machine learning" in best_match["text"].lower()
+        assert best_match["score"] > 0.5
+
+    def test_hybrid_search_empty_results(self, test_services):
+        """Test hybrid search with no matching results"""
         _, query_service = test_services
-        results = query_service.search("machine learning", limit=1)
-        metadata = results[0]["metadata"]
 
-        # Check metadata structure from notebook
-        assert isinstance(metadata, dict)
-        assert "category" in metadata
-        assert metadata["category"] == "tech"
-        assert isinstance(metadata["tags"], list)
+        # Search for non-existent term
+        results = query_service.hybrid_search("nonexistent term xyz")
+        assert len(results) == 0
 
-    def test_document_indexing(self, test_services):
-        """Verify documents are indexed with metadata"""
-        embeddings_service, _ = test_services
+    def test_hybrid_search_weights(self, test_services):
+        """Test hybrid search with different weight combinations"""
+        _, query_service = test_services
 
-        # Search directly with embeddings to see raw results
-        results = embeddings_service.embeddings.search("machine learning", 1)
-        result = results[0]
+        # Standard hybrid search
+        standard_results = query_service.hybrid_search("machine learning", limit=1)
 
-        # Debug what we got
-        logger.info(f"Raw search result: {result}")
-
-        # Check if we can find the document by metadata
-        sql_results = embeddings_service.embeddings.search(
-            'SELECT * FROM txtai WHERE metadata LIKE \'%"category":"tech"%\''
+        # Custom weights through embeddings directly
+        semantic_results = query_service.embeddings.search(
+            "machine learning", limit=1, weights={"hybrid": 1.0, "terms": 0.0}  # Pure semantic
         )
-        assert len(sql_results) > 0, "Should find documents with tech category"
 
-        # Verify metadata in semantic results
-        semantic_results = embeddings_service.embeddings.search("machine learning", 1)
-        assert semantic_results[0].get(
-            "metadata"
-        ), "Semantic results should include metadata"
+        # Results should be different with different weights
+        assert standard_results[0]["score"] != semantic_results[0]["score"]
