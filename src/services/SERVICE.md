@@ -2,49 +2,22 @@
 
 ## Overview
 
-The txtai service architecture consists of three core components that work together to provide semantic search capabilities:
+The txtai service architecture consists of three core components:
 
-- `config_service.py` - Central configuration management
-- `embeddings_service.py` - Core embeddings functionality
-- `query_service.py` - Search and query operations
+- `embeddings_service.py` - Core document management and indexing
+- `query_service.py` - Search operations (semantic, SQL, hybrid)
+- `config_service.py` - Configuration management
 
 ## Component Details
 
-### 1. Configuration Service (config_service.py)
+### 1. Embeddings Service (embeddings_service.py)
 
-The ConfigService manages all configuration and initialization:
-
-```python
-class ConfigService:
-    def __init__(self):
-        self.settings = Settings()
-        self._api_config = None
-        self.initialize_api()
-
-    @property
-    def embeddings_config(self) -> dict:
-        return {
-            "path": self.settings.EMBEDDINGS_MODEL,
-            "content": True,
-            "backend": "faiss",
-            "hybrid": True,
-            ...
-        }
-```
-
-Key responsibilities:
-
-- Environment variable management
-- txtai configuration creation
-- API initialization
-
-### 2. Embeddings Service (embeddings_service.py)
-
-Handles document management and indexing:
+Handles document indexing and storage:
 
 ```python
 class EmbeddingsService:
     def add(self, documents: List[Dict[str, Any]]) -> int:
+        """Add documents with metadata stored in tags"""
         formatted_docs = [
             (doc["id"], doc["text"], json.dumps(doc["metadata"]))
             for doc in documents
@@ -55,78 +28,154 @@ class EmbeddingsService:
 Key responsibilities:
 
 - Document indexing
-- Metadata handling
+- Metadata storage in tags
 - Index management
 
-### 3. Query Service (query_service.py)
+### 2. Query Service (query_service.py)
 
-Manages search operations:
-
-```python
-class QueryService:
-    def search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
-        results = self.embeddings.search(query, limit)
-        return self._process_results(results)
-```
-
-Key responsibilities:
-
-- Search execution
-- Result formatting
-- Query optimization
-
-## Critical Implementation Details
-
-### 1. Document Structure
-
-Documents must be formatted as tuples for indexing:
-
-```python
-(id, text, metadata_json) = (
-    "doc1",
-    "Document text",
-    json.dumps({"category": "tech", "tags": ["ML"]})
-)
-```
-
-### 2. Metadata Handling
-
-**Important**: Metadata is stored in the 'tags' column of txtai's SQLite database:
-
-```python
-# Correct way to retrieve metadata
-sql_query = """
-    SELECT id, text, tags
-    FROM txtai
-    WHERE id IN (...)
-"""
-```
-
-### 3. Search Operations
-
-Three types of searches are supported:
+Provides three search types:
 
 1. **Semantic Search**:
 
 ```python
-results = embeddings.search("query text", limit=10)
+# Pure semantic similarity search
+results = query_service.semantic_search("machine learning", limit=10)
 ```
 
 2. **SQL Search**:
 
 ```python
-results = embeddings.search("SELECT * FROM txtai WHERE tags LIKE '%tech%'")
+# Direct SQL queries with metadata filtering
+sql_query = '''
+    SELECT id, text, tags
+    FROM txtai
+    WHERE tags LIKE '%"category": "tech"%'
+'''
+results = query_service.sql_search(sql_query)
 ```
 
 3. **Hybrid Search**:
 
 ```python
-# Combines semantic similarity with SQL filtering
-results = embeddings.search(
-    "query text",
-    limit=10,
-    weights={"hybrid": 0.7, "terms": 0.3}
-)
+# Combines semantic and term matching (configured in txtai_config.py)
+results = query_service.hybrid_search("machine learning", limit=10)
+```
+
+## Critical Implementation Details
+
+### 1. Document Structure
+
+Documents must include:
+
+```python
+{
+    "id": "unique_id",
+    "text": "Document content",
+    "metadata": {
+        "category": "tech",
+        "tags": ["ML", "computing"],
+        "priority": 1
+    }
+}
+```
+
+### 2. Metadata Handling
+
+Metadata is stored in the 'tags' column:
+
+```python
+# Correct way to query metadata
+sql_query = '''
+    SELECT id, text, tags
+    FROM txtai
+    WHERE tags LIKE '%"category": "tech"%'
+'''
+```
+
+### 3. Search Results
+
+All search methods return consistent results:
+
+```python
+{
+    "id": "doc1",
+    "text": "Document content",
+    "score": 0.75,  # Only for semantic and hybrid search
+    "metadata": {
+        "category": "tech",
+        "tags": ["ML", "computing"],
+        "priority": 1
+    }
+}
+```
+
+## Configuration
+
+Hybrid search settings in txtai_config.py:
+
+```python
+base_config = {
+    "hybrid": True,
+    "scoring": {
+        "method": "bm25",
+        "terms": True,
+        "normalize": True,
+        "weights": {
+            "hybrid": 0.7,  # Semantic weight
+            "terms": 0.3    # Term matching weight
+        }
+    }
+}
+```
+
+## Common Patterns
+
+### 1. Adding Documents
+
+```python
+service = EmbeddingsService()
+service.initialize()
+service.add([
+    {
+        "id": "doc1",
+        "text": "content",
+        "metadata": {"category": "tech"}
+    }
+])
+```
+
+### 2. Searching Documents
+
+```python
+# Create query service
+query_service = QueryService(embeddings_service.embeddings, settings)
+
+# Semantic search
+semantic_results = query_service.semantic_search("query")
+
+# SQL search with metadata
+sql_results = query_service.sql_search('''
+    SELECT * FROM txtai
+    WHERE tags LIKE '%"category": "tech"%'
+''')
+
+# Hybrid search
+hybrid_results = query_service.hybrid_search("query")
+```
+
+## Testing
+
+Run service tests:
+
+```bash
+# Test embeddings service
+python -m src.services.embeddings_service
+
+# Test query service
+python -m src.services.query_service
+
+# Run all tests
+pytest src/tests/test_services/
 ```
 
 ## Common Pitfalls
@@ -138,44 +187,10 @@ results = embeddings.search(
 
 2. **SQL Queries**:
 
-   - ✅ Use string formatting for IDs
-   - ❌ Don't use parameterized queries with `?`
+   - ✅ Use triple quotes for SQL
+   - ✅ Use double quotes for JSON patterns
+   - ❌ Don't escape quotes in patterns
 
-3. **Document Formatting**:
-   - ✅ Always JSON encode metadata
-   - ❌ Don't pass raw dictionaries
-
-## Testing and Verification
-
-Test the service using:
-
-```bash
-python -m src.services.embeddings_service
-```
-
-This runs a comprehensive test suite that verifies:
-
-- Document indexing
-- Metadata persistence
-- Search functionality
-- Result formatting
-
-## Debugging Tips
-
-1. Use SQL queries to inspect the database:
-
-```python
-results = embeddings.search("SELECT * FROM txtai")
-```
-
-2. Check metadata storage:
-
-```python
-results = embeddings.search("SELECT id, text, tags FROM txtai")
-```
-
-3. Verify search results:
-
-```python
-logger.info(f"Raw results: {json.dumps(results, indent=2)}")
-```
+3. **Search Configuration**:
+   - ✅ Configure hybrid search in txtai_config.py
+   - ❌ Don't set weights in search calls
