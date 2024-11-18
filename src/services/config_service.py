@@ -1,43 +1,6 @@
-from typing import Optional
-from pydantic_settings import BaseSettings
 from txtai.api import API
-import os
-
-
-class Settings(BaseSettings):
-    """Application settings loaded from environment variables"""
-
-    # GCP Settings
-    GOOGLE_CLOUD_PROJECT: str = "aurite-dev"
-    GOOGLE_CLOUD_BUCKET: str = "aurite-txtai-dev"
-    GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
-
-    # API Settings
-    API_HOST: str = "0.0.0.0"
-    API_PORT: int = 8000
-    API_KEY: str
-
-    # Embeddings Settings
-    EMBEDDINGS_MODEL: str = "sentence-transformers/nli-mpnet-base-v2"
-    EMBEDDINGS_PREFIX: str = "txtai"
-    EMBEDDINGS_BATCH_SIZE: int = 32
-    EMBEDDINGS_CONTENT_PATH: str = "txtai/content.db"
-    EMBEDDINGS_STORAGE_TYPE: str = "cloud"  # Options: memory, sqlite, cloud
-
-    # LLM Settings
-    LLM_MODEL: str = "TheBloke/Mistral-7B-OpenOrca-AWQ"
-    LLM_DTYPE: str = "torch.bfloat16"
-    OPENAI_API_KEY: str = ""  # Add to your .env file
-    ANTHROPIC_API_KEY: str = ""  # Add to your .env file
-    LLM_PROVIDER: str = "anthropic"  # or "openai"
-
-    # Python Settings
-    PYTHONPATH: Optional[str] = None
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-        extra = "ignore"
+from ..config.settings import Settings
+from ..config.txtai_config import create_embeddings_config, create_llm_config
 
 
 class ConfigService:
@@ -57,47 +20,19 @@ class ConfigService:
                     "content": True,
                     "backend": "faiss",
                 },
-                "token": self.settings.API_KEY,  # Token goes in config dict
+                "token": self.settings.API_KEY,
             }
         )
 
     @property
     def embeddings_config(self) -> dict:
-        """Get embeddings configuration for txtai"""
-        base_config = {
-            "path": self.settings.EMBEDDINGS_MODEL,
-            "content": True,
-            "backend": "faiss",
-            "hybrid": True,
-            "normalize": True,
-            "scoring": {
-                "method": "bm25",
-                "terms": True,
-                "normalize": True,
-                "weights": {"hybrid": 0.7, "terms": 0.3},
-            },
-            "batch": self.settings.EMBEDDINGS_BATCH_SIZE,
-        }
-
-        # Add storage configuration
-        if self.settings.EMBEDDINGS_STORAGE_TYPE == "memory":
-            base_config["contentpath"] = ":memory:"
-        else:
-            base_config["contentpath"] = self.settings.EMBEDDINGS_CONTENT_PATH
-
-            if self.settings.EMBEDDINGS_STORAGE_TYPE == "cloud":
-                base_config["cloud"] = {
-                    "provider": "gcs",
-                    "container": self.settings.GOOGLE_CLOUD_BUCKET,
-                    "prefix": self.settings.EMBEDDINGS_PREFIX,
-                }
-
-        return base_config
+        """Get embeddings configuration"""
+        return create_embeddings_config(self.settings)
 
     @property
-    def api_config(self) -> dict:
-        """Get API configuration for txtai"""
-        return self._api_config
+    def llm_config(self) -> dict:
+        """Get LLM configuration"""
+        return create_llm_config(self.settings)
 
 
 # Global config service instance

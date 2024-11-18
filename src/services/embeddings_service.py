@@ -148,6 +148,23 @@ class EmbeddingsService:
             logger.error(f"Search failed: {str(e)}")
             raise
 
+    def is_empty(self) -> bool:
+        """Check if embeddings index is empty
+
+        Returns:
+            True if no documents are indexed, False otherwise
+        """
+        if not self.embeddings:
+            return True
+
+        try:
+            # Query for any document
+            results = self.embeddings.search("SELECT COUNT(*) as count FROM txtai")
+            return results[0]["count"] == 0
+        except Exception as e:
+            logger.error(f"Failed to check if index is empty: {str(e)}")
+            return True
+
 
 # Global service instance
 embeddings_service = EmbeddingsService()

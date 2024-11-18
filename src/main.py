@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.routes import embeddings, llm
+from src.routes import embeddings, llm, rag
 import logging
 
 # Configure logging
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="txtai Service",
     description="API for semantic search and document embeddings using txtai",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Configure CORS
@@ -26,11 +26,14 @@ app.add_middleware(
 # Include routers
 app.include_router(embeddings.router)
 app.include_router(llm.router)
+# app.include_router(rag.router)
+
 
 @app.get("/", tags=["health"])
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
+
 
 # Only used when running directly (not through uvicorn command)
 if __name__ == "__main__":
@@ -41,5 +44,5 @@ if __name__ == "__main__":
         "src.main:app",
         host=config_service.settings.API_HOST,
         port=config_service.settings.API_PORT,
-        reload=True
+        reload=True,
     )

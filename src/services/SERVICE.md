@@ -8,6 +8,7 @@ The txtai service architecture consists of three core components:
 - `query_service.py` - Search operations (semantic, SQL, hybrid)
 - `config_service.py` - Configuration management
 - `llm_service.py` - LLM functionality through txtai
+- `rag_service.py` - RAG functionality through txtai
 
 ## Component Details
 
@@ -65,6 +66,79 @@ results = query_service.hybrid_search("machine learning", limit=10)
 ### 3. LLM Service (llm_service.py)
 
 Provides LLM functionality through txtai:
+
+Basic generation
+
+```python
+response = llm_service.generate("What is machine learning?")
+```
+
+Context-based generation
+
+```python
+response = llm_service.generate_with_context(
+    question="What is ML?",
+    context="Machine learning is..."
+)
+```
+
+Key responsibilities:
+
+```plaintext
+- Text generation
+- RAG-style context-based responses
+- Message formatting
+- Error handling
+```
+
+## LLM Configuration
+
+LLM settings in settings.py:
+
+```python
+LLM_PROVIDER="anthropic" # or "openai"
+ANTHROPIC_API_KEY="..."
+OPENAI_API_KEY="..."
+```
+
+# 4. RAG Service (rag_service.py)
+
+Combines embeddings search with LLM generation:
+
+Basic RAG generation
+
+```python
+response = rag_service.generate(
+    question="What is machine learning?",
+    limit=3 # Number of context documents
+)
+```
+
+Batch RAG generation
+
+```python
+responses = rag_service.batch_generate([
+    "What is deep learning?",
+    "How does NLP work?"
+])
+```
+
+Custom template RAG
+
+```python
+response = rag_service.generate(
+    question="Explain neural networks",
+    template=custom_template
+)
+```
+
+Key responsibilities:
+
+- Context retrieval from embeddings
+- LLM prompt construction
+- Response generation
+- Batch processing
+- Custom templating
 
 ## Critical Implementation Details
 
@@ -199,39 +273,3 @@ pytest src/tests/test_services/
 3. **Search Configuration**:
    - ✅ Configure hybrid search in txtai_config.py
    - ❌ Don't set weights in search calls
-
-## LLM SERVICE
-
-Basic generation
-
-```python
-response = llm_service.generate("What is machine learning?")
-```
-
-Context-based generation
-
-```python
-response = llm_service.generate_with_context(
-    question="What is ML?",
-    context="Machine learning is..."
-)
-```
-
-Key responsibilities:
-
-```plaintext
-- Text generation
-- RAG-style context-based responses
-- Message formatting
-- Error handling
-```
-
-## LLM Configuration
-
-LLM settings in settings.py:
-
-```python
-LLM_PROVIDER="anthropic" # or "openai"
-ANTHROPIC_API_KEY="..."
-OPENAI_API_KEY="..."
-```

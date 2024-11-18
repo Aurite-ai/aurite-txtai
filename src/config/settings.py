@@ -4,45 +4,43 @@ from pydantic import ConfigDict, Field
 
 StorageType = Literal["memory", "sqlite", "cloud"]
 QueryType = Literal["sql", "semantic", "hybrid"]
+LLMProvider = Literal["anthropic", "openai"]
 
 
 class Settings(BaseSettings):
-    """Application runtime settings from environment"""
-
-    # Embeddings Core Settings
-    EMBEDDINGS_MODEL: str = "sentence-transformers/nli-mpnet-base-v2"
-    EMBEDDINGS_STORAGE_TYPE: StorageType = Field(
-        default="memory", description="Storage backend type (memory, sqlite, cloud)"
-    )
-
-    # Storage Settings
-    STORAGE_PATH: str = "txtai/content.db"
-    STORAGE_PREFIX: str = "txtai"
-    EMBEDDINGS_CONTENT_PATH: str = "txtai/content.db"
-    EMBEDDINGS_PREFIX: str = "txtai"
-    EMBEDDINGS_BATCH_SIZE: int = Field(default=32, description="Batch size for document indexing")
-
-    # Search Settings
-    DEFAULT_QUERY_TYPE: QueryType = Field(
-        default="hybrid", description="Default search type (sql, semantic, hybrid)"
-    )
-
-    # Cloud Provider Settings
-    GOOGLE_CLOUD_PROJECT: str = "aurite-dev"
-    GOOGLE_CLOUD_BUCKET: str = "aurite-txtai-dev"
-    GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
+    """Application runtime settings"""
 
     # API Settings
     API_KEY: str
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
 
-    # Python Settings
-    PYTHONPATH: Optional[str] = None
+    # Cloud Settings
+    GOOGLE_CLOUD_PROJECT: str = "aurite-dev"
+    GOOGLE_CLOUD_BUCKET: str = "aurite-txtai-dev"
+    GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
+
+    # Embeddings Settings
+    EMBEDDINGS_MODEL: str = "sentence-transformers/nli-mpnet-base-v2"
+    EMBEDDINGS_STORAGE_TYPE: StorageType = "memory"
+    EMBEDDINGS_CONTENT_PATH: str = "txtai/content.db"
+    EMBEDDINGS_PREFIX: str = "txtai"
+    EMBEDDINGS_BATCH_SIZE: int = 32
+
+    # LLM Settings
+    LLM_PROVIDER: LLMProvider = "anthropic"
+    LLM_MODELS: dict = {
+        "anthropic": "anthropic/claude-3-sonnet-20240229",
+        "openai": "openai/gpt-4-turbo-preview",
+    }
+    ANTHROPIC_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
+
+    # System Prompts
+    SYSTEM_PROMPTS: dict = {
+        "default": """You are a helpful AI assistant. Answer questions clearly and concisely.""",
+        "rag": """You are a helpful AI assistant. You must ONLY answer questions using the provided context.
+If the answer cannot be found in the context, you must clearly state that the information is not available in the given context.""",
+    }
 
     model_config = ConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
-
-    @property
-    def has_cloud_credentials(self) -> bool:
-        """Check if cloud credentials are configured"""
-        return bool(self.GOOGLE_APPLICATION_CREDENTIALS)
