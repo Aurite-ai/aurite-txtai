@@ -51,24 +51,28 @@ async def initialized_services(test_settings):
         logger.info("Config service initialized")
 
         # Initialize embeddings service
-        if not registry.embeddings_service.initialized:
-            await registry.embeddings_service.initialize()
-            logger.info("Embeddings service initialized")
+        await registry.embeddings_service.initialize()
+        logger.info("Embeddings service initialized")
 
         # Initialize LLM service
-        if not registry.llm_service.initialized:
-            await registry.llm_service.initialize()
-            logger.info("LLM service initialized")
+        await registry.llm_service.initialize()
+        logger.info("LLM service initialized")
 
         # Initialize RAG service
-        if not registry.rag_service.initialized:
-            await registry.rag_service.initialize()
-            logger.info("RAG service initialized")
+        await registry.rag_service.initialize()
+        logger.info("RAG service initialized")
+
+        # Initialize Stream service
+        await registry.stream_service.initialize()
+        logger.info("Stream service initialized")
+
+        # Initialize Communication service
+        await registry.communication_service.initialize()
+        logger.info("Communication service initialized")
 
         # Initialize TxtAI service
-        if not registry.txtai_service.initialized:
-            await registry.txtai_service.initialize()
-            logger.info("TxtAI service initialized")
+        await registry.txtai_service.initialize()
+        logger.info("TxtAI service initialized")
 
         logger.info("All services initialized successfully")
         return registry
@@ -79,7 +83,7 @@ async def initialized_services(test_settings):
 
 
 @pytest.fixture(scope="function")
-async def setup_test_data(initialized_services):
+async def setup_test_data():
     """Setup test data using initialized services"""
     logger.info("\n=== Setting up test data ===")
     try:

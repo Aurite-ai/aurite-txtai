@@ -1,45 +1,101 @@
 import pytest
-from src.services.communication_service import communication_service
-from src.models.messages import MessageType
+import logging
+from src.services import registry
+from src.models.messages import Message, MessageType
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.mark.asyncio
-async def test_redis_connection():
-    """Test basic Redis connection"""
-    try:
-        assert communication_service.redis_client.ping()
-    except Exception as e:
-        pytest.fail(f"Redis connection failed: {str(e)}")
+class TestCommunicationService:
+    """Test communication service functionality"""
 
+    async def test_service_initialization(self, initialized_services):
+        """Test that communication service initializes correctly"""
+        await initialized_services
+        assert registry.communication_service.initialized
+        assert registry.stream_service.initialized
+        logger.info("Communication service and dependencies initialized successfully")
 
-@pytest.mark.asyncio
-async def test_basic_publish():
-    """Test basic message publishing"""
-    test_data = {
-        "type": MessageType.RAG_REQUEST,
-        "data": {"query": "test query"},
-        "session_id": "test-session",
-    }
+    async def test_handle_rag_request(self, setup_test_data):
+        """Test handling RAG request messages"""
+        async for _ in setup_test_data:
+            # Create test message
+            message = Message(
+                type=MessageType.RAG_REQUEST,
+                data={"query": "What is machine learning?"},
+                session_id="test-session",
+            )
 
-    try:
-        result = await communication_service.publish_to_node("test_stream", test_data)
-        assert result is True
-    except Exception as e:
-        pytest.fail(f"Publishing failed: {str(e)}")
+            # Process message
+            responses = []
+            async for response in registry.communication_service.handle_message(message):
+                responses.append(response)
 
+            # Verify responses
+            assert len(responses) == 2  # Context and response messages
+            assert responses[0].type == MessageType.RAG_CONTEXT
+            assert responses[1].type == MessageType.RAG_RESPONSE
+            assert isinstance(responses[0].data["context"], str)
+            assert isinstance(responses[1].data["response"], str)
+            break
 
-@pytest.mark.asyncio
-async def test_message_handling(setup_services):
-    """Test message handling"""
-    # Test RAG request
-    test_message = {
-        "type": MessageType.RAG_REQUEST,
-        "data": {"query": "What is machine learning?"},
-        "session_id": "test-session",
-    }
+    async def test_handle_unsupported_message(self):
+        """Test handling unsupported message types"""
+        message = Message(
+            type=MessageType.LLM_REQUEST,  # Unsupported type
+            data={"prompt": "test"},
+            session_id="test-session",
+        )
 
-    result = await communication_service.handle_message(test_message)
-    assert result is not None
-    assert "query" in result
-    assert "context" in result
-    assert "response" in result
+        responses = []
+        async for response in registry.communication_service.handle_message(message):
+            responses.append(response)
+
+        assert len(responses) == 1
+        assert responses[0].type == MessageType.ERROR
+        assert "Unsupported message type" in responses[0].data["error"]
+
+    async def test_error_handling(self):
+        """Test error handling in message processing"""
+        message = Message(
+            type=MessageType.RAG_REQUEST,
+            data={},  # Missing query
+            session_id="test-session",
+        )
+
+        responses = []
+        async for response in registry.communication_service.handle_message(message):
+            responses.append(response)
+
+        assert len(responses) == 1
+        assert responses[0].type == MessageType.ERROR
+        assert "Query not found" in responses[0].data["error"]
+
+    async def test_session_handling(self, setup_test_data):
+        """Test handling messages for different sessions"""
+        async for _ in setup_test_data:
+            # Create messages for different sessions
+            session1_msg = Message(
+                type=MessageType.RAG_REQUEST,
+                data={"query": "What is AI?"},
+                session_id="session1",
+            )
+            session2_msg = Message(
+                type=MessageType.RAG_REQUEST,
+                data={"query": "What is ML?"},
+                session_id="session2",
+            )
+
+            # Process messages
+            responses1 = []
+            responses2 = []
+            async for response in registry.communication_service.handle_message(session1_msg):
+                responses1.append(response)
+            async for response in registry.communication_service.handle_message(session2_msg):
+                responses2.append(response)
+
+            # Verify session isolation
+            assert all(r.session_id == "session1" for r in responses1)
+            assert all(r.session_id == "session2" for r in responses2)
+            break
