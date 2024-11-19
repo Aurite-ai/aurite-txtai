@@ -1,38 +1,6 @@
 import pytest
 from src.services.communication_service import communication_service
-from src.services.txtai_service import txtai_service
-from src.models.messages import Message, MessageType
-
-
-@pytest.fixture(autouse=True)
-async def setup_txtai():
-    """Initialize txtai services before tests"""
-    try:
-        await txtai_service.initialize()
-        yield
-    except Exception as e:
-        pytest.fail(f"Failed to initialize txtai: {e}")
-
-
-@pytest.fixture(autouse=True)
-async def setup_embeddings(setup_txtai):
-    """Add test documents to embeddings"""
-    docs = [
-        {
-            "id": "test1",
-            "text": "Machine learning is a field of artificial intelligence",
-            "metadata": {"source": "test"},
-        }
-    ]
-
-    await communication_service.handle_message(
-        {
-            "type": MessageType.EMBEDDING_REQUEST,
-            "data": {"documents": docs},
-            "session_id": "test-session",
-        }
-    )
-    yield
+from src.models.messages import MessageType
 
 
 @pytest.mark.asyncio
@@ -61,26 +29,9 @@ async def test_basic_publish():
 
 
 @pytest.mark.asyncio
-async def test_message_handling():
+async def test_message_handling(setup_services):
     """Test message handling"""
-    # Add test documents first
-    docs = [
-        {
-            "id": "test1",
-            "text": "Machine learning is a field of artificial intelligence",
-            "metadata": {"source": "test"},
-        }
-    ]
-
-    await communication_service.handle_message(
-        {
-            "type": MessageType.EMBEDDING_REQUEST,
-            "data": {"documents": docs},
-            "session_id": "test-session",
-        }
-    )
-
-    # Now test RAG request
+    # Test RAG request
     test_message = {
         "type": MessageType.RAG_REQUEST,
         "data": {"query": "What is machine learning?"},
@@ -89,3 +40,6 @@ async def test_message_handling():
 
     result = await communication_service.handle_message(test_message)
     assert result is not None
+    assert "query" in result
+    assert "context" in result
+    assert "response" in result

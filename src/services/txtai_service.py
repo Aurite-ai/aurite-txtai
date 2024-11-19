@@ -10,14 +10,23 @@ logger = logging.getLogger(__name__)
 class TxtAIService:
     """Service to handle txtai operations"""
 
+    def __init__(self):
+        self._initialized = False
+
     async def initialize(self):
         """Initialize txtai services"""
         try:
-            # Initialize embeddings service
-            await embeddings_service.initialize()
-            # Initialize RAG service
-            await rag_service.initialize()
-            logger.info("TxtAI services initialized successfully")
+            if not self._initialized:
+                # Initialize embeddings service first
+                await embeddings_service.initialize()
+                logger.info("Embeddings service initialized")
+
+                # Initialize RAG service
+                await rag_service.initialize()
+                logger.info("RAG service initialized")
+
+                self._initialized = True
+                logger.info("TxtAI services initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize TxtAI services: {e}")
             raise
@@ -25,6 +34,9 @@ class TxtAIService:
     async def handle_request(self, message: Message) -> Optional[Dict[str, Any]]:
         """Handle incoming txtai requests"""
         try:
+            if not self._initialized:
+                await self.initialize()
+
             if message.type == MessageType.RAG_REQUEST:
                 return await rag_service.generate(message.data["query"])
             elif message.type == MessageType.EMBEDDING_REQUEST:

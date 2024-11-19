@@ -1,13 +1,12 @@
 import pytest
 from pathlib import Path
 import json
-from src.services.embeddings_service import EmbeddingsService, embeddings_service
-from src.services.query_service import QueryService
-from src.config.settings import Settings
+from src.services.embeddings_service import embeddings_service
 from src.services.txtai_service import txtai_service
+from src.config.settings import Settings
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def test_settings():
     """Test settings with memory storage"""
     return Settings(
@@ -19,7 +18,7 @@ def test_settings():
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def test_documents():
     """Test documents with metadata matching notebook format"""
     return [
@@ -40,30 +39,37 @@ def test_documents():
     ]
 
 
-@pytest.fixture
-def test_services(test_settings, test_documents):
-    """Create test instances of embeddings and query services"""
-    # Create and initialize embeddings service
-    embeddings_service = EmbeddingsService()
-    embeddings_service.initialize()
-
-    # Add test documents
-    embeddings_service.add(test_documents)
-
-    # Create query service
-    query_service = QueryService(embeddings_service.embeddings, test_settings)
-
-    return embeddings_service, query_service
-
-
-@pytest.fixture(autouse=True)
-async def setup_services():
-    """Initialize all services before tests"""
+@pytest.fixture(scope="session")
+async def base_services(test_settings):
+    """Initialize base services for all tests"""
     try:
-        # Initialize embeddings service
-        await embeddings_service.initialize()
-        # Initialize txtai service (which initializes RAG)
+        # Initialize txtai service (which handles embeddings and RAG)
         await txtai_service.initialize()
         yield
+    finally:
+        # Cleanup if needed
+        pass
+
+
+@pytest.fixture(scope="function")
+async def setup_services(base_services, test_documents):
+    """Setup test data for each test"""
+    try:
+        # Reset embeddings index before adding test data
+        await embeddings_service.initialize()
+        # Add test documents
+        await embeddings_service.add(test_documents)
+        yield
     except Exception as e:
-        pytest.fail(f"Failed to initialize services: {e}")
+        pytest.fail(f"Failed to setup test data: {e}")
+
+
+@pytest.fixture(scope="function")
+async def clean_services(setup_services):
+    """Cleanup after each test"""
+    yield
+    try:
+        # Reset embeddings index
+        await embeddings_service.initialize()
+    except Exception as e:
+        pytest.fail(f"Failed to clean services: {e}")

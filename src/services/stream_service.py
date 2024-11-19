@@ -20,10 +20,6 @@ class StreamService:
 
     async def start_listening(self):
         """Start listening to all streams"""
-        # Initialize txtai service first
-        await txtai_service.initialize()
-        logger.info("Txtai service initialized")
-
         while True:
             try:
                 for stream in self.streams:

@@ -34,8 +34,14 @@ class EmbeddingsService:
             logger.info(f"Using config: {json.dumps(config, indent=2)}")
 
             self.embeddings = Embeddings(config)
-            # Initialize empty index
-            self.embeddings.index([])
+
+            # Initialize with a dummy document to ensure index is created
+            dummy_doc = ("init", "initialization document", "{}")
+            self.embeddings.index([dummy_doc])
+
+            # Clear the index by deleting all documents
+            self.embeddings.delete(ids=None)  # Delete all documents
+
             logger.info("Embeddings initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize embeddings: {str(e)}")
@@ -47,9 +53,6 @@ class EmbeddingsService:
             await self.initialize()
 
         try:
-            logger.info("\n=== Document Processing ===")
-            logger.info(f"Input documents: {json.dumps(documents, indent=2)}")
-
             # Format documents for txtai indexing
             formatted_docs = []
             for doc in documents:
@@ -58,24 +61,15 @@ class EmbeddingsService:
                 formatted_doc = (doc_id, doc["text"], metadata_str)
                 formatted_docs.append(formatted_doc)
 
-                logger.info(f"\nDocument transformation:")
-                logger.info(f"Original: {json.dumps(doc, indent=2)}")
-                logger.info(f"Formatted: {formatted_doc}")
-
-            logger.info("\n=== Pre-Indexing State ===")
-            logger.info(f"Number of documents to index: {len(formatted_docs)}")
-
             # Index the documents
             self.embeddings.index(formatted_docs)
 
-            # Verify indexing using SQL query
-            logger.info("\n=== Post-Indexing Verification ===")
+            # Verify indexing
             verify_query = "SELECT id, text, tags FROM txtai"
             results = self.embeddings.search(verify_query)
             logger.info(f"Indexed documents: {json.dumps(results, indent=2)}")
 
             return len(formatted_docs)
-
         except Exception as e:
             logger.error(f"Failed to add documents: {str(e)}")
             raise
@@ -94,64 +88,30 @@ class EmbeddingsService:
             results = self.embeddings.search(query, limit)
             logger.info(f"Raw search results: {json.dumps(results, indent=2)}")
 
-            # Get full documents with tags
-            doc_ids = [f"'{result['id']}'" for result in results]
-            if not doc_ids:
-                return []
-
-            # Create the joined doc_ids string
-            doc_ids_str = ','.join(doc_ids)
-
-            # Use triple quotes for SQL and double quotes for JSON patterns
-            sql_query = f'''
-                SELECT id, text, tags, score
-                FROM txtai
-                WHERE id IN ({doc_ids_str})
-            '''
-            full_docs = self.embeddings.search(sql_query)
-            logger.info(f"Full documents: {json.dumps(full_docs, indent=2)}")
-
-            # Format results with metadata from tags
+            # Format results with metadata
             formatted_results = []
             for result in results:
-                # Find matching full document
-                full_doc = next((doc for doc in full_docs if doc["id"] == result["id"]), None)
+                # Parse metadata from tags if present
+                metadata = {}
+                if result.get("tags"):
+                    try:
+                        metadata = json.loads(result["tags"])
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Failed to parse tags: {e}")
 
-                if full_doc:
-                    # Parse metadata from tags
-                    metadata = {}
-                    if full_doc.get("tags"):
-                        try:
-                            metadata = json.loads(full_doc["tags"])
-                        except json.JSONDecodeError as e:
-                            logger.warning(f"Failed to parse tags: {e}")
-
-                    formatted_result = {
-                        "id": result["id"],
-                        "text": result["text"],
-                        "score": result["score"],
-                        "metadata": metadata,
-                    }
-                    formatted_results.append(formatted_result)
+                formatted_result = {
+                    "id": result["id"],
+                    "text": result["text"],
+                    "score": result["score"],
+                    "metadata": metadata,
+                }
+                formatted_results.append(formatted_result)
 
             return formatted_results
 
         except Exception as e:
             logger.error(f"Search failed: {str(e)}")
             raise
-
-    async def is_empty(self) -> bool:
-        """Check if embeddings index is empty"""
-        if not self.embeddings:
-            await self.initialize()
-
-        try:
-            # Query for any document
-            results = self.embeddings.search("SELECT COUNT(*) as count FROM txtai")
-            return results[0]["count"] == 0
-        except Exception as e:
-            logger.error(f"Failed to check if index is empty: {str(e)}")
-            return True
 
 
 # Global service instance

@@ -4,6 +4,7 @@ from src.routes import embeddings, llm, rag, test
 import logging
 from src.services import stream_service
 import asyncio
+from src.services.txtai_service import txtai_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -43,11 +44,16 @@ async def health_check():
 async def startup_event():
     """Initialize services on startup"""
     try:
+        # Initialize txtai service first (which initializes embeddings and RAG)
+        await txtai_service.initialize()
+        logger.info("TxtAI services initialized")
+
         # Start stream service in background task
         asyncio.create_task(stream_service.start_listening())
         logger.info("Stream service started")
     except Exception as e:
-        logger.error(f"Failed to start stream service: {e}")
+        logger.error(f"Failed to start services: {e}")
+        raise
 
 
 # Only used when running directly (not through uvicorn command)
