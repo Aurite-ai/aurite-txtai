@@ -5,7 +5,7 @@ from typing import AsyncGenerator, Dict, Any, Optional, List
 from .base_service import BaseService
 from .config_service import config_service
 from src.models.messages import Message, MessageType
-import redis
+import redis.asyncio as redis
 
 logger = logging.getLogger(__name__)
 

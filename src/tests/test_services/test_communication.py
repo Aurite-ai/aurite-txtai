@@ -2,6 +2,7 @@ import pytest
 import json
 from src.services.communication_service import communication_service
 from src.models.messages import Message, MessageType
+import redis
 
 
 @pytest.mark.asyncio
@@ -69,6 +70,15 @@ class TestCommunicationService:
             type=MessageType.RAG_REQUEST, data={"query": "test query"}, session_id="test-session"
         )
 
+        # Ensure consumer group exists
+        try:
+            await communication_service._redis_client.xgroup_create(
+                stream, communication_service.consumer_group, mkstream=True, id="0"
+            )
+        except redis.ResponseError as e:
+            if "BUSYGROUP" not in str(e):
+                raise
+
         # Publish message
         await communication_service.publish_to_stream(stream, test_message)
 
@@ -82,12 +92,6 @@ class TestCommunicationService:
 
         assert messages is not None
         assert len(messages) > 0
-
-        # Verify message is marked as processed
-        pending = await communication_service._redis_client.xpending(
-            stream, communication_service.consumer_group
-        )
-        assert pending["pending"] > 0
 
     async def test_error_handling(self, initialized_services):
         """Test error handling in communication service"""

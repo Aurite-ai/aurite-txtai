@@ -14,8 +14,10 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope="session")
 def event_loop():
-    """Create an instance of the default event loop for the test session"""
-    loop = asyncio.new_event_loop()
+    """Create a single event loop for all tests"""
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
+    asyncio.set_event_loop(loop)
     yield loop
     loop.close()
 
@@ -35,30 +37,47 @@ def test_settings():
             "rag": "You are a helpful AI assistant.",
             "default": "You are a helpful AI assistant.",
         },
-        # Redis test settings
-        REDIS_DB=1,  # Use separate test database
+        REDIS_DB=1,  # Use test database
     )
 
 
-@pytest.fixture(scope="session", autouse=True)
-async def initialized_services(test_settings):
-    """Initialize all services once for the test session"""
+@pytest.fixture(scope="session")
+async def redis_client(event_loop, test_settings):
+    """Create a Redis client for tests"""
+    import redis.asyncio as redis
+
+    client = redis.Redis(
+        host=test_settings.REDIS_HOST,
+        port=test_settings.REDIS_PORT,
+        db=test_settings.REDIS_DB,
+        decode_responses=True,
+        single_connection_client=True,
+    )
+    await client.ping()  # Test connection
+    yield client
+    await client.close()
+
+
+@pytest.fixture(scope="session")
+async def initialized_services(event_loop, test_settings, redis_client):
+    """Initialize all services with test settings"""
     logger.info("\n=== Initializing Services (Session) ===")
     try:
-        # Initialize in correct order
+        # Set event loop for the entire initialization process
+        asyncio.set_event_loop(event_loop)
+
         registry.config_service.settings = test_settings
         await registry.config_service.initialize()
 
-        # Initialize core services first
+        # Set Redis client before other services
+        registry.communication_service._redis_client = redis_client
+
+        # Initialize services
         await registry.embeddings_service.initialize()
         await registry.llm_service.initialize()
         await registry.rag_service.initialize()
-
-        # Initialize communication services
         await registry.communication_service.initialize()
         await registry.stream_service.initialize()
-
-        # Initialize composite services
         await registry.txtai_service.initialize()
 
         logger.info("All services initialized successfully")
@@ -69,13 +88,8 @@ async def initialized_services(test_settings):
 
 
 @pytest.fixture(autouse=True)
-async def clean_redis(initialized_services):
+async def clean_redis(redis_client):
     """Clean Redis before and after each test"""
-    redis_client = registry.communication_service._redis_client
-    try:
-        # Clean before test
-        await redis_client.flushdb()
-        yield
-    finally:
-        # Clean after test
-        await redis_client.flushdb()
+    await redis_client.flushdb()
+    yield
+    await redis_client.flushdb()

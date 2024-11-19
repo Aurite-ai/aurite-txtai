@@ -8,7 +8,7 @@ router = APIRouter()
 async def test_redis():
     """Test Redis connection"""
     try:
-        ping = communication_service.redis_client.ping()
+        ping = await communication_service._redis_client.ping()
         return {"status": "connected" if ping else "error"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -18,7 +18,7 @@ async def test_redis():
 async def health_check():
     """Health check with Redis status"""
     try:
-        redis_status = "connected" if communication_service.redis_client.ping() else "error"
+        redis_status = "connected" if await communication_service._redis_client.ping() else "error"
         return {"status": "healthy", "redis": redis_status}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

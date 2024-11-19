@@ -47,6 +47,19 @@ class CommunicationService(BaseService):
                 # Test connection
                 await self._redis_client.ping()
 
+                # Create consumer groups for each stream
+                for stream in self.streams:
+                    try:
+                        await self._redis_client.xgroup_create(
+                            stream,
+                            self.consumer_group,
+                            mkstream=True,
+                            id="0",  # Start from beginning
+                        )
+                    except redis.ResponseError as e:
+                        if "BUSYGROUP" not in str(e):  # Ignore if group exists
+                            raise
+
                 self._initialized = True
                 logger.info("Communication service initialized successfully")
             except Exception as e:
@@ -57,6 +70,10 @@ class CommunicationService(BaseService):
         """Publish message to Redis Stream"""
         self._check_initialized()
         try:
+            # Verify stream is valid
+            if stream not in self.streams:
+                raise ValueError(f"Invalid stream: {stream}")
+
             stream_data = {
                 "type": message.type.value,
                 "data": json.dumps(message.data),
