@@ -18,6 +18,7 @@ bin
 **.venv**
 **.cursorignore**
 **__pycache__**
+**notebooks**
 **dist**
 **build**
 **eggs**

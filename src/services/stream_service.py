@@ -1,11 +1,9 @@
-import logging
 import asyncio
 import json
-from typing import AsyncGenerator, Dict, Any, Optional, List
+import logging
+from typing import Dict, Any, List, Optional
 from .base_service import BaseService
-from .config_service import config_service
 from src.models.messages import Message, MessageType
-import redis.asyncio as redis
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +13,129 @@ class StreamService(BaseService):
 
     def __init__(self):
         """Initialize stream service"""
-        super().__init__()  # This will set up config_service
+        super().__init__()
         self.streams = None
         self.consumer_group = None
         self.consumer_name = None
         self.read_count = None
         self.block_ms = None
+        self._listening = False
+        self._task = None
+        self._error_count = 0
+        self._max_retries = 5
+        self._base_delay = 1  # Start with 1 second delay
+
+    async def _backoff_delay(self):
+        """Calculate exponential backoff delay"""
+        if self._error_count > 0:
+            delay = min(30, self._base_delay * (2 ** (self._error_count - 1)))  # Max 30 seconds
+            logger.warning(f"Backing off for {delay} seconds (attempt {self._error_count})")
+            await asyncio.sleep(delay)
+
+    async def _listen(self):
+        """Main listening loop with improved error handling"""
+        while self._listening:
+            try:
+                if not self.registry.communication_service.initialized:
+                    logger.warning("Communication service not initialized, waiting...")
+                    await asyncio.sleep(1)
+                    continue
+
+                for stream in self.streams:
+                    messages = await self.registry.communication_service.subscribe_to_node(stream)
+                    if messages:
+                        for message in messages:
+                            await self.handle_stream(stream, message)
+
+                # Reset error count on successful iteration
+                if self._error_count > 0:
+                    logger.info("Stream service recovered from errors")
+                    self._error_count = 0
+
+                await asyncio.sleep(0.1)
+
+            except Exception as e:
+                self._error_count += 1
+                logger.error(f"Error in stream handler (attempt {self._error_count}): {e}")
+
+                if self._error_count >= self._max_retries:
+                    logger.critical("Max retries reached, stopping stream service")
+                    await self.stop_listening()
+                    break
+
+                await self._backoff_delay()
+
+    async def start_listening(self):
+        """Start listening to streams with initialization check"""
+        if not self._listening:
+            if not self.initialized:
+                logger.error("Cannot start: Stream service not initialized")
+                return
+
+            self._listening = True
+            self._error_count = 0
+            self._task = asyncio.create_task(self._listen())
+            logger.info("Stream listener started")
+
+    async def stop_listening(self):
+        """Stop listening to streams with proper cleanup"""
+        if self._listening:
+            logger.info("Stopping stream listener...")
+            self._listening = False
+            if self._task:
+                try:
+                    self._task.cancel()
+                    await asyncio.wait([self._task], timeout=5.0)
+                except asyncio.TimeoutError:
+                    logger.warning("Stream listener shutdown timed out")
+                except asyncio.CancelledError:
+                    pass
+                except Exception as e:
+                    logger.error(f"Error during shutdown: {e}")
+                finally:
+                    self._task = None
+                    self._error_count = 0
+            logger.info("Stream listener stopped")
+
+    async def handle_stream(self, stream: str, message: Dict[str, Any]):
+        """Handle incoming stream messages"""
+        try:
+            msg_type = MessageType(message["type"])
+            msg = Message(
+                type=msg_type, data=message["data"], session_id=message.get("session_id", "")
+            )
+
+            if msg_type == MessageType.RAG_REQUEST:
+                response = await self.registry.rag_service.handle_request(msg)
+            elif msg_type == MessageType.EMBEDDING_REQUEST:
+                response = await self.registry.embeddings_service.handle_request(msg)
+            elif msg_type == MessageType.LLM_REQUEST:
+                response = await self.registry.llm_service.handle_request(msg)
+            else:
+                logger.error(f"Unknown message type: {msg_type}")
+                return
+
+            # Send response back on same stream
+            await self.registry.communication_service.publish_to_node(
+                stream,
+                {
+                    "type": msg_type.value.replace("request", "response"),
+                    "data": response,
+                    "session_id": msg.session_id,
+                },
+            )
+
+        except Exception as e:
+            logger.error(f"Error handling message: {e}")
+            # Send error response
+            await self.registry.communication_service.publish_to_node(
+                stream,
+                {
+                    "type": "error",
+                    "data": {"error": str(e)},
+                    "session_id": message.get("session_id", ""),
+                },
+            )
 
     async def initialize(self) -> None:
         """Initialize stream service"""
@@ -30,7 +145,7 @@ class StreamService(BaseService):
                 if not self.config_service.initialized:
                     await self.config_service.initialize()
 
-                # Get settings
+                # Get settings from config service
                 self.settings = self.config_service.settings
 
                 # Initialize stream settings
@@ -45,137 +160,6 @@ class StreamService(BaseService):
             except Exception as e:
                 logger.error(f"Failed to initialize stream service: {e}")
                 raise
-
-    async def _get_redis_client(self):
-        """Get Redis client from communication service"""
-        from . import registry
-
-        return registry.communication_service._redis_client
-
-    async def start_listening(self):
-        """Start listening to streams"""
-        self._check_initialized()
-        while True:
-            try:
-                redis_client = await self._get_redis_client()
-                for stream in self.streams:
-                    try:
-                        await redis_client.xgroup_create(stream, self.consumer_group, mkstream=True)
-                    except redis.ResponseError as e:
-                        if "BUSYGROUP" not in str(e):
-                            logger.error(f"Error creating group: {e}")
-                            continue
-
-                    messages = await self._read_stream(stream)
-                    if messages:
-                        await self._process_messages(messages)
-
-                await asyncio.sleep(0.1)
-            except Exception as e:
-                logger.error(f"Error in stream handler: {e}")
-                await asyncio.sleep(1)
-
-    async def _read_stream(self, stream: str) -> Optional[List[Message]]:
-        """Read messages from stream"""
-        try:
-            redis_client = await self._get_redis_client()
-            messages = await redis_client.xreadgroup(
-                self.consumer_group,
-                self.consumer_name,
-                {stream: ">"},
-                count=self.read_count,
-                block=self.block_ms,
-            )
-            return self._parse_messages(messages) if messages else None
-        except Exception as e:
-            logger.error(f"Error reading stream: {e}")
-            return None
-
-    def _parse_messages(self, messages: List) -> List[Message]:
-        """Parse raw Redis messages into Message objects"""
-        parsed_messages = []
-        for stream_name, stream_messages in messages:
-            for message_id, message_data in stream_messages:
-                try:
-                    parsed_message = Message(
-                        type=message_data["type"],
-                        data=json.loads(message_data["data"]),
-                        session_id=message_data["session_id"],
-                    )
-                    parsed_messages.append(parsed_message)
-                except Exception as e:
-                    logger.error(f"Error parsing message {message_id}: {e}")
-                    continue
-        return parsed_messages
-
-    async def _process_messages(self, messages: List[Message]):
-        """Process messages from stream"""
-        for message in messages:
-            await self.process_message(message)
-
-    async def process_message(self, message: Message):
-        """Process a message from stream"""
-        if message.type == MessageType.RAG_REQUEST:
-            await self.process_rag_request(message)
-        elif message.type == MessageType.RAG_CONTEXT:
-            await self.process_context_message(message)
-        elif message.type == MessageType.RAG_RESPONSE:
-            await self.process_response_message(message)
-        elif message.type == MessageType.ERROR:
-            await self.process_error_message(message)
-
-    async def process_rag_request(self, message: Message) -> AsyncGenerator[Message, None]:
-        """Process a RAG request and stream responses"""
-        self._check_initialized()
-        try:
-            # Get query from message
-            query = message.data.get("query")
-            if not query:
-                raise ValueError("Query not found in message data")
-
-            # Get context
-            context = await self.rag_service.get_context(query)
-
-            # Send context message
-            context_message = Message(
-                type=MessageType.RAG_CONTEXT,
-                data={"context": context},
-                session_id=message.session_id,
-            )
-            yield context_message
-
-            # Generate response
-            response = await self.rag_service.generate(query)
-
-            # Send response message
-            response_message = Message(
-                type=MessageType.RAG_RESPONSE,
-                data={"response": response},
-                session_id=message.session_id,
-            )
-            yield response_message
-
-        except Exception as e:
-            logger.error(f"Error processing RAG request: {e}")
-            error_message = Message(
-                type=MessageType.ERROR, data={"error": str(e)}, session_id=message.session_id
-            )
-            yield error_message
-
-    async def process_context_message(self, message: Message):
-        """Process a context message from stream"""
-        # Implement context message processing logic here
-        pass
-
-    async def process_response_message(self, message: Message):
-        """Process a response message from stream"""
-        # Implement response message processing logic here
-        pass
-
-    async def process_error_message(self, message: Message):
-        """Process an error message from stream"""
-        # Implement error message processing logic here
-        pass
 
 
 # Global service instance

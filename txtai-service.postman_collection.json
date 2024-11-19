@@ -5,109 +5,96 @@
   },
   "item": [
     {
-      "name": "Health Check",
+      "name": "Service Status",
       "request": {
         "method": "GET",
         "url": "http://localhost:8000/"
       }
     },
     {
-      "name": "Add Documents",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
+      "name": "Stream Operations",
+      "item": [
+        {
+          "name": "Start Stream Listener",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8000/api/stream/start"
           }
-        ],
-        "url": "http://localhost:8000/api/embeddings/add",
-        "body": {
-          "mode": "raw",
-          "raw": {
-            "documents": [
-              {
-                "text": "Embeddings are great for semantic search",
-                "metadata": {
-                  "category": "tech",
-                  "type": "example"
-                }
-              },
-              {
-                "text": "Vector search helps find similar content",
-                "metadata": {
-                  "category": "tech",
-                  "type": "example"
-                }
+        },
+        {
+          "name": "Stop Stream Listener",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8000/api/stream/stop"
+          }
+        },
+        {
+          "name": "Stream Status",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8000/api/stream/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "RAG Operations",
+      "item": [
+        {
+          "name": "Query RAG",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "http://localhost:8000/api/rag/query",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "query": "What is artificial intelligence?",
+                "limit": 3
               }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "Hybrid Search",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "http://localhost:8000/api/embeddings/search",
-        "body": {
-          "mode": "raw",
-          "raw": {
-            "query": "semantic search",
-            "limit": 5,
-            "weight": 0.7
-          }
-        }
-      }
-    },
-    {
-      "name": "Semantic Search",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "http://localhost:8000/api/embeddings/semantic-search",
-        "body": {
-          "mode": "raw",
-          "raw": {
-            "query": "semantic search",
-            "limit": 5
-          }
-        }
-      }
-    },
-    {
-      "name": "Advanced Search",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "http://localhost:8000/api/embeddings/advanced-search",
-        "body": {
-          "mode": "raw",
-          "raw": {
-            "query": "semantic search",
-            "limit": 5,
-            "filters": {
-              "category": "tech"
             }
           }
         }
-      }
+      ]
+    },
+    {
+      "name": "Embeddings Operations",
+      "item": [
+        {
+          "name": "Generate Embedding",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "http://localhost:8000/api/embeddings/embed",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "text": "Test document for embedding"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "LLM Operations",
+      "item": [
+        {
+          "name": "Complete Text",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "http://localhost:8000/api/llm/complete",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "prompt": "What is the capital of France?",
+                "system": "You are a helpful AI assistant."
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

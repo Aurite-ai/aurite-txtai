@@ -10,7 +10,7 @@ class ConfigService:
 
     def __init__(self):
         self._initialized = False
-        self.settings: Settings = None
+        self.settings: Settings = Settings()
         self._embeddings_config: Dict[str, Any] = None
         self._llm_config: Dict[str, Any] = None
         logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")

@@ -1,6 +1,8 @@
 from .settings import Settings
 from typing import Dict, Any
 
+settings = Settings()
+
 
 def create_llm_config(settings: Settings) -> dict:
     """Create LLM configuration"""

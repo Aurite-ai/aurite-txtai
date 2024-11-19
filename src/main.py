@@ -1,20 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.routes import embeddings, llm, rag, test
 import logging
-from src.services import registry, stream_service
-import asyncio
+from src.routes import api_router
+from src.services import registry
+from src.config.settings import Settings
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app
-app = FastAPI(
-    title="txtai Service",
-    description="API for semantic search and document embeddings using txtai",
-    version="1.0.0",
-)
+app = FastAPI(title="txtai Service", description="txtai API with Redis Streams")
+settings = Settings()
 
 # Add CORS middleware
 app.add_middleware(
@@ -25,37 +21,55 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(embeddings.router)
-app.include_router(llm.router)
-app.include_router(rag.router)
-app.include_router(test.router)
+# Add routes
+app.include_router(api_router, prefix="/api")
+
+
+@app.get("/")
+async def root():
+    """Root endpoint with service status"""
+    return {
+        "status": "healthy",
+        "services": {
+            "config": registry.config_service.initialized,
+            "embeddings": registry.embeddings_service.initialized,
+            "llm": registry.llm_service.initialized,
+            "rag": registry.rag_service.initialized,
+            "communication": registry.communication_service.initialized,
+            "stream": registry.stream_service.initialized,
+            "stream_listening": registry.stream_service.is_listening,
+        },
+    }
 
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
     try:
-        # Initialize all services through registry
-        await registry.initialize()
-        logger.info("Services initialized")
+        # Initialize services in dependency order
+        await registry.config_service.initialize()
+        await registry.communication_service.initialize()
+        await registry.stream_service.initialize()
+        await registry.embeddings_service.initialize()
+        await registry.llm_service.initialize()
+        await registry.rag_service.initialize()
+        await registry.txtai_service.initialize()
 
-        # Start stream service
-        asyncio.create_task(stream_service.start_listening())
-        logger.info("Stream service started")
+        # Start stream listener after all services are ready
+        await registry.stream_service.start_listening()
+        logger.info("All services initialized and stream listener started")
+
     except Exception as e:
-        logger.error(f"Failed to start services: {e}")
+        logger.error(f"Failed to start services: {str(e)}")
         raise
 
 
-# Only used when running directly (not through uvicorn command)
-if __name__ == "__main__":
-    import uvicorn
-    from src.services.config_service import config_service
-
-    uvicorn.run(
-        "src.main:app",
-        host=config_service.settings.API_HOST,
-        port=config_service.settings.API_PORT,
-        reload=True,
-    )
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    try:
+        await registry.stream_service.stop_listening()
+        await registry.communication_service.close()
+        logger.info("Services shut down successfully")
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")

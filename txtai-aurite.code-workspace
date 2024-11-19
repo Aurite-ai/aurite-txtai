@@ -6,10 +6,6 @@
     {
       "name": "../aurite-dev/services/persona-server",
       "path": "../aurite-dev/services/persona-server"
-    },
-    {
-      "name": "../aurite-dev/services/mobile-server",
-      "path": "../aurite-dev/services/mobile-server"
     }
   ],
   "settings": {
