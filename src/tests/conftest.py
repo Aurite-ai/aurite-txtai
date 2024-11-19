@@ -65,8 +65,9 @@ async def setup_test_data():
     try:
         test_documents = get_test_documents()
         await registry.embeddings_service.add(test_documents)
-        yield
+        yield  # Use yield instead of return for proper cleanup
     finally:
         # Cleanup
-        delete_query = "DELETE FROM txtai"
-        registry.embeddings_service.embeddings.delete(delete_query)
+        if registry.embeddings_service.initialized:
+            delete_query = "DELETE FROM txtai"
+            registry.embeddings_service.embeddings.delete(delete_query)
