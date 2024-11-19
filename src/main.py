@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.routes import embeddings, llm, rag
+from src.routes import embeddings, llm, rag, test
 import logging
 
 # Configure logging
@@ -26,7 +26,8 @@ app.add_middleware(
 # Include routers
 app.include_router(embeddings.router)
 app.include_router(llm.router)
-# app.include_router(rag.router)
+app.include_router(rag.router)
+app.include_router(test.router, prefix="/api")
 
 
 @app.get("/", tags=["health"])

@@ -20,7 +20,7 @@ check-python:
 setup: check-python
     #!/usr/bin/env bash
     sudo apt-get install libomp-dev
-    # Create symlink if it doesn't exist
+    # Create symlink if it does not exist
     sudo ln -sf /usr/lib/x86_64-linux-gnu/libgomp.so.1 /home/wilcoxr/miniconda3/envs/txtai/lib/libgomp.so.1
     # Set environment variables for OpenMP
     export CC=$(which gcc)
@@ -43,8 +43,18 @@ update:
 test:
     pytest -v
 
-test-embeddings:
-    pytest -v test/embeddings/
+test-services:
+    pytest -v test/test_services/
+
+test-config:
+    pytest -v test/test_config/
+
+# Add to justfile
+test-redis:
+    pytest src/tests/test_services/test_communication.py -v -k "test_redis"
+
+test-pub:
+    pytest src/tests/test_services/test_communication.py -v -k "test_basic_publish"
 
 # Start API server
 serve:

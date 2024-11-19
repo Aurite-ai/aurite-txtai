@@ -1,4 +1,4 @@
-from typing import Optional, Literal
+from typing import Optional, Literal, Dict, ClassVar
 from pydantic_settings import BaseSettings
 from pydantic import ConfigDict, Field
 
@@ -41,6 +41,22 @@ class Settings(BaseSettings):
         "default": """You are a helpful AI assistant. Answer questions clearly and concisely.""",
         "rag": """You are a helpful AI assistant. You must ONLY answer questions using the provided context.
 If the answer cannot be found in the context, you must clearly state that the information is not available in the given context.""",
+    }
+
+    # Redis settings
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+
+    # ZMQ settings
+    ZMQ_BASE_PORT: int = 5555
+
+    # Communication channels - using ClassVar since this is a static configuration
+    CHANNELS: ClassVar[Dict[str, str]] = {
+        "embeddings": "embeddings_stream",
+        "rag": "rag_stream",
+        "llm": "llm_stream",
+        "agent_requests": "agent_requests",
+        "agent_responses": "agent_responses",
     }
 
     model_config = ConfigDict(env_file=".env", case_sensitive=True, extra="ignore")

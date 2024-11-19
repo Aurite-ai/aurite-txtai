@@ -57,10 +57,10 @@ class EmbeddingsService:
             for doc in documents:
                 doc_id = str(doc.get("id", str(uuid4())))
 
-                # Ensure metadata is stored in tags field per SERVICE.md
+                # Ensure metadata is stored in tags field
                 metadata_str = json.dumps(doc.get("metadata", {}))
 
-                # Create tuple of (id, text, tags) as specified in SERVICE.md
+                # Create tuple of (id, text, tags)
                 formatted_doc = (doc_id, doc["text"], metadata_str)
                 formatted_docs.append(formatted_doc)
 
@@ -76,7 +76,7 @@ class EmbeddingsService:
             # Index the documents
             self.embeddings.index(formatted_docs)
 
-            # Verify indexing using SQL query as shown in SERVICE.md
+            # Verify indexing using SQL query
             logger.info("\n=== Post-Indexing Verification ===")
             verify_query = "SELECT id, text, tags FROM txtai"
             results = self.embeddings.search(verify_query)

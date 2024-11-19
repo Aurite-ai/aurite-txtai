@@ -14,7 +14,8 @@ dependencies = [
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "google-cloud-storage>=2.14.0",
-    "python-multipart"
+    "python-multipart",
+    "redis>=5.0.0"
 ]
 
 [project.optional-dependencies]

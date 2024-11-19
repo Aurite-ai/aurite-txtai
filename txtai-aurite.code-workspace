@@ -1,0 +1,23 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "name": "../aurite-dev/services/persona-server",
+      "path": "../aurite-dev/services/persona-server"
+    },
+    {
+      "name": "../aurite-dev/services/mobile-server",
+      "path": "../aurite-dev/services/mobile-server"
+    }
+  ],
+  "settings": {
+    "python.analysis.ignore": ["notebooks/**", "../aurite-dev/services/**"],
+    "[python]": {
+      "editor.defaultFormatter": "ms-python.black-formatter",
+      "editor.formatOnSave": true
+    },
+    "black-formatter.args": ["--skip-string-normalization"]
+  }
+}

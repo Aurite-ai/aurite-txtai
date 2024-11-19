@@ -5,6 +5,8 @@ import json
 from .embeddings_service import embeddings_service
 from .llm_service import llm_service
 from .config_service import config_service
+from .communication_service import communication_service
+from ..models.messages import Message, MessageType
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -47,9 +49,46 @@ Answer:"""
             )
             logger.info("RAG service initialized successfully")
 
+            # Subscribe to RAG requests
+            self._start_listeners()
+
         except Exception as e:
             logger.error(f"Failed to initialize RAG service: {str(e)}", exc_info=True)
             raise
+
+    def _start_listeners(self):
+        """Start listening for RAG requests"""
+        try:
+            # Listen for Node.js requests
+            stream = config_service.settings.CHANNELS["rag"]
+            while True:
+                messages = communication_service.subscribe_to_node(stream)
+                for msg in messages:
+                    self._handle_rag_request(msg)
+
+        except Exception as e:
+            logger.error(f"Error in RAG listener: {str(e)}")
+
+    def _handle_rag_request(self, message: Dict):
+        """Handle incoming RAG request"""
+        try:
+            # Process RAG request
+            result = self.generate(
+                question=message["data"]["question"], limit=message["data"].get("limit", 3)
+            )
+
+            # Publish result back to Node.js
+            communication_service.publish_to_node(
+                config_service.settings.CHANNELS["rag"],
+                {
+                    "type": MessageType.RAG_REQUEST,
+                    "data": result,
+                    "session_id": message.get("session_id"),
+                },
+            )
+
+        except Exception as e:
+            logger.error(f"Error handling RAG request: {str(e)}")
 
     def search_context(self, query: str, limit: int = 3, min_score: float = 0.3) -> List[Dict]:
         """Search for relevant context using embeddings"""
