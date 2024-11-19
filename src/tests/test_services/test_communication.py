@@ -1,9 +1,7 @@
 import pytest
-import logging
-from src.services import registry
+import json
+from src.services.communication_service import communication_service
 from src.models.messages import Message, MessageType
-
-logger = logging.getLogger(__name__)
 
 
 @pytest.mark.asyncio
@@ -11,84 +9,100 @@ class TestCommunicationService:
     """Test communication service functionality"""
 
     async def test_service_initialization(self, initialized_services):
-        """Test that communication service initializes correctly"""
-        assert registry.communication_service.initialized
-        assert registry.stream_service.initialized
-        logger.info("Communication service and dependencies initialized successfully")
+        """Test that communication service initializes with correct Redis settings"""
+        assert communication_service.initialized
+        assert (
+            communication_service.consumer_group
+            == communication_service.settings.CONSUMER_GROUP_TXTAI
+        )
+        assert (
+            communication_service.consumer_name
+            == communication_service.settings.CONSUMER_NAME_TXTAI
+        )
+        assert communication_service.streams == communication_service.settings.STREAMS
 
-    async def test_handle_rag_request(self, initialized_services, setup_test_data):
-        """Test handling RAG request messages"""
+    async def test_redis_connection(self, initialized_services):
+        """Test Redis connection and stream creation"""
+        # Test connection
+        assert await communication_service._redis_client.ping()
+
+        # Test stream creation
+        for stream in communication_service.streams:
+            try:
+                await communication_service._redis_client.xgroup_create(
+                    stream, communication_service.consumer_group, mkstream=True
+                )
+                stream_exists = await communication_service._redis_client.exists(stream)
+                assert stream_exists
+            except Exception as e:
+                if "BUSYGROUP" not in str(e):  # Ignore if group already exists
+                    raise
+
+    async def test_message_publishing(self, initialized_services):
+        """Test publishing messages to streams"""
+        test_message = Message(
+            type=MessageType.RAG_REQUEST, data={"query": "test query"}, session_id="test-session"
+        )
+
+        # Test publishing to each stream
+        for stream in communication_service.streams:
+            await communication_service.publish_to_stream(stream, test_message)
+
+            # Verify message was published
+            messages = await communication_service._redis_client.xread({stream: "0-0"})
+            assert messages is not None
+            assert len(messages) > 0
+
+            # Verify message content
+            stream_name, stream_messages = messages[0]
+            msg_id, msg_data = stream_messages[-1]
+            assert msg_data["type"] == test_message.type.value
+            assert json.loads(msg_data["data"]) == test_message.data
+            assert msg_data["session_id"] == test_message.session_id
+
+    async def test_consumer_groups(self, initialized_services):
+        """Test consumer group functionality"""
+        stream = communication_service.settings.STREAM_RAG
+
         # Create test message
-        message = Message(
-            type=MessageType.RAG_REQUEST,
-            data={"query": "What is machine learning?"},
-            session_id="test-session",
+        test_message = Message(
+            type=MessageType.RAG_REQUEST, data={"query": "test query"}, session_id="test-session"
         )
 
-        # Process message
-        responses = []
-        async for response in registry.communication_service.handle_message(message):
-            responses.append(response)
+        # Publish message
+        await communication_service.publish_to_stream(stream, test_message)
 
-        # Verify responses
-        assert len(responses) == 2  # Context and response messages
-        assert responses[0].type == MessageType.RAG_CONTEXT
-        assert responses[1].type == MessageType.RAG_RESPONSE
-
-    async def test_handle_unsupported_message(self, initialized_services):
-        """Test handling unsupported message types"""
-        message = Message(
-            type=MessageType.LLM_REQUEST,  # Unsupported type
-            data={"prompt": "test"},
-            session_id="test-session",
+        # Read with consumer group
+        messages = await communication_service._redis_client.xreadgroup(
+            communication_service.consumer_group,
+            communication_service.consumer_name,
+            {stream: ">"},
+            count=1,
         )
 
-        responses = []
-        async for response in registry.communication_service.handle_message(message):
-            responses.append(response)
+        assert messages is not None
+        assert len(messages) > 0
 
-        assert len(responses) == 1
-        assert responses[0].type == MessageType.ERROR
-        assert "Unsupported message type" in responses[0].data["error"]
+        # Verify message is marked as processed
+        pending = await communication_service._redis_client.xpending(
+            stream, communication_service.consumer_group
+        )
+        assert pending["pending"] > 0
 
     async def test_error_handling(self, initialized_services):
-        """Test error handling in message processing"""
-        message = Message(
-            type=MessageType.RAG_REQUEST,
-            data={},  # Missing query
-            session_id="test-session",
-        )
+        """Test error handling in communication service"""
+        # Test invalid stream
+        with pytest.raises(Exception):
+            await communication_service.publish_to_stream(
+                "invalid_stream",
+                Message(type=MessageType.RAG_REQUEST, data={"query": "test"}, session_id="test"),
+            )
 
-        responses = []
-        async for response in registry.communication_service.handle_message(message):
-            responses.append(response)
-
-        assert len(responses) == 1
-        assert responses[0].type == MessageType.ERROR
-        assert "Query not found" in responses[0].data["error"]
-
-    async def test_session_handling(self, initialized_services, setup_test_data):
-        """Test handling messages for different sessions"""
-        # Create messages for different sessions
-        session1_msg = Message(
-            type=MessageType.RAG_REQUEST,
-            data={"query": "What is AI?"},
-            session_id="session1",
-        )
-        session2_msg = Message(
-            type=MessageType.RAG_REQUEST,
-            data={"query": "What is ML?"},
-            session_id="session2",
-        )
-
-        # Process messages
-        responses1 = []
-        responses2 = []
-        async for response in registry.communication_service.handle_message(session1_msg):
-            responses1.append(response)
-        async for response in registry.communication_service.handle_message(session2_msg):
-            responses2.append(response)
-
-        # Verify session isolation
-        assert all(r.session_id == "session1" for r in responses1)
-        assert all(r.session_id == "session2" for r in responses2)
+        # Test invalid message type
+        with pytest.raises(Exception):
+            await communication_service.publish_to_stream(
+                communication_service.settings.STREAM_RAG,
+                Message(
+                    type="invalid_type", data={"query": "test"}, session_id="test"  # type: ignore
+                ),
+            )

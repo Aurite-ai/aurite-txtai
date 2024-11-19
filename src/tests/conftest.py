@@ -7,9 +7,8 @@ from .fixtures.test_docs import get_test_documents
 import os
 from dotenv import load_dotenv
 
-# Load environment variables at the top of conftest.py
+# Load environment variables
 load_dotenv()
-
 logger = logging.getLogger(__name__)
 
 
@@ -36,6 +35,8 @@ def test_settings():
             "rag": "You are a helpful AI assistant.",
             "default": "You are a helpful AI assistant.",
         },
+        # Redis test settings
+        REDIS_DB=1,  # Use separate test database
     )
 
 
@@ -44,14 +45,22 @@ async def initialized_services(test_settings):
     """Initialize all services once for the test session"""
     logger.info("\n=== Initializing Services (Session) ===")
     try:
+        # Initialize in correct order
         registry.config_service.settings = test_settings
         await registry.config_service.initialize()
+
+        # Initialize core services first
         await registry.embeddings_service.initialize()
         await registry.llm_service.initialize()
         await registry.rag_service.initialize()
-        await registry.stream_service.initialize()
+
+        # Initialize communication services
         await registry.communication_service.initialize()
+        await registry.stream_service.initialize()
+
+        # Initialize composite services
         await registry.txtai_service.initialize()
+
         logger.info("All services initialized successfully")
         return registry
     except Exception as e:
@@ -59,15 +68,14 @@ async def initialized_services(test_settings):
         pytest.exit(f"Critical error: {e}", returncode=1)
 
 
-@pytest.fixture(scope="function")
-async def setup_test_data():
-    """Setup test data using initialized services"""
+@pytest.fixture(autouse=True)
+async def clean_redis(initialized_services):
+    """Clean Redis before and after each test"""
+    redis_client = registry.communication_service._redis_client
     try:
-        test_documents = get_test_documents()
-        await registry.embeddings_service.add(test_documents)
-        yield  # Use yield instead of return for proper cleanup
+        # Clean before test
+        await redis_client.flushdb()
+        yield
     finally:
-        # Cleanup
-        if registry.embeddings_service.initialized:
-            delete_query = "DELETE FROM txtai"
-            registry.embeddings_service.embeddings.delete(delete_query)
+        # Clean after test
+        await redis_client.flushdb()

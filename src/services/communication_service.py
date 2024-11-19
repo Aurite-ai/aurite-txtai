@@ -1,8 +1,8 @@
+import redis.asyncio as redis
+import json
 import logging
 from typing import AsyncGenerator
 from .base_service import BaseService
-from .stream_service import stream_service
-from .config_service import config_service
 from src.models.messages import Message, MessageType
 
 logger = logging.getLogger(__name__)
@@ -14,20 +14,59 @@ class CommunicationService(BaseService):
     def __init__(self):
         """Initialize communication service"""
         super().__init__()
-        self.stream_service = stream_service
-        self.config_service = config_service
+        self._redis_client = None
+        self.consumer_group = None
+        self.consumer_name = None
+        self.streams = None
 
     async def initialize(self) -> None:
         """Initialize communication service"""
         if not self.initialized:
             try:
-                # Get settings from config service
+                # Ensure config service is initialized
+                if not self.config_service.initialized:
+                    await self.config_service.initialize()
+
+                # Get settings
                 self.settings = self.config_service.settings
+
+                # Set Redis configuration
+                self.consumer_group = self.settings.CONSUMER_GROUP_TXTAI
+                self.consumer_name = self.settings.CONSUMER_NAME_TXTAI
+                self.streams = self.settings.STREAMS
+
+                # Initialize Redis client with async client
+                self._redis_client = redis.Redis(
+                    host=self.settings.REDIS_HOST,
+                    port=self.settings.REDIS_PORT,
+                    db=self.settings.REDIS_DB,
+                    decode_responses=True,
+                    single_connection_client=True,
+                )
+
+                # Test connection
+                await self._redis_client.ping()
+
                 self._initialized = True
                 logger.info("Communication service initialized successfully")
             except Exception as e:
                 logger.error(f"Failed to initialize communication service: {e}")
                 raise
+
+    async def publish_to_stream(self, stream: str, message: Message) -> None:
+        """Publish message to Redis Stream"""
+        self._check_initialized()
+        try:
+            stream_data = {
+                "type": message.type.value,
+                "data": json.dumps(message.data),
+                "session_id": message.session_id,
+            }
+            await self._redis_client.xadd(stream, stream_data)
+            logger.info(f"Published to stream {stream}: {message}")
+        except Exception as e:
+            logger.error(f"Failed to publish message: {e}")
+            raise
 
     async def handle_message(self, message: Message) -> AsyncGenerator[Message, None]:
         """Handle incoming messages"""

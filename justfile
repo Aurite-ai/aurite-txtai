@@ -51,10 +51,8 @@ test-config:
 
 # Add to justfile
 test-redis:
-    pytest src/tests/test_services/test_communication.py -v -k "test_redis"
+    pytest src/tests/test_services/test_communication.py -v
 
-test-pub:
-    pytest src/tests/test_services/test_communication.py -v -k "test_basic_publish"
 
 # Start API server
 serve:

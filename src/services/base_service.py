@@ -12,7 +12,9 @@ class BaseService:
         """Initialize base service"""
         self._initialized = False
         self.settings: Optional[Settings] = None
-        self.config_service = None
+        from .config_service import config_service
+
+        self.config_service = config_service
 
     @property
     def initialized(self) -> bool:

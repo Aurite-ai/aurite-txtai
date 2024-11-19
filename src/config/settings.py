@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Literal
+from typing import Dict, Optional, Literal, List
 from pydantic_settings import BaseSettings
 
 
@@ -34,11 +34,26 @@ class Settings(BaseSettings):
     SYSTEM_PROMPTS: Dict[str, str]
 
     # Redis settings (optional)
-    redis_host: Optional[str] = None
-    redis_port: Optional[str] = None
-    redis_url: Optional[str] = None
-    redis_db: Optional[str] = None
-    pythonpath: Optional[str] = None
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_URL: str = "redis://localhost:6379"
+    REDIS_DB: int = 0
+
+    # Redis Stream Names
+    STREAM_RAG: str = "rag_stream"
+    STREAM_EMBEDDINGS: str = "embeddings_stream"
+    STREAM_LLM: str = "llm_stream"
+
+    # Redis Consumer Groups
+    CONSUMER_GROUP_TXTAI: str = "txtai-group"
+    CONSUMER_NAME_TXTAI: str = "txtai-consumer"
+
+    # Redis Stream Settings
+    STREAM_READ_COUNT: int = 1
+    STREAM_BLOCK_MS: int = 1000  # 1 second block
+
+    # List of all streams for easy access
+    STREAMS: List[str] = [STREAM_RAG, STREAM_EMBEDDINGS, STREAM_LLM]
 
     class Config:
         env_file = ".env"
