@@ -1,8 +1,8 @@
 import pytest
 import json
 import logging
+from src.services import registry
 from src.services.query_service import QueryService
-from src.services.embeddings_service import embeddings_service
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class TestQueryService:
 
     async def test_query_types(self, setup_test_data):
         """Test different query types"""
-        query_service = QueryService(embeddings_service.embeddings)
+        query_service = QueryService(registry.embeddings_service.embeddings)
 
         # Test semantic search
         semantic_results = await query_service.semantic_search("machine learning", limit=1)
@@ -37,3 +37,9 @@ class TestQueryService:
         assert len(hybrid_results) > 0
         assert "score" in hybrid_results[0]
         assert "text" in hybrid_results[0]
+
+
+@pytest.fixture
+def query_service(test_settings):
+    """Create QueryService instance for testing"""
+    return QueryService(registry.embeddings_service.embeddings, test_settings)

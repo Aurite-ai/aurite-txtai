@@ -129,6 +129,41 @@ class EmbeddingsService(BaseService):
             logger.error(f"Search failed: {str(e)}")
             raise
 
+    async def search(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
+        """Search for documents using hybrid search by default"""
+        self._check_initialized()
+        try:
+            logger.info(f"Searching for: {query} (limit: {limit})")
+
+            # Format search query
+            search_query = f"""
+            SELECT id, text, score, tags as metadata
+            FROM txtai
+            WHERE similar('{query}')
+            LIMIT {limit}
+            """
+
+            # Execute search
+            results = self.embeddings.search(search_query)
+
+            # Format results
+            formatted_results = []
+            for result in results:
+                formatted_result = {
+                    "id": result["id"],
+                    "text": result["text"],
+                    "score": result["score"],
+                    "metadata": json.loads(result["metadata"]) if result.get("metadata") else {},
+                }
+                formatted_results.append(formatted_result)
+
+            logger.info(f"Found {len(formatted_results)} results")
+            return formatted_results
+
+        except Exception as e:
+            logger.error(f"Search failed: {str(e)}")
+            raise
+
 
 # Global service instance
 embeddings_service = EmbeddingsService()

@@ -16,7 +16,7 @@ def create_llm_config(settings: Settings) -> dict:
 
 def create_embeddings_config(settings: Settings) -> Dict[str, Any]:
     """Create embeddings configuration"""
-    return {
+    config = {
         "path": settings.EMBEDDINGS_MODEL,
         "content": True,
         "backend": "faiss",
@@ -34,6 +34,21 @@ def create_embeddings_config(settings: Settings) -> Dict[str, Any]:
         "storetokens": True,
         "storeannoy": True,
     }
+
+    # Add cloud configuration if using cloud storage
+    if settings.EMBEDDINGS_STORAGE_TYPE == "cloud":
+        config["cloud"] = {
+            "provider": "gcs",
+            "container": settings.GOOGLE_CLOUD_BUCKET,
+            "prefix": settings.EMBEDDINGS_PREFIX,
+        }
+        config["contentpath"] = f"gcs://{settings.GOOGLE_CLOUD_BUCKET}"
+
+    # Use memory storage if specified
+    elif settings.EMBEDDINGS_STORAGE_TYPE == "memory":
+        config["contentpath"] = ":memory:"
+
+    return config
 
 
 def create_storage_config(settings: Settings) -> dict:

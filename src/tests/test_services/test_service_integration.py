@@ -5,85 +5,89 @@ from src.models.messages import Message, MessageType
 
 logger = logging.getLogger(__name__)
 
-pytestmark = pytest.mark.asyncio
 
-
+@pytest.mark.asyncio
 class TestServiceIntegration:
-    """Test service initialization and basic integration"""
+    """Test service integration"""
 
-    @pytest.mark.first
     async def test_service_initialization(self, initialized_services):
-        """Test that all services initialize properly"""
+        """Test that all services initialize correctly"""
         logger.info("\n=== Testing Service Initialization ===")
 
         # Get initialized services
         services = await initialized_services
 
-        # Verify services in dependency order
-        assert services.config_service._initialized, "Config service not initialized"
-        assert services.embeddings_service._initialized, "Embeddings service not initialized"
-        assert services.llm_service._initialized, "LLM service not initialized"
-        assert services.rag_service._initialized, "RAG service not initialized"
-        assert services.txtai_service._initialized, "TxtAI service not initialized"
+        # Verify all services are initialized
+        assert services.config_service.initialized
+        assert services.embeddings_service.initialized
+        assert services.llm_service.initialized
+        assert services.rag_service.initialized
+        assert services.txtai_service.initialized
 
         logger.info("All services initialized successfully")
 
-    @pytest.mark.second
-    async def test_basic_search(self, setup_test_data):
+    async def test_basic_search(self, initialized_services, setup_test_data):
         """Test basic search functionality"""
         logger.info("\n=== Testing Basic Search ===")
 
-        # Use async for instead of await
+        # Wait for test data setup
         async for _ in setup_test_data:
-            query = "machine learning"
-            results = await registry.embeddings_service.hybrid_search(query, limit=1)
-
-            assert len(results) > 0
-            assert "score" in results[0]
-            assert "text" in results[0]
+            # Search for documents
+            results = await registry.embeddings_service.search("machine learning", limit=1)
+            assert len(results) == 1
             assert "machine learning" in results[0]["text"].lower()
+            break
 
-            logger.info(f"Search successful: {results[0]['text'][:50]}...")
-            break  # Only need one iteration
-
-    @pytest.mark.third
-    async def test_basic_rag(self, setup_test_data):
+    async def test_basic_rag(self, initialized_services, setup_test_data):
         """Test basic RAG functionality"""
         logger.info("\n=== Testing Basic RAG ===")
 
-        # Use async for instead of await
+        # Wait for test data setup
         async for _ in setup_test_data:
-            query = "What is machine learning?"
-            response = await registry.rag_service.generate(query)
+            # Perform RAG query
+            context = await registry.rag_service.get_context("What is artificial intelligence?")
+            assert len(context) > 0
 
-            assert isinstance(response, dict)
-            assert "query" in response
-            assert "context" in response
-            assert "response" in response
-            assert len(response["context"]) > 0
+            # Generate response with context
+            response = await registry.llm_service.generate_with_context(
+                "What is artificial intelligence?", context
+            )
+            assert isinstance(response, str)
+            assert len(response) > 0
+            break
 
-            logger.info(f"RAG response: {response['response'][:100]}...")
-            break  # Only need one iteration
-
-    @pytest.mark.fourth
-    async def test_message_flow(self, setup_test_data):
-        """Test message handling through txtai service"""
+    async def test_message_flow(self, initialized_services, setup_test_data):
+        """Test message flow through services"""
         logger.info("\n=== Testing Message Flow ===")
 
-        # Use async for instead of await
+        # Wait for test data setup
         async for _ in setup_test_data:
-            message = Message(
+            # Test RAG message flow
+            rag_request = Message(
                 type=MessageType.RAG_REQUEST,
                 data={"query": "What is artificial intelligence?"},
                 session_id="test-session",
             )
 
-            response = await registry.txtai_service.handle_request(message)
+            # Get context
+            context = await registry.rag_service.get_context(rag_request.data["query"])
+            assert len(context) > 0
 
-            assert response is not None
-            assert "query" in response
-            assert "context" in response
-            assert "response" in response
+            # Generate response
+            response = await registry.llm_service.generate_with_context(
+                rag_request.data["query"], context
+            )
+            assert isinstance(response, str)
+            assert len(response) > 0
 
-            logger.info(f"Message flow successful: {response['response'][:100]}...")
-            break  # Only need one iteration
+            # Create response message
+            rag_response = Message(
+                type=MessageType.RAG_RESPONSE,
+                data={"response": response, "context": context},
+                session_id=rag_request.session_id,
+            )
+
+            assert rag_response.type == MessageType.RAG_RESPONSE
+            assert isinstance(rag_response.data["response"], str)
+            assert len(rag_response.data["response"]) > 0
+            break

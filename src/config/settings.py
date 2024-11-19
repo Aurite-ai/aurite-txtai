@@ -1,46 +1,52 @@
 from typing import Optional, Literal, Dict, ClassVar
 from pydantic_settings import BaseSettings
 from pydantic import ConfigDict, Field
+from enum import Enum
 
 StorageType = Literal["memory", "sqlite", "cloud"]
 QueryType = Literal["sql", "semantic", "hybrid"]
-LLMProvider = Literal["anthropic", "openai"]
+
+
+class LLMProvider(str, Enum):
+    """LLM provider options"""
+
+    ANTHROPIC = "anthropic"
+    OPENAI = "openai"
 
 
 class Settings(BaseSettings):
-    """Application runtime settings"""
+    """Application settings"""
 
-    # API Settings
-    API_KEY: str
+    # API settings
+    API_KEY: str = "test-key"
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
 
-    # Cloud Settings
+    # Google Cloud settings
     GOOGLE_CLOUD_PROJECT: str = "aurite-dev"
     GOOGLE_CLOUD_BUCKET: str = "aurite-txtai-dev"
     GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
 
-    # Embeddings Settings
+    # Embeddings settings
     EMBEDDINGS_MODEL: str = "sentence-transformers/nli-mpnet-base-v2"
-    EMBEDDINGS_STORAGE_TYPE: StorageType = "memory"
-    EMBEDDINGS_CONTENT_PATH: str = "txtai/content.db"
+    EMBEDDINGS_STORAGE_TYPE: str = "memory"  # memory, sqlite, cloud
+    EMBEDDINGS_CONTENT_PATH: str = ":memory:"
     EMBEDDINGS_PREFIX: str = "txtai"
     EMBEDDINGS_BATCH_SIZE: int = 32
 
-    # LLM Settings
-    LLM_PROVIDER: LLMProvider = "anthropic"
-    LLM_MODELS: dict = {
+    # LLM settings
+    LLM_PROVIDER: LLMProvider = LLMProvider.ANTHROPIC
+    LLM_MODELS: Dict[str, str] = {
         "anthropic": "anthropic/claude-3-sonnet-20240229",
-        "openai": "openai/gpt-4-turbo-preview",
+        "openai": "gpt-4-turbo-preview",
     }
-    ANTHROPIC_API_KEY: str = ""
-    OPENAI_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = Field(..., env="ANTHROPIC_API_KEY")
+    OPENAI_API_KEY: str = Field(..., env="OPENAI_API_KEY")
 
-    # System Prompts
-    SYSTEM_PROMPTS: dict = {
-        "default": """You are a helpful AI assistant. Answer questions clearly and concisely.""",
-        "rag": """You are a helpful AI assistant. You must ONLY answer questions using the provided context.
-If the answer cannot be found in the context, you must clearly state that the information is not available in the given context.""",
+    # System prompts
+    SYSTEM_PROMPTS: Dict[str, str] = {
+        "rag": "You are a helpful AI assistant.",
+        "default": "You are a helpful AI assistant.",
     }
 
     # Redis settings

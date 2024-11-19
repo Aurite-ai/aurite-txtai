@@ -67,12 +67,12 @@ def test_environment_override(monkeypatch, base_settings):
     """Test environment variable override"""
     monkeypatch.setenv("EMBEDDINGS_MODEL", "test-model")
     monkeypatch.setenv("API_KEY", "test-key")
-    monkeypatch.setenv("LLM_PROVIDER", "test-provider")
+    monkeypatch.setenv("LLM_PROVIDER", "anthropic")
 
     settings = Settings()
     assert settings.EMBEDDINGS_MODEL == "test-model"
     assert settings.API_KEY == "test-key"
-    assert settings.LLM_PROVIDER == "test-provider"
+    assert settings.LLM_PROVIDER == "anthropic"
 
 
 def test_llm_settings(base_settings):

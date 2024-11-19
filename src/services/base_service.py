@@ -1,27 +1,29 @@
 import logging
-from abc import ABC, abstractmethod
 from typing import Optional
+from src.config.settings import Settings
 
 logger = logging.getLogger(__name__)
 
 
-class BaseService(ABC):
-    """Base class for all services"""
+class BaseService:
+    """Base service class"""
 
     def __init__(self):
+        """Initialize base service"""
         self._initialized = False
+        self.settings: Optional[Settings] = None
+        self.config_service = None
 
     @property
     def initialized(self) -> bool:
         """Check if service is initialized"""
         return self._initialized
 
-    @abstractmethod
-    async def initialize(self):
-        """Initialize the service"""
-        pass
-
     def _check_initialized(self):
         """Check if service is initialized and raise error if not"""
         if not self._initialized:
             raise ValueError(f"{self.__class__.__name__} not initialized")
+
+    async def initialize(self) -> None:
+        """Initialize service - to be implemented by child classes"""
+        raise NotImplementedError("Service must implement initialize method")

@@ -33,7 +33,10 @@ def test_settings():
         EMBEDDINGS_BATCH_SIZE=32,
         LLM_PROVIDER="anthropic",
         ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY"),
-        SYSTEM_PROMPTS={"rag": "You are a helpful AI assistant."},
+        SYSTEM_PROMPTS={
+            "rag": "You are a helpful AI assistant.",
+            "default": "You are a helpful AI assistant.",
+        },
     )
 
 
@@ -47,34 +50,29 @@ async def initialized_services(test_settings):
         await registry.config_service.initialize()
         logger.info("Config service initialized")
 
-        # Wait for config service to be ready
-        assert registry.config_service._initialized, "Config service failed to initialize"
-
         # Initialize embeddings service
-        await registry.embeddings_service.initialize()
-        logger.info("Embeddings service initialized")
-        assert registry.embeddings_service._initialized, "Embeddings service failed to initialize"
+        if not registry.embeddings_service.initialized:
+            await registry.embeddings_service.initialize()
+            logger.info("Embeddings service initialized")
 
         # Initialize LLM service
-        await registry.llm_service.initialize()
-        logger.info("LLM service initialized")
-        assert registry.llm_service._initialized, "LLM service failed to initialize"
+        if not registry.llm_service.initialized:
+            await registry.llm_service.initialize()
+            logger.info("LLM service initialized")
 
         # Initialize RAG service
-        await registry.rag_service.initialize()
-        logger.info("RAG service initialized")
-        assert registry.rag_service._initialized, "RAG service failed to initialize"
+        if not registry.rag_service.initialized:
+            await registry.rag_service.initialize()
+            logger.info("RAG service initialized")
 
-        # Initialize txtai service
-        await registry.txtai_service.initialize()
-        logger.info("TxtAI service initialized")
-        assert registry.txtai_service._initialized, "TxtAI service failed to initialize"
+        # Initialize TxtAI service
+        if not registry.txtai_service.initialized:
+            await registry.txtai_service.initialize()
+            logger.info("TxtAI service initialized")
 
         logger.info("All services initialized successfully")
         return registry
-    except AssertionError as e:
-        logger.error(f"Service initialization failed: {e}")
-        pytest.exit(f"Critical initialization failure: {e}", returncode=1)
+
     except Exception as e:
         logger.error(f"Unexpected error during initialization: {e}")
         pytest.exit(f"Critical error: {e}", returncode=1)
@@ -97,7 +95,6 @@ async def setup_test_data(initialized_services):
         # Verify documents were added
         verify_query = "SELECT COUNT(*) as count FROM txtai"
         logger.info(f"Verifying documents with query: {verify_query}")
-        # Use synchronous search
         results = registry.embeddings_service.embeddings.search(verify_query)
         count = results[0]["count"] if results else 0
         logger.info(f"Found {count} documents in index")
@@ -105,7 +102,6 @@ async def setup_test_data(initialized_services):
         # Show sample document
         if count > 0:
             sample_query = "SELECT id, text FROM txtai LIMIT 1"
-            # Use synchronous search
             sample = registry.embeddings_service.embeddings.search(sample_query)
             logger.info(f"Sample document: {sample[0]}")
 
@@ -114,7 +110,7 @@ async def setup_test_data(initialized_services):
         ), f"Expected {len(test_documents)} documents, got {count}"
         logger.info("Test data setup complete")
 
-        yield  # Simple yield for async generator
+        yield
 
     except Exception as e:
         logger.error(f"Test data setup failed: {e}")

@@ -1,79 +1,57 @@
 import logging
-from typing import Dict, Any, List, Optional
-from .config_service import config_service
-from .embeddings_service import embeddings_service
-from ..models.messages import MessageType
+from typing import List, Dict, Any
 from .base_service import BaseService
-from .llm_service import llm_service
+from .embeddings_service import embeddings_service
+from .config_service import config_service
 
 logger = logging.getLogger(__name__)
 
 
 class RAGService(BaseService):
-    """Service to handle RAG operations"""
+    """Service for RAG operations"""
 
-    async def initialize(self):
+    def __init__(self):
+        """Initialize RAG service"""
+        super().__init__()
+        self.embeddings_service = embeddings_service
+        self.config_service = config_service
+
+    async def initialize(self) -> None:
         """Initialize RAG service"""
         if not self.initialized:
             try:
-                # Ensure embeddings service is initialized
-                await embeddings_service.initialize()
-                # Ensure LLM service is initialized
-                await llm_service.initialize()
+                # Get settings from config service
+                self.settings = self.config_service.settings
 
+                # Mark as initialized
                 self._initialized = True
                 logger.info("RAG service initialized successfully")
+
             except Exception as e:
                 logger.error(f"Failed to initialize RAG service: {e}")
                 raise
 
-    async def generate(self, query: str, limit: int = 3) -> Dict[str, Any]:
-        """Generate RAG response"""
+    async def get_context(self, query: str, limit: int = 3) -> str:
+        """Get relevant context for a query"""
         self._check_initialized()
-        if not query.strip():
-            raise ValueError("Query cannot be empty")
-
         try:
-            # Get relevant context
-            context = await self.search_context(query, limit)
-            context_text = "\n".join(doc["text"] for doc in context) if context else ""
+            logger.info(f"Getting context for query: {query}")
 
-            # Generate response
-            response = (
-                llm_service.generate_with_context(query, context_text)
-                if context
-                else "No relevant context found."
-            )
-
-            return {"query": query, "context": context, "response": response}
-        except Exception as e:
-            logger.error(f"RAG generation failed: {str(e)}")
-            raise
-
-    async def search_context(
-        self, query: str, limit: int = 3, min_score: float = 0.3
-    ) -> List[Dict]:
-        """Search for relevant context using embeddings"""
-        self._check_initialized()
-
-        try:
-            logger.info(f"\n=== Context Search ===")
-            logger.info(f"Query: {query}")
-            logger.info(f"Limit: {limit}")
-            logger.info(f"Min score: {min_score}")
-
-            # Use embeddings service for search
-            results = await embeddings_service.hybrid_search(query, limit)
+            # Search for relevant documents
+            results = await self.embeddings_service.search(query, limit=limit)
             logger.info(f"Raw search results: {results}")
 
-            # Filter by minimum score
-            results = [r for r in results if r.get("score", 0) >= min_score]
-            logger.info(f"Filtered results: {results}")
-            logger.info(f"Found {len(results)} relevant documents")
+            # Filter and format results
+            filtered_results = [r for r in results if r["score"] > 0.3]
+            logger.info(f"Filtered results: {filtered_results}")
+            logger.info(f"Found {len(filtered_results)} relevant documents")
 
-            return results
+            # Combine context
+            context = " ".join([r["text"] for r in filtered_results])
+            return context
+
         except Exception as e:
-            logger.error(f"Context search failed: {str(e)}", exc_info=True)
+            logger.error(f"Failed to get context: {str(e)}")
             raise
 
 
