@@ -35,7 +35,7 @@ class TestCommunicationService:
         assert responses[0].type == MessageType.RAG_CONTEXT
         assert responses[1].type == MessageType.RAG_RESPONSE
 
-    async def test_handle_unsupported_message(self):
+    async def test_handle_unsupported_message(self, initialized_services):
         """Test handling unsupported message types"""
         message = Message(
             type=MessageType.LLM_REQUEST,  # Unsupported type
@@ -51,7 +51,7 @@ class TestCommunicationService:
         assert responses[0].type == MessageType.ERROR
         assert "Unsupported message type" in responses[0].data["error"]
 
-    async def test_error_handling(self):
+    async def test_error_handling(self, initialized_services):
         """Test error handling in message processing"""
         message = Message(
             type=MessageType.RAG_REQUEST,
@@ -67,10 +67,8 @@ class TestCommunicationService:
         assert responses[0].type == MessageType.ERROR
         assert "Query not found" in responses[0].data["error"]
 
-    async def test_session_handling(self, setup_test_data):
+    async def test_session_handling(self, initialized_services, setup_test_data):
         """Test handling messages for different sessions"""
-        await setup_test_data
-
         # Create messages for different sessions
         session1_msg = Message(
             type=MessageType.RAG_REQUEST,

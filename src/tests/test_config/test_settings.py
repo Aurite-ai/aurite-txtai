@@ -38,29 +38,83 @@ def test_default_settings(base_settings):
     assert settings.LLM_PROVIDER == "anthropic"
 
 
-def test_storage_type_validation(base_settings):
-    """Test storage type validation"""
-    invalid_settings = base_settings.copy()
-    invalid_settings["EMBEDDINGS_STORAGE_TYPE"] = "invalid"
+def test_storage_type_validation():
+    """Test validation of storage type"""
+    with pytest.raises(ValueError, match="1 validation error"):
+        Settings(
+            EMBEDDINGS_STORAGE_TYPE="invalid",  # Invalid storage type
+            EMBEDDINGS_CONTENT_PATH=":memory:",
+            API_KEY="test-key",
+            EMBEDDINGS_MODEL="test-model",
+            EMBEDDINGS_BATCH_SIZE=32,
+            LLM_PROVIDER="anthropic",
+            ANTHROPIC_API_KEY="test-key",
+            SYSTEM_PROMPTS={
+                "rag": "You are a helpful AI assistant.",
+                "default": "You are a helpful AI assistant.",
+            },
+        )
 
-    with pytest.raises(ValueError):
-        Settings(**invalid_settings)
 
-
-def test_cloud_settings(base_settings):
-    """Test cloud settings validation"""
-    cloud_settings = base_settings.copy()
-    cloud_settings.update(
-        {
-            "EMBEDDINGS_STORAGE_TYPE": "cloud",
-            "GOOGLE_CLOUD_BUCKET": "aurite-txtai-dev",
-            "GOOGLE_CLOUD_PROJECT": "aurite-dev",
-        }
+def test_valid_settings():
+    """Test valid settings configuration"""
+    settings = Settings(
+        EMBEDDINGS_STORAGE_TYPE="memory",
+        EMBEDDINGS_CONTENT_PATH=":memory:",
+        API_KEY="test-key",
+        EMBEDDINGS_MODEL="test-model",
+        EMBEDDINGS_BATCH_SIZE=32,
+        LLM_PROVIDER="anthropic",
+        ANTHROPIC_API_KEY="test-key",
+        SYSTEM_PROMPTS={
+            "rag": "You are a helpful AI assistant.",
+            "default": "You are a helpful AI assistant.",
+        },
     )
+    assert settings.EMBEDDINGS_STORAGE_TYPE == "memory"
+    assert settings.EMBEDDINGS_CONTENT_PATH == ":memory:"
 
-    settings = Settings(**cloud_settings)
-    assert settings.GOOGLE_CLOUD_BUCKET == "aurite-txtai-dev"
-    assert settings.GOOGLE_CLOUD_PROJECT == "aurite-dev"
+
+def test_cloud_settings():
+    """Test cloud settings validation"""
+    cloud_settings = Settings(
+        EMBEDDINGS_STORAGE_TYPE="cloud",
+        EMBEDDINGS_CONTENT_PATH="gcs://bucket/path",
+        API_KEY="test-key",
+        EMBEDDINGS_MODEL="test-model",
+        EMBEDDINGS_BATCH_SIZE=32,
+        LLM_PROVIDER="anthropic",
+        ANTHROPIC_API_KEY="test-key",
+        GOOGLE_CLOUD_BUCKET="aurite-txtai-dev",
+        GOOGLE_CLOUD_PROJECT="aurite-dev",
+        SYSTEM_PROMPTS={
+            "rag": "You are a helpful AI assistant.",
+            "default": "You are a helpful AI assistant.",
+        },
+    )
+    assert cloud_settings.GOOGLE_CLOUD_BUCKET == "aurite-txtai-dev"
+    assert cloud_settings.GOOGLE_CLOUD_PROJECT == "aurite-dev"
+
+
+def test_llm_settings():
+    """Test LLM-specific settings"""
+    settings = Settings(
+        EMBEDDINGS_STORAGE_TYPE="memory",
+        EMBEDDINGS_CONTENT_PATH=":memory:",
+        API_KEY="test-key",
+        EMBEDDINGS_MODEL="test-model",
+        EMBEDDINGS_BATCH_SIZE=32,
+        LLM_PROVIDER="anthropic",
+        ANTHROPIC_API_KEY="test-key",
+        SYSTEM_PROMPTS={
+            "rag": "You are a helpful AI assistant.",
+            "default": "You are a helpful AI assistant.",
+        },
+    )
+    assert settings.LLM_PROVIDER == "anthropic"
+    assert settings.ANTHROPIC_API_KEY == "test-key"
+    assert "rag" in settings.SYSTEM_PROMPTS
+    assert "default" in settings.SYSTEM_PROMPTS
 
 
 def test_environment_override(monkeypatch, base_settings):
@@ -73,13 +127,3 @@ def test_environment_override(monkeypatch, base_settings):
     assert settings.EMBEDDINGS_MODEL == "test-model"
     assert settings.API_KEY == "test-key"
     assert settings.LLM_PROVIDER == "anthropic"
-
-
-def test_llm_settings(base_settings):
-    """Test LLM-specific settings"""
-    settings = Settings(**base_settings)
-
-    assert settings.LLM_PROVIDER == "anthropic"
-    assert settings.ANTHROPIC_API_KEY == os.getenv("ANTHROPIC_API_KEY")
-    assert "rag" in settings.SYSTEM_PROMPTS
-    assert "default" in settings.SYSTEM_PROMPTS
