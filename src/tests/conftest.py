@@ -4,6 +4,11 @@ import asyncio
 from src.services import registry
 from src.config.settings import Settings
 from .fixtures.test_docs import get_test_documents
+import os
+from dotenv import load_dotenv
+
+# Load environment variables at the top of conftest.py
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +32,7 @@ def test_settings():
         EMBEDDINGS_MODEL="sentence-transformers/nli-mpnet-base-v2",
         EMBEDDINGS_BATCH_SIZE=32,
         LLM_PROVIDER="anthropic",
-        ANTHROPIC_API_KEY="test-anthropic-key",
+        ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY"),
         SYSTEM_PROMPTS={"rag": "You are a helpful AI assistant."},
     )
 
@@ -92,14 +97,16 @@ async def setup_test_data(initialized_services):
         # Verify documents were added
         verify_query = "SELECT COUNT(*) as count FROM txtai"
         logger.info(f"Verifying documents with query: {verify_query}")
-        results = await registry.embeddings_service.embeddings.search(verify_query)
+        # Use synchronous search
+        results = registry.embeddings_service.embeddings.search(verify_query)
         count = results[0]["count"] if results else 0
         logger.info(f"Found {count} documents in index")
 
         # Show sample document
         if count > 0:
             sample_query = "SELECT id, text FROM txtai LIMIT 1"
-            sample = await registry.embeddings_service.embeddings.search(sample_query)
+            # Use synchronous search
+            sample = registry.embeddings_service.embeddings.search(sample_query)
             logger.info(f"Sample document: {sample[0]}")
 
         assert count == len(
