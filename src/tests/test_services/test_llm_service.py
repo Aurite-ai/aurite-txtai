@@ -11,12 +11,9 @@ class TestLLMService:
 
     async def test_basic_generation(self, initialized_services):
         """Test basic text generation"""
-        # Initialize services once at the start
-        await initialized_services
-
+        # No need to await initialized_services
         prompt = "What is 2+2?"
         response = await registry.llm_service.generate(prompt)
-
         assert isinstance(response, str)
         assert len(response) > 0
         assert "4" in response.lower()

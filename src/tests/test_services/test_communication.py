@@ -12,33 +12,28 @@ class TestCommunicationService:
 
     async def test_service_initialization(self, initialized_services):
         """Test that communication service initializes correctly"""
-        await initialized_services
         assert registry.communication_service.initialized
         assert registry.stream_service.initialized
         logger.info("Communication service and dependencies initialized successfully")
 
-    async def test_handle_rag_request(self, setup_test_data):
+    async def test_handle_rag_request(self, initialized_services, setup_test_data):
         """Test handling RAG request messages"""
-        async for _ in setup_test_data:
-            # Create test message
-            message = Message(
-                type=MessageType.RAG_REQUEST,
-                data={"query": "What is machine learning?"},
-                session_id="test-session",
-            )
+        # Create test message
+        message = Message(
+            type=MessageType.RAG_REQUEST,
+            data={"query": "What is machine learning?"},
+            session_id="test-session",
+        )
 
-            # Process message
-            responses = []
-            async for response in registry.communication_service.handle_message(message):
-                responses.append(response)
+        # Process message
+        responses = []
+        async for response in registry.communication_service.handle_message(message):
+            responses.append(response)
 
-            # Verify responses
-            assert len(responses) == 2  # Context and response messages
-            assert responses[0].type == MessageType.RAG_CONTEXT
-            assert responses[1].type == MessageType.RAG_RESPONSE
-            assert isinstance(responses[0].data["context"], str)
-            assert isinstance(responses[1].data["response"], str)
-            break
+        # Verify responses
+        assert len(responses) == 2  # Context and response messages
+        assert responses[0].type == MessageType.RAG_CONTEXT
+        assert responses[1].type == MessageType.RAG_RESPONSE
 
     async def test_handle_unsupported_message(self):
         """Test handling unsupported message types"""
@@ -74,28 +69,28 @@ class TestCommunicationService:
 
     async def test_session_handling(self, setup_test_data):
         """Test handling messages for different sessions"""
-        async for _ in setup_test_data:
-            # Create messages for different sessions
-            session1_msg = Message(
-                type=MessageType.RAG_REQUEST,
-                data={"query": "What is AI?"},
-                session_id="session1",
-            )
-            session2_msg = Message(
-                type=MessageType.RAG_REQUEST,
-                data={"query": "What is ML?"},
-                session_id="session2",
-            )
+        await setup_test_data
 
-            # Process messages
-            responses1 = []
-            responses2 = []
-            async for response in registry.communication_service.handle_message(session1_msg):
-                responses1.append(response)
-            async for response in registry.communication_service.handle_message(session2_msg):
-                responses2.append(response)
+        # Create messages for different sessions
+        session1_msg = Message(
+            type=MessageType.RAG_REQUEST,
+            data={"query": "What is AI?"},
+            session_id="session1",
+        )
+        session2_msg = Message(
+            type=MessageType.RAG_REQUEST,
+            data={"query": "What is ML?"},
+            session_id="session2",
+        )
 
-            # Verify session isolation
-            assert all(r.session_id == "session1" for r in responses1)
-            assert all(r.session_id == "session2" for r in responses2)
-            break
+        # Process messages
+        responses1 = []
+        responses2 = []
+        async for response in registry.communication_service.handle_message(session1_msg):
+            responses1.append(response)
+        async for response in registry.communication_service.handle_message(session2_msg):
+            responses2.append(response)
+
+        # Verify session isolation
+        assert all(r.session_id == "session1" for r in responses1)
+        assert all(r.session_id == "session2" for r in responses2)

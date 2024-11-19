@@ -164,6 +164,25 @@ class EmbeddingsService(BaseService):
             logger.error(f"Search failed: {str(e)}")
             raise
 
+    async def delete(self, ids: List[str]) -> None:
+        """Delete documents by ID"""
+        self._check_initialized()
+        try:
+            # Convert list to tuple for SQL IN clause
+            if isinstance(ids, str):
+                # If it's a SQL query, use it directly
+                delete_query = ids
+            else:
+                # If it's a list of IDs, create IN clause
+                id_tuple = tuple(ids)
+                delete_query = f"DELETE FROM txtai WHERE id IN {id_tuple}"
+
+            self.embeddings.delete(delete_query)
+            logger.info(f"Deleted documents with query: {delete_query}")
+        except Exception as e:
+            logger.error(f"Failed to delete documents: {e}")
+            raise
+
 
 # Global service instance
 embeddings_service = EmbeddingsService()
