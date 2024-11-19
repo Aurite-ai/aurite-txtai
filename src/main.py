@@ -2,9 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.routes import embeddings, llm, rag, test
 import logging
-from src.services import stream_service
+from src.services import registry, stream_service
 import asyncio
-from src.services.txtai_service import txtai_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +16,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configure CORS
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,25 +29,18 @@ app.add_middleware(
 app.include_router(embeddings.router)
 app.include_router(llm.router)
 app.include_router(rag.router)
-app.include_router(test.router, prefix="/api")
+app.include_router(test.router)
 
 
-@app.get("/", tags=["health"])
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}
-
-
-# Add to startup event
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
     try:
-        # Initialize txtai service first (which initializes embeddings and RAG)
-        await txtai_service.initialize()
-        logger.info("TxtAI services initialized")
+        # Initialize all services through registry
+        await registry.initialize()
+        logger.info("Services initialized")
 
-        # Start stream service in background task
+        # Start stream service
         asyncio.create_task(stream_service.start_listening())
         logger.info("Stream service started")
     except Exception as e:

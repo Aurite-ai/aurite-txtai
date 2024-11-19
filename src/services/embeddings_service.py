@@ -1,114 +1,97 @@
-from pathlib import Path
-import json
-import logging
 from typing import List, Dict, Any, Optional
 from uuid import uuid4
-
+import json
+import logging
 from txtai.embeddings import Embeddings
-
-from .config_service import config_service, Settings
+from .config_service import config_service
+from .base_service import BaseService
 from ..config.txtai_config import create_embeddings_config
 
 logger = logging.getLogger(__name__)
 
 
-class EmbeddingsService:
+class EmbeddingsService(BaseService):
     """Service to manage txtai embeddings lifecycle"""
 
-    def __init__(self, settings: Optional[Settings] = None):
-        """Initialize service with optional settings override"""
-        self.settings = settings or config_service.settings
+    def __init__(self):
+        super().__init__()
+        self.settings = None
         self.embeddings: Optional[Embeddings] = None
 
     async def initialize(self):
         """Initialize embeddings with config"""
-        try:
-            # Use config_service if no settings override
-            config = (
-                create_embeddings_config(self.settings)
-                if hasattr(self, "settings")
-                else config_service.embeddings_config
-            )
+        if not self.initialized:
+            try:
+                self.settings = config_service.settings
+                config = create_embeddings_config(self.settings)
 
-            logger.info("Initializing embeddings...")
-            logger.info(f"Using config: {json.dumps(config, indent=2)}")
+                logger.info("\n=== Initializing Embeddings ===")
+                logger.info(f"Using config: {json.dumps(config, indent=2)}")
 
-            self.embeddings = Embeddings(config)
-
-            # Initialize with a dummy document to ensure index is created
-            dummy_doc = ("init", "initialization document", "{}")
-            self.embeddings.index([dummy_doc])
-
-            # Clear the index by deleting all documents
-            self.embeddings.delete(ids=None)  # Delete all documents
-
-            logger.info("Embeddings initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize embeddings: {str(e)}")
-            raise
+                # Create new embeddings instance
+                self.embeddings = Embeddings(config)
+                self._initialized = True
+                logger.info("Embeddings initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize embeddings: {str(e)}")
+                raise
 
     async def add(self, documents: List[Dict[str, Any]]) -> int:
         """Add documents to embeddings index"""
-        if not self.embeddings:
-            await self.initialize()
-
+        self._check_initialized()
         try:
+            logger.info(f"\n=== Adding {len(documents)} Documents ===")
+
             # Format documents for txtai indexing
             formatted_docs = []
             for doc in documents:
                 doc_id = str(doc.get("id", str(uuid4())))
+                text = doc["text"]
                 metadata_str = json.dumps(doc.get("metadata", {}))
-                formatted_doc = (doc_id, doc["text"], metadata_str)
+                formatted_doc = (doc_id, text, metadata_str)
                 formatted_docs.append(formatted_doc)
+                logger.info(f"Formatted document: {formatted_doc}")
 
             # Index the documents
             self.embeddings.index(formatted_docs)
+            logger.info("Documents indexed")
 
             # Verify indexing
-            verify_query = "SELECT id, text, tags FROM txtai"
+            verify_query = "SELECT COUNT(*) as count FROM txtai"
             results = self.embeddings.search(verify_query)
-            logger.info(f"Indexed documents: {json.dumps(results, indent=2)}")
+            count = results[0]["count"] if results else 0
+            logger.info(f"Verified document count: {count}")
 
-            return len(formatted_docs)
+            # Show sample document
+            if count > 0:
+                sample = self.embeddings.search("SELECT id, text, tags FROM txtai LIMIT 1")
+                logger.info(f"Sample document: {sample[0]}")
+
+            return count
+
         except Exception as e:
             logger.error(f"Failed to add documents: {str(e)}")
             raise
 
     async def hybrid_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Perform hybrid search on indexed documents"""
-        if not self.embeddings:
-            await self.initialize()
-
+        """Perform hybrid search"""
+        self._check_initialized()
         try:
             logger.info("\n=== Search Process ===")
             logger.info(f"Query: {query}")
             logger.info(f"Limit: {limit}")
 
-            # Get semantic search results
+            # Verify index has documents
+            count_query = "SELECT COUNT(*) as count FROM txtai"
+            count_result = self.embeddings.search(count_query)
+            doc_count = count_result[0]["count"] if count_result else 0
+            logger.info(f"Documents in index: {doc_count}")
+
+            # Perform search
             results = self.embeddings.search(query, limit)
             logger.info(f"Raw search results: {json.dumps(results, indent=2)}")
 
-            # Format results with metadata
-            formatted_results = []
-            for result in results:
-                # Parse metadata from tags if present
-                metadata = {}
-                if result.get("tags"):
-                    try:
-                        metadata = json.loads(result["tags"])
-                    except json.JSONDecodeError as e:
-                        logger.warning(f"Failed to parse tags: {e}")
-
-                formatted_result = {
-                    "id": result["id"],
-                    "text": result["text"],
-                    "score": result["score"],
-                    "metadata": metadata,
-                }
-                formatted_results.append(formatted_result)
-
-            return formatted_results
-
+            return results
         except Exception as e:
             logger.error(f"Search failed: {str(e)}")
             raise
@@ -116,89 +99,3 @@ class EmbeddingsService:
 
 # Global service instance
 embeddings_service = EmbeddingsService()
-
-if __name__ == "__main__":
-    import logging
-    from pathlib import Path
-
-    # Setup logging
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-    logger = logging.getLogger(__name__)
-
-    # Test documents matching notebook pattern
-    test_docs = [
-        {
-            "id": "doc1",
-            "text": "Machine learning models require significant computational resources",
-            "metadata": {
-                "category": "tech",
-                "tags": ["ML", "computing"],
-                "priority": 1,
-            },
-        },
-        {
-            "id": "doc2",
-            "text": "Natural language processing advances with transformer models",
-            "metadata": {"category": "tech", "tags": ["NLP", "ML"], "priority": 2},
-        },
-    ]
-
-    def inspect_embeddings():
-        """Debug function to inspect embeddings state"""
-        try:
-            # Create and initialize service
-            service = EmbeddingsService()
-            service.initialize()  # Make sure to initialize
-
-            # Log config
-            logger.info("\n=== Configuration ===")
-            logger.info(
-                f"Embeddings config: {json.dumps(config_service.embeddings_config, indent=2)}"
-            )
-
-            # Log initial state
-            logger.info("\n=== Initial State ===")
-            logger.info(f"Embeddings initialized: {service.embeddings is not None}")
-            if service.embeddings:
-                logger.info(f"Embeddings config: {json.dumps(service.embeddings.config, indent=2)}")
-
-            # Add documents
-            logger.info("\n=== Adding Documents ===")
-            count = service.add(test_docs)
-            logger.info(f"Added {count} documents")
-
-            # Test different search types
-            logger.info("\n=== Testing Search Types ===")
-
-            # Direct SQL query
-            logger.info("\nDirect SQL Query:")
-            sql_results = service.embeddings.search(
-                '''
-                SELECT * FROM txtai
-            '''
-            )
-            logger.info(f"SQL results: {json.dumps(sql_results, indent=2)}")
-
-            # Metadata SQL query - Using exact JSON pattern match
-            logger.info("\nMetadata SQL Query:")
-            metadata_results = service.embeddings.search(
-                '''
-                SELECT id, text, tags
-                FROM txtai
-                WHERE tags LIKE '%"category": "tech"%'
-                ORDER BY id
-            '''
-            )
-            logger.info(f"Metadata results: {json.dumps(metadata_results, indent=2)}")
-
-            # Hybrid search
-            logger.info("\nHybrid Search:")
-            hybrid_results = service.hybrid_search("machine learning", limit=2)
-            logger.info(f"Hybrid results: {json.dumps(hybrid_results, indent=2)}")
-
-        except Exception as e:
-            logger.error(f"Inspection failed: {str(e)}", exc_info=True)
-
-    # Run inspection
-    logger.info("Starting embeddings service inspection...")
-    inspect_embeddings()

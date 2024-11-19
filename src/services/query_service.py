@@ -1,181 +1,98 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 import json
 import logging
 from ..config.settings import Settings, QueryType
 from txtai.embeddings import Embeddings
+from .base_service import BaseService
 
 logger = logging.getLogger(__name__)
 
 
-class QueryService:
+class QueryService(BaseService):
     """Service for handling different types of txtai searches"""
 
     def __init__(self, embeddings: Embeddings, settings: Settings):
-        """Initialize with embeddings instance and settings"""
+        super().__init__()
         self.embeddings = embeddings
         self.settings = settings
+        self._initialized = True  # Initialized on construction since dependencies are passed in
 
-    def semantic_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Perform semantic search using embeddings
+    async def initialize(self):
+        """Initialize query service"""
+        if not self.initialized:
+            if not self.embeddings or not self.settings:
+                raise ValueError("QueryService requires embeddings and settings")
+            self._initialized = True
+            logger.info("Query service initialized successfully")
 
-        Args:
-            query: Search query text
-            limit: Maximum number of results to return
-
-        Returns:
-            List of results with scores and metadata
-        """
+    async def semantic_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Perform semantic search using embeddings"""
+        self._check_initialized()
         try:
             logger.info("\n=== Semantic Search ===")
             logger.info(f"Query: {query}")
             logger.info(f"Limit: {limit}")
 
-            # Get semantic search results
             results = self.embeddings.search(query, limit)
             logger.info(f"Raw results: {json.dumps(results, indent=2)}")
 
-            # Get full documents with metadata
-            doc_ids = [f"'{result['id']}'" for result in results]
-            if not doc_ids:
-                return []
-
-            # Get complete documents with metadata
-            sql_query = f'''
-                SELECT id, text, tags
-                FROM txtai
-                WHERE id IN ({','.join(doc_ids)})
-            '''
-            full_docs = self.embeddings.search(sql_query)
-            logger.info(f"Full documents: {json.dumps(full_docs, indent=2)}")
-
-            # Format results
-            formatted_results = []
-            for result in results:
-                # Find matching full document
-                full_doc = next((doc for doc in full_docs if doc["id"] == result["id"]), None)
-
-                if full_doc:
-                    # Parse metadata from tags
-                    metadata = {}
-                    if full_doc.get("tags"):
-                        try:
-                            metadata = json.loads(full_doc["tags"])
-                        except json.JSONDecodeError as e:
-                            logger.warning(f"Failed to parse tags: {e}")
-
-                    formatted_result = {
-                        "id": result["id"],
-                        "text": result["text"],
-                        "score": result["score"],
-                        "metadata": metadata,
-                    }
-                    formatted_results.append(formatted_result)
-
-            return formatted_results
-
+            return await self._format_results(results)
         except Exception as e:
             logger.error(f"Semantic search failed: {str(e)}")
             raise
 
-    def sql_search(self, query: str) -> List[Dict[str, Any]]:
-        """Execute SQL query on embeddings index
-
-        Args:
-            query: SQL query string
-
-        Returns:
-            List of results with metadata
-        """
+    async def sql_search(self, query: str) -> List[Dict[str, Any]]:
+        """Execute SQL query on embeddings index"""
+        self._check_initialized()
         try:
             logger.info("\n=== SQL Search ===")
             logger.info(f"Query: {query}")
 
-            # Execute SQL query
             results = self.embeddings.search(query)
             logger.info(f"Raw results: {json.dumps(results, indent=2)}")
 
-            # Format results
-            formatted_results = []
-            for result in results:
-                # Parse metadata from tags if present
-                metadata = {}
-                if result.get("tags"):
-                    try:
-                        metadata = json.loads(result["tags"])
-                    except json.JSONDecodeError as e:
-                        logger.warning(f"Failed to parse tags: {e}")
-
-                formatted_result = {
-                    "id": result["id"],
-                    "text": result["text"],
-                    "metadata": metadata,
-                }
-
-                # Include score if present
-                if "score" in result:
-                    formatted_result["score"] = result["score"]
-
-                formatted_results.append(formatted_result)
-
-            return formatted_results
-
+            return await self._format_results(results)
         except Exception as e:
             logger.error(f"SQL search failed: {str(e)}")
             raise
 
-    def hybrid_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    async def hybrid_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
         """Perform hybrid search combining semantic and term-based scoring"""
+        self._check_initialized()
         try:
             logger.info("\n=== Hybrid Search ===")
             logger.info(f"Query: {query}")
             logger.info(f"Limit: {limit}")
 
-            # Use default search which is hybrid mode from config
             results = self.embeddings.search(query, limit)
             logger.info(f"Raw results: {json.dumps(results, indent=2)}")
 
-            # Get full documents with metadata
-            doc_ids = [f"'{result['id']}'" for result in results]
-            if not doc_ids:
-                return []
-
-            # Get complete documents with metadata
-            sql_query = f'''
-                SELECT id, text, tags
-                FROM txtai
-                WHERE id IN ({','.join(doc_ids)})
-            '''
-            full_docs = self.embeddings.search(sql_query)
-            logger.info(f"Full documents: {json.dumps(full_docs, indent=2)}")
-
-            # Format results
-            formatted_results = []
-            for result in results:
-                # Find matching full document
-                full_doc = next((doc for doc in full_docs if doc["id"] == result["id"]), None)
-
-                if full_doc:
-                    # Parse metadata from tags
-                    metadata = {}
-                    if full_doc.get("tags"):
-                        try:
-                            metadata = json.loads(full_doc["tags"])
-                        except json.JSONDecodeError as e:
-                            logger.warning(f"Failed to parse tags: {e}")
-
-                    formatted_result = {
-                        "id": result["id"],
-                        "text": result["text"],
-                        "score": result["score"],
-                        "metadata": metadata,
-                    }
-                    formatted_results.append(formatted_result)
-
-            return formatted_results
-
+            return await self._format_results(results)
         except Exception as e:
             logger.error(f"Hybrid search failed: {str(e)}")
             raise
+
+    async def _format_results(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Format search results with metadata"""
+        formatted_results = []
+        for result in results:
+            metadata = {}
+            if result.get("tags"):
+                try:
+                    metadata = json.loads(result["tags"])
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to parse tags: {e}")
+
+            formatted_result = {
+                "id": result["id"],
+                "text": result["text"],
+                "metadata": metadata,
+            }
+            if "score" in result:
+                formatted_result["score"] = result["score"]
+            formatted_results.append(formatted_result)
+
+        return formatted_results
 
 
 if __name__ == "__main__":

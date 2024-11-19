@@ -4,22 +4,37 @@ from typing import Dict, Any
 from .communication_service import communication_service
 from .txtai_service import txtai_service
 from ..models.messages import Message, MessageType
+from .base_service import BaseService
 
 logger = logging.getLogger(__name__)
 
 
-class StreamService:
+class StreamService(BaseService):
     """Service to handle stream operations"""
 
     def __init__(self):
+        super().__init__()
         self.streams = {
             "embeddings_stream": self._handle_embedding,
             "rag_stream": self._handle_rag,
             "llm_stream": self._handle_llm,
         }
 
+    async def initialize(self):
+        """Initialize stream service"""
+        if not self.initialized:
+            try:
+                # Verify communication service is ready
+                await communication_service.initialize()
+                self._initialized = True
+                logger.info("Stream service initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize stream service: {e}")
+                raise
+
     async def start_listening(self):
         """Start listening to all streams"""
+        self._check_initialized()
         while True:
             try:
                 for stream in self.streams:

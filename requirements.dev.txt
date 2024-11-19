@@ -9,3 +9,6 @@ jupyterlab
 notebook
 ipython
 ipywidgets
+pytest-depends
+pytest-ordering
+pytest-xdist

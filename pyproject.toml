@@ -23,6 +23,9 @@ dev = [
     "black>=24.10.0",
     "pytest>=8.3.3",
     "pytest-asyncio>=0.24.0",
+    "pytest-depends>=1.0.1",
+    "pytest-ordering>=0.6",
+    "pytest-xdist>=3.5.0",
     "ipykernel",
     "jupyter"
 ]
@@ -34,22 +37,3 @@ packages = ["src"]
 line-length = 100
 target-version = ['py311']
 skip-string-normalization = true
-
-[tool.pytest.ini_options]
-asyncio_mode = "strict"
-asyncio_default_fixture_loop_scope = "function"
-filterwarnings = [
-    "ignore::DeprecationWarning:numpy.*:",
-    "ignore::DeprecationWarning:pkg_resources.*:",
-    "ignore::DeprecationWarning:tika.*:",
-    "ignore::DeprecationWarning:txtai.*:",
-    "ignore::DeprecationWarning:litellm.*:",
-    "ignore::DeprecationWarning:faiss.*:",
-    "ignore::DeprecationWarning:accelerate.*:",
-    "ignore::DeprecationWarning:pydantic.*:",
-    "ignore::DeprecationWarning:starlette.*:"
-]
-pythonpath = [
-    ".",
-    "src"
-]

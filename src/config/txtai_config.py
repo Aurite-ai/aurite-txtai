@@ -1,4 +1,5 @@
 from .settings import Settings
+from typing import Dict, Any
 
 
 def create_llm_config(settings: Settings) -> dict:
@@ -13,9 +14,9 @@ def create_llm_config(settings: Settings) -> dict:
     }
 
 
-def create_embeddings_config(settings: Settings) -> dict:
+def create_embeddings_config(settings: Settings) -> Dict[str, Any]:
     """Create embeddings configuration"""
-    config = {
+    return {
         "path": settings.EMBEDDINGS_MODEL,
         "content": True,
         "backend": "faiss",
@@ -28,18 +29,11 @@ def create_embeddings_config(settings: Settings) -> dict:
             "weights": {"hybrid": 0.7, "terms": 0.3},
         },
         "batch": settings.EMBEDDINGS_BATCH_SIZE,
+        "contentpath": settings.EMBEDDINGS_CONTENT_PATH,
+        "database": True,
+        "storetokens": True,
+        "storeannoy": True,
     }
-
-    # Add storage config
-    if settings.EMBEDDINGS_STORAGE_TYPE == "memory":
-        config["contentpath"] = ":memory:"
-    elif settings.EMBEDDINGS_STORAGE_TYPE == "cloud":
-        config["cloud"] = {"provider": "gcs", "container": settings.GOOGLE_CLOUD_BUCKET}
-        config["contentpath"] = f"gcs://{settings.GOOGLE_CLOUD_BUCKET}"
-    else:
-        config["contentpath"] = settings.EMBEDDINGS_CONTENT_PATH
-
-    return config
 
 
 def create_storage_config(settings: Settings) -> dict:
