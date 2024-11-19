@@ -1,9 +1,10 @@
 import pytest
 from pathlib import Path
 import json
-from src.services.embeddings_service import EmbeddingsService
+from src.services.embeddings_service import EmbeddingsService, embeddings_service
 from src.services.query_service import QueryService
 from src.config.settings import Settings
+from src.services.txtai_service import txtai_service
 
 
 @pytest.fixture
@@ -53,3 +54,16 @@ def test_services(test_settings, test_documents):
     query_service = QueryService(embeddings_service.embeddings, test_settings)
 
     return embeddings_service, query_service
+
+
+@pytest.fixture(autouse=True)
+async def setup_services():
+    """Initialize all services before tests"""
+    try:
+        # Initialize embeddings service
+        await embeddings_service.initialize()
+        # Initialize txtai service (which initializes RAG)
+        await txtai_service.initialize()
+        yield
+    except Exception as e:
+        pytest.fail(f"Failed to initialize services: {e}")

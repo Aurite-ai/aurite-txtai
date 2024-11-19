@@ -1,9 +1,10 @@
 import redis
-import zmq
 import json
 import logging
-from typing import Any, Dict
+from typing import Dict, Any, Optional, List
 from .config_service import config_service
+from ..models.messages import Message, MessageType
+from .txtai_service import txtai_service
 
 logger = logging.getLogger(__name__)
 
@@ -14,85 +15,94 @@ class CommunicationService:
     def __init__(self):
         # Redis connection for Node.js communication
         self.redis_client = redis.Redis(
-            host=config_service.settings.REDIS_HOST, port=config_service.settings.REDIS_PORT, db=0
+            host=config_service.settings.REDIS_HOST,
+            port=config_service.settings.REDIS_PORT,
+            db=0,
+            decode_responses=True,
         )
+        self.consumer_group = "txtai-group"
+        self.consumer_name = "txtai-consumer"
 
-        # ZMQ for Python-Python communication
-        self.zmq_context = zmq.Context()
-        self.publishers = {}
-        self.subscribers = {}
-
-    def publish_to_node(self, stream: str, data: Dict[str, Any]):
+    async def publish_to_node(self, stream: str, data: Dict[str, Any]) -> bool:
         """Publish message to Node.js via Redis Stream"""
         try:
             # Convert dict to field-value pairs for Redis stream
-            # Redis expects {'field1': 'value1', 'field2': 'value2'} format
             stream_data = {
                 'type': str(data['type']),
-                'data': json.dumps(data['data']),  # Serialize nested dict to string
-                'session_id': data.get('session_id', ''),
+                'data': json.dumps(data['data']),
+                'session_id': str(data.get('session_id', '')),
             }
 
             self.redis_client.xadd(stream, stream_data)
             logger.info(f"Published to Redis stream {stream}: {data}")
+            return True
         except Exception as e:
             logger.error(f"Failed to publish to Redis: {str(e)}")
-            raise
+            return False
 
-    def subscribe_to_node(self, stream: str):
+    async def subscribe_to_node(self, stream: str) -> Optional[List[Dict[str, Any]]]:
         """Subscribe to messages from Node.js"""
         try:
             # Create consumer group if doesn't exist
             try:
-                self.redis_client.xgroup_create(stream, "txtai-group", mkstream=True)
-            except redis.exceptions.ResponseError:
-                pass
+                self.redis_client.xgroup_create(stream, self.consumer_group, mkstream=True)
+            except redis.exceptions.ResponseError as e:
+                if "BUSYGROUP" not in str(e):
+                    raise
 
-            while True:
-                try:
-                    messages = self.redis_client.xreadgroup(
-                        "txtai-group", "txtai-consumer", {stream: ">"}, count=1
-                    )
-                    if messages:
-                        return messages
-                except Exception as e:
-                    logger.error(f"Error reading stream: {str(e)}")
-                    continue
+            # Read new messages
+            messages = self.redis_client.xreadgroup(
+                self.consumer_group,
+                self.consumer_name,
+                {stream: '>'},
+                count=1,
+                block=1000,  # Block for 1 second
+            )
+
+            if not messages:
+                return None
+
+            # Parse messages
+            parsed_messages = []
+            for stream_name, stream_messages in messages:
+                for msg_id, msg_data in stream_messages:
+                    try:
+                        parsed_msg = {
+                            'type': msg_data['type'],
+                            'data': json.loads(msg_data['data']),
+                            'session_id': msg_data.get('session_id', ''),
+                        }
+                        parsed_messages.append(parsed_msg)
+                    except Exception as e:
+                        logger.error(f"Error parsing message: {e}")
+                        continue
+
+            return parsed_messages
 
         except Exception as e:
             logger.error(f"Failed to subscribe to Redis: {str(e)}")
-            raise
+            return None
 
-    def publish_to_persona(self, topic: str, data: Dict[str, Any]):
-        """Publish message to Persona server via ZMQ"""
-        if topic not in self.publishers:
-            socket = self.zmq_context.socket(zmq.PUB)
-            socket.bind(f"tcp://*:{config_service.settings.ZMQ_BASE_PORT}")
-            self.publishers[topic] = socket
-
+    async def handle_message(self, message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Handle incoming messages based on type"""
         try:
-            message = json.dumps(data)
-            self.publishers[topic].send_string(f"{topic} {message}")
-            logger.info(f"Published to ZMQ topic {topic}: {data}")
-        except Exception as e:
-            logger.error(f"Failed to publish to ZMQ: {str(e)}")
-            raise
+            msg_type = message.get('type')
+            if not msg_type:
+                return None
 
-    def subscribe_to_persona(self, topic: str):
-        """Subscribe to messages from Persona server"""
-        if topic not in self.subscribers:
-            socket = self.zmq_context.socket(zmq.SUB)
-            socket.connect(f"tcp://localhost:{config_service.settings.ZMQ_BASE_PORT}")
-            socket.setsockopt_string(zmq.SUBSCRIBE, topic)
-            self.subscribers[topic] = socket
+            # Convert to Message object
+            msg = Message(
+                type=MessageType(msg_type),
+                data=message['data'],
+                session_id=message.get('session_id'),
+            )
 
-        try:
-            message = self.subscribers[topic].recv_string()
-            _, data = message.split(" ", 1)
-            return json.loads(data)
+            # Handle through txtai service
+            return await txtai_service.handle_request(msg)
+
         except Exception as e:
-            logger.error(f"Failed to receive from ZMQ: {str(e)}")
-            raise
+            logger.error(f"Error handling message: {e}")
+            return None
 
 
 # Global service instance

@@ -19,10 +19,8 @@ class EmbeddingsService:
         """Initialize service with optional settings override"""
         self.settings = settings or config_service.settings
         self.embeddings: Optional[Embeddings] = None
-        if settings:
-            self.initialize()
 
-    def initialize(self):
+    async def initialize(self):
         """Initialize embeddings with config"""
         try:
             # Use config_service if no settings override
@@ -43,10 +41,10 @@ class EmbeddingsService:
             logger.error(f"Failed to initialize embeddings: {str(e)}")
             raise
 
-    def add(self, documents: List[Dict[str, Any]]) -> int:
+    async def add(self, documents: List[Dict[str, Any]]) -> int:
         """Add documents to embeddings index"""
         if not self.embeddings:
-            raise ValueError("Embeddings not initialized")
+            await self.initialize()
 
         try:
             logger.info("\n=== Document Processing ===")
@@ -56,22 +54,16 @@ class EmbeddingsService:
             formatted_docs = []
             for doc in documents:
                 doc_id = str(doc.get("id", str(uuid4())))
-
-                # Ensure metadata is stored in tags field
                 metadata_str = json.dumps(doc.get("metadata", {}))
-
-                # Create tuple of (id, text, tags)
                 formatted_doc = (doc_id, doc["text"], metadata_str)
                 formatted_docs.append(formatted_doc)
 
                 logger.info(f"\nDocument transformation:")
                 logger.info(f"Original: {json.dumps(doc, indent=2)}")
                 logger.info(f"Formatted: {formatted_doc}")
-                logger.info(f"Tags (metadata): {metadata_str}")
 
             logger.info("\n=== Pre-Indexing State ===")
             logger.info(f"Number of documents to index: {len(formatted_docs)}")
-            logger.info(f"Formatted documents: {formatted_docs}")
 
             # Index the documents
             self.embeddings.index(formatted_docs)
@@ -88,10 +80,10 @@ class EmbeddingsService:
             logger.error(f"Failed to add documents: {str(e)}")
             raise
 
-    def hybrid_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    async def hybrid_search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
         """Perform hybrid search on indexed documents"""
         if not self.embeddings:
-            raise ValueError("Embeddings not initialized")
+            await self.initialize()
 
         try:
             logger.info("\n=== Search Process ===")
@@ -110,7 +102,7 @@ class EmbeddingsService:
             # Create the joined doc_ids string
             doc_ids_str = ','.join(doc_ids)
 
-            # Use triple quotes for SQL and double quotes for JSON patterns per SERVICE.md
+            # Use triple quotes for SQL and double quotes for JSON patterns
             sql_query = f'''
                 SELECT id, text, tags, score
                 FROM txtai
@@ -126,7 +118,7 @@ class EmbeddingsService:
                 full_doc = next((doc for doc in full_docs if doc["id"] == result["id"]), None)
 
                 if full_doc:
-                    # Parse metadata from tags per SERVICE.md
+                    # Parse metadata from tags
                     metadata = {}
                     if full_doc.get("tags"):
                         try:
@@ -148,14 +140,10 @@ class EmbeddingsService:
             logger.error(f"Search failed: {str(e)}")
             raise
 
-    def is_empty(self) -> bool:
-        """Check if embeddings index is empty
-
-        Returns:
-            True if no documents are indexed, False otherwise
-        """
+    async def is_empty(self) -> bool:
+        """Check if embeddings index is empty"""
         if not self.embeddings:
-            return True
+            await self.initialize()
 
         try:
             # Query for any document

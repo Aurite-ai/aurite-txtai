@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.routes import embeddings, llm, rag, test
 import logging
+from src.services import stream_service
+import asyncio
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +36,18 @@ app.include_router(test.router, prefix="/api")
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
+
+
+# Add to startup event
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup"""
+    try:
+        # Start stream service in background task
+        asyncio.create_task(stream_service.start_listening())
+        logger.info("Stream service started")
+    except Exception as e:
+        logger.error(f"Failed to start stream service: {e}")
 
 
 # Only used when running directly (not through uvicorn command)
