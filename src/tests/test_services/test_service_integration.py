@@ -33,48 +33,57 @@ class TestServiceIntegration:
         """Test basic search functionality"""
         logger.info("\n=== Testing Basic Search ===")
 
-        query = "machine learning"
-        results = await registry.embeddings_service.hybrid_search(query, limit=1)
+        # Use async for instead of await
+        async for _ in setup_test_data:
+            query = "machine learning"
+            results = await registry.embeddings_service.hybrid_search(query, limit=1)
 
-        assert len(results) > 0
-        assert "score" in results[0]
-        assert "text" in results[0]
-        assert "machine learning" in results[0]["text"].lower()
+            assert len(results) > 0
+            assert "score" in results[0]
+            assert "text" in results[0]
+            assert "machine learning" in results[0]["text"].lower()
 
-        logger.info(f"Search successful: {results[0]['text'][:50]}...")
+            logger.info(f"Search successful: {results[0]['text'][:50]}...")
+            break  # Only need one iteration
 
     @pytest.mark.third
     async def test_basic_rag(self, setup_test_data):
         """Test basic RAG functionality"""
         logger.info("\n=== Testing Basic RAG ===")
 
-        query = "What is machine learning?"
-        response = await registry.rag_service.generate(query)
+        # Use async for instead of await
+        async for _ in setup_test_data:
+            query = "What is machine learning?"
+            response = await registry.rag_service.generate(query)
 
-        assert isinstance(response, dict)
-        assert "query" in response
-        assert "context" in response
-        assert "response" in response
-        assert len(response["context"]) > 0
+            assert isinstance(response, dict)
+            assert "query" in response
+            assert "context" in response
+            assert "response" in response
+            assert len(response["context"]) > 0
 
-        logger.info(f"RAG response: {response['response'][:100]}...")
+            logger.info(f"RAG response: {response['response'][:100]}...")
+            break  # Only need one iteration
 
     @pytest.mark.fourth
     async def test_message_flow(self, setup_test_data):
         """Test message handling through txtai service"""
         logger.info("\n=== Testing Message Flow ===")
 
-        message = Message(
-            type=MessageType.RAG_REQUEST,
-            data={"query": "What is artificial intelligence?"},
-            session_id="test-session",
-        )
+        # Use async for instead of await
+        async for _ in setup_test_data:
+            message = Message(
+                type=MessageType.RAG_REQUEST,
+                data={"query": "What is artificial intelligence?"},
+                session_id="test-session",
+            )
 
-        response = await registry.txtai_service.handle_request(message)
+            response = await registry.txtai_service.handle_request(message)
 
-        assert response is not None
-        assert "query" in response
-        assert "context" in response
-        assert "response" in response
+            assert response is not None
+            assert "query" in response
+            assert "context" in response
+            assert "response" in response
 
-        logger.info(f"Message flow successful: {response['response'][:100]}...")
+            logger.info(f"Message flow successful: {response['response'][:100]}...")
+            break  # Only need one iteration

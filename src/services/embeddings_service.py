@@ -5,7 +5,6 @@ import logging
 from txtai.embeddings import Embeddings
 from .config_service import config_service
 from .base_service import BaseService
-from ..config.txtai_config import create_embeddings_config
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +22,18 @@ class EmbeddingsService(BaseService):
         if not self.initialized:
             try:
                 self.settings = config_service.settings
-                config = create_embeddings_config(self.settings)
+                config = config_service.embeddings_config
 
                 logger.info("\n=== Initializing Embeddings ===")
                 logger.info(f"Using config: {json.dumps(config, indent=2)}")
 
                 # Create new embeddings instance
                 self.embeddings = Embeddings(config)
+
+                # Initialize database and create empty index
+                self.embeddings.index([("init", "init", "{}")])
+                self.embeddings.delete(["init"])
+
                 self._initialized = True
                 logger.info("Embeddings initialized successfully")
             except Exception as e:
@@ -40,7 +44,8 @@ class EmbeddingsService(BaseService):
         """Add documents to embeddings index"""
         self._check_initialized()
         try:
-            logger.info(f"\n=== Adding {len(documents)} Documents ===")
+            logger.info("\n=== Adding Documents ===")
+            logger.info(f"Processing {len(documents)} documents")
 
             # Format documents for txtai indexing
             formatted_docs = []
@@ -53,14 +58,16 @@ class EmbeddingsService(BaseService):
                 logger.info(f"Formatted document: {formatted_doc}")
 
             # Index the documents
+            logger.info("Indexing documents...")
             self.embeddings.index(formatted_docs)
             logger.info("Documents indexed")
 
             # Verify indexing
             verify_query = "SELECT COUNT(*) as count FROM txtai"
+            logger.info(f"Verifying with query: {verify_query}")
             results = self.embeddings.search(verify_query)
             count = results[0]["count"] if results else 0
-            logger.info(f"Verified document count: {count}")
+            logger.info(f"Verified count: {count}")
 
             # Show sample document
             if count > 0:
@@ -91,7 +98,33 @@ class EmbeddingsService(BaseService):
             results = self.embeddings.search(query, limit)
             logger.info(f"Raw search results: {json.dumps(results, indent=2)}")
 
-            return results
+            # Format results with metadata
+            formatted_results = []
+            for result in results:
+                # Get full document with metadata
+                doc_query = f"SELECT id, text, tags FROM txtai WHERE id = '{result['id']}'"
+                doc_result = self.embeddings.search(doc_query)
+
+                if doc_result:
+                    doc = doc_result[0]
+                    metadata = {}
+                    if doc.get("tags"):
+                        try:
+                            metadata = json.loads(doc["tags"])
+                        except json.JSONDecodeError:
+                            pass
+
+                    formatted_results.append(
+                        {
+                            "id": result["id"],
+                            "text": result["text"],
+                            "score": result["score"],
+                            "metadata": metadata,
+                        }
+                    )
+
+            return formatted_results
+
         except Exception as e:
             logger.error(f"Search failed: {str(e)}")
             raise

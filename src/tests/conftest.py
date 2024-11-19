@@ -80,18 +80,35 @@ async def setup_test_data(initialized_services):
     """Setup test data using initialized services"""
     logger.info("\n=== Setting up test data ===")
     try:
+        # Get test documents
         test_documents = get_test_documents()
+        logger.info(f"Got {len(test_documents)} test documents")
+
+        # Add documents
+        logger.info("Adding documents to embeddings service...")
         await registry.embeddings_service.add(test_documents)
+        logger.info("Documents added to embeddings service")
 
         # Verify documents were added
-        results = await registry.embeddings_service.embeddings.search("SELECT COUNT(*) FROM txtai")
+        verify_query = "SELECT COUNT(*) as count FROM txtai"
+        logger.info(f"Verifying documents with query: {verify_query}")
+        results = await registry.embeddings_service.embeddings.search(verify_query)
         count = results[0]["count"] if results else 0
-        logger.info(f"Added {count} test documents")
+        logger.info(f"Found {count} documents in index")
+
+        # Show sample document
+        if count > 0:
+            sample_query = "SELECT id, text FROM txtai LIMIT 1"
+            sample = await registry.embeddings_service.embeddings.search(sample_query)
+            logger.info(f"Sample document: {sample[0]}")
 
         assert count == len(
             test_documents
         ), f"Expected {len(test_documents)} documents, got {count}"
-        yield
+        logger.info("Test data setup complete")
+
+        yield  # Simple yield for async generator
+
     except Exception as e:
         logger.error(f"Test data setup failed: {e}")
         pytest.fail(f"Test data setup failed: {e}")

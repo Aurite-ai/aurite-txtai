@@ -1,11 +1,14 @@
 """Test document fixtures"""
 
 from typing import List, Dict, Any
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_test_documents() -> List[Dict[str, Any]]:
     """Get standard test documents"""
-    return [
+    docs = [
         {
             "id": "doc1",
             "text": "Machine learning is a subset of artificial intelligence that enables systems to learn and improve from experience.",
@@ -34,6 +37,11 @@ def get_test_documents() -> List[Dict[str, Any]]:
             },
         },
     ]
+    logger.info(f"\n=== Test Documents ===")
+    logger.info(f"Created {len(docs)} test documents")
+    for doc in docs:
+        logger.info(f"Document: {doc}")
+    return docs
 
 
 def get_edge_case_documents() -> List[Dict[str, Any]]:
