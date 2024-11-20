@@ -30,9 +30,20 @@ async def rag_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, 
                 "session_id": session_id,
             }
         else:
-            raise ValueError("Invalid RAG request format")
+            return {
+                "type": MessageType.ERROR.value,
+                "data": {
+                    "error": "Invalid request format",
+                    "details": {"required": ["query or documents"]},
+                },
+                "session_id": session_id,
+            }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "type": MessageType.ERROR.value,
+            "data": {"error": str(e), "details": {"exception": e.__class__.__name__}},
+            "session_id": session_id,
+        }
 
 
 @router.post("/llm", dependencies=[Depends(verify_token)])
@@ -40,7 +51,11 @@ async def llm_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, 
     """Handle LLM stream requests"""
     try:
         if "prompt" not in data:
-            raise ValueError("Prompt is required for LLM requests")
+            return {
+                "type": MessageType.ERROR.value,
+                "data": {"error": "Prompt is required", "details": {"required": ["prompt"]}},
+                "session_id": session_id,
+            }
 
         response = await registry.llm_service.generate(data["prompt"], system=data.get("system"))
         return {
@@ -49,7 +64,11 @@ async def llm_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, 
             "session_id": session_id,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "type": MessageType.ERROR.value,
+            "data": {"error": str(e), "details": {"exception": e.__class__.__name__}},
+            "session_id": session_id,
+        }
 
 
 @router.post("/embeddings", dependencies=[Depends(verify_token)])
