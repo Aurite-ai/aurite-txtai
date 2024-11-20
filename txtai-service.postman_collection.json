@@ -24,7 +24,7 @@
           "name": "Start Stream Listener",
           "request": {
             "method": "POST",
-            "url": "{{BASE_URL}}/api/stream/start",
+            "url": "{{BASE_URL}}/stream/start",
             "header": [
               {
                 "key": "Authorization",
@@ -37,7 +37,7 @@
           "name": "Stop Stream Listener",
           "request": {
             "method": "POST",
-            "url": "{{BASE_URL}}/api/stream/stop",
+            "url": "{{BASE_URL}}/stream/stop",
             "header": [
               {
                 "key": "Authorization",
@@ -50,7 +50,7 @@
           "name": "Stream Status",
           "request": {
             "method": "GET",
-            "url": "{{BASE_URL}}/api/stream/status",
+            "url": "{{BASE_URL}}/stream/status",
             "header": [
               {
                 "key": "Authorization",
@@ -81,10 +81,28 @@
             "url": "{{BASE_URL}}/api/rag/query",
             "body": {
               "mode": "raw",
-              "raw": {
-                "query": "What is artificial intelligence?",
-                "limit": 3
+              "raw": "{\"query\": \"What is artificial intelligence?\", \"limit\": 3}"
+            }
+          }
+        },
+        {
+          "name": "Stream RAG",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
+            ],
+            "url": "{{BASE_URL}}/api/rag/stream",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\": \"What is artificial intelligence?\", \"limit\": 3}"
             }
           }
         }
@@ -110,9 +128,28 @@
             "url": "{{BASE_URL}}/api/embeddings/embed",
             "body": {
               "mode": "raw",
-              "raw": {
-                "text": "Test document for embedding"
+              "raw": "{\"text\": \"Test document for embedding\"}"
+            }
+          }
+        },
+        {
+          "name": "Stream Embedding",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
+            ],
+            "url": "{{BASE_URL}}/api/embeddings/stream",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"Test document for embedding\"}"
             }
           }
         }
@@ -138,10 +175,28 @@
             "url": "{{BASE_URL}}/api/llm/complete",
             "body": {
               "mode": "raw",
-              "raw": {
-                "prompt": "What is the capital of France?",
-                "system": "You are a helpful AI assistant."
+              "raw": "{\"prompt\": \"What is the capital of France?\", \"system\": \"You are a helpful AI assistant.\"}"
+            }
+          }
+        },
+        {
+          "name": "Stream LLM",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
+            ],
+            "url": "{{BASE_URL}}/api/llm/stream",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"prompt\": \"What is the capital of France?\", \"system\": \"You are a helpful AI assistant.\"}"
             }
           }
         }

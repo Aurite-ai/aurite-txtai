@@ -77,21 +77,6 @@ app.add_middleware(
 )
 
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    if not services:
-        raise HTTPException(status_code=503, detail="Services not initialized")
-
-    return {
-        "status": "healthy",
-        "services": {
-            name: "initialized" if service.initialized else "not initialized"
-            for name, service in services.items()
-        },
-    }
-
-
 @app.get("/")
 async def root():
     """Root endpoint for service status"""
@@ -106,9 +91,9 @@ async def root():
 
 
 # Import and include routers
-from src.routes import router as api_router
+from src.routes import router
 
-app.include_router(api_router, prefix="/api")
+app.include_router(router)
 
 # Add startup logging
 logger.info("Application initialized and ready to start")

@@ -1,12 +1,12 @@
 import asyncio
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
+import json
+from src.config import Settings
 from ..base_service import BaseService
 from .communication_service import communication_service
 from .txtai_service import txtai_service
-from src.config import Settings
 from src.models.messages import Message, MessageType
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +24,11 @@ class StreamService(BaseService):
 
     async def initialize(self, settings: Settings) -> None:
         """Initialize stream service"""
-        self.settings = settings
-        self.streams = settings.STREAMS
-        logger.info(f"Stream service initialized with streams: {self.streams}")
-        self._initialized = True
+        if not self.initialized:
+            self.settings = settings
+            self.streams = settings.STREAMS
+            logger.info(f"Stream service initialized with streams: {self.streams}")
+            self._initialized = True
 
     async def start_listening(self) -> None:
         """Start listening to streams"""
@@ -54,44 +55,56 @@ class StreamService(BaseService):
         while self._listening:
             try:
                 for stream in self.streams:
+                    logger.info(f"Checking stream: {stream}")
                     message = await communication_service.read_from_stream(stream)
                     if message:
+                        logger.info(f"Received message on stream {stream}: {message}")
                         await self.process_message(stream, message)
+                    else:
+                        logger.debug(f"No messages on stream {stream}")
+                await asyncio.sleep(0.1)  # Prevent tight loop
             except Exception as e:
                 logger.error(f"Error in stream listener: {e}")
-                await asyncio.sleep(1)  # Prevent tight loop on error
+                await asyncio.sleep(1)  # Longer delay on error
 
     async def process_message(self, stream: str, message: Dict[str, Any]) -> None:
         """Process a message from a stream"""
         try:
-            # First, try to parse the message data if it's a string
-            data = message.get('data')
-            if isinstance(data, str):
-                try:
-                    data = json.loads(data)
-                except json.JSONDecodeError:
-                    logger.error(f"Invalid JSON in message data: {data}")
-                    return
+            # Skip error messages
+            if message.get("type") == "error":
+                logger.info(f"Skipping error message: {message}")
+                return
 
-            # Create Message object with parsed data
-            msg = Message(type=message.get('type'), data=data, session_id=message.get('session_id'))
+            # Create Message object
+            msg = Message(
+                type=message.get("type"),
+                data=message.get("data", {}),
+                session_id=message.get("session_id", ""),
+            )
 
-            # Process the message
+            # Process message through txtai service
             response = await txtai_service.handle_request(msg)
 
-            # Publish response
             if response:
-                await communication_service.publish(stream, response)
+                # Map request types to response types
+                response_types = {
+                    "rag_request": "rag_response",
+                    "embedding_request": "embedding_response",
+                    "llm_request": "llm_response",
+                }
+
+                # Update response type
+                request_type = message.get("type", "")
+                if request_type in response_types:
+                    response["type"] = response_types[request_type]
+
+                # Publish response to stream
+                await communication_service.publish_to_stream(stream, response)
+                logger.info(f"Published response to stream {stream}: {response}")
 
         except Exception as e:
-            logger.error(f"Error processing message: {str(e)}")
-            # Send a simple error response to avoid recursive validation errors
-            error_response = {
-                "type": "error",
-                "data": str(e),
-                "session_id": message.get('session_id', 'unknown'),
-            }
-            await communication_service.publish(stream, error_response)
+            logger.error(f"Error processing message: {e}")
+            # Don't send error back to stream to prevent loops
 
 
 # Global service instance
