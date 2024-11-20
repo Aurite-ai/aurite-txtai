@@ -67,36 +67,27 @@ class StreamService(BaseService):
     async def _process_message(self, stream: str, message: Dict[str, Any]) -> None:
         """Process a single message from a stream"""
         try:
-            # Convert message to Message object
             msg = Message.from_dict(message)
 
-            # Skip response messages to avoid loops
+            # Skip processing response messages to avoid loops
             if msg.type in [
                 MessageType.RAG_RESPONSE,
                 MessageType.LLM_RESPONSE,
                 MessageType.EMBEDDINGS_RESPONSE,
+                MessageType.ERROR,
             ]:
+                logger.debug(f"Skipping response message type: {msg.type}")
                 return
 
-            # Process message through txtai service
-            logger.info("Sending message to txtai service")
+            # Process through txtai service
             response = await self.txtai_service.handle_request(msg)
-            logger.info(f"Got response from txtai service: {response}")
 
             if response:
-                # Publish response to stream
-                logger.info(f"Publishing response to stream {stream}")
+                logger.debug(f"Response before publishing: {response}")
                 await self.comm_service.publish_to_stream(stream, response)
-                logger.info(f"Published response: {response}")
 
         except Exception as e:
             logger.error(f"Error processing message: {str(e)}", exc_info=True)
-            error_response = {
-                "type": MessageType.ERROR.value,
-                "data": {"error": str(e)},
-                "session_id": message.get("session_id", ""),
-            }
-            await self.comm_service.publish_to_stream(stream, error_response)
 
 
 # Global service instance

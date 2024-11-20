@@ -47,11 +47,7 @@ class TxtAIService(BaseService):
                 MessageType.EMBEDDINGS_RESPONSE,
             ]:
                 logger.debug(f"Skipping response message type: {message.type}")
-                return {
-                    "type": message.type.value,
-                    "data": message.data,
-                    "session_id": message.session_id,
-                }
+                return message.data
 
             # Get endpoint based on message type
             endpoint = self._get_endpoint(message.type)
@@ -60,17 +56,19 @@ class TxtAIService(BaseService):
             if message.type == MessageType.RAG_REQUEST:
                 response = await self._client.post(endpoint, json={"query": message.data["query"]})
                 response.raise_for_status()
+                response_data = response.json()
                 return {
                     "type": MessageType.RAG_RESPONSE.value,
-                    "data": response.json(),
+                    "data": response_data,
                     "session_id": message.session_id,
                 }
             elif message.type == MessageType.LLM_REQUEST:
                 response = await self._client.post(endpoint, json=message.data)
                 response.raise_for_status()
+                response_data = response.json()
                 return {
                     "type": MessageType.LLM_RESPONSE.value,
-                    "data": response.json(),
+                    "data": response_data,
                     "session_id": message.session_id,
                 }
             elif message.type == MessageType.EMBEDDINGS_REQUEST:

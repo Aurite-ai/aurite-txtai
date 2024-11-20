@@ -3,11 +3,13 @@ from typing import Dict, Any
 from src.middleware.auth import verify_token
 from src.services import registry
 from src.models.messages import MessageType
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["stream"])
 
 
-@router.post("/rag", dependencies=[Depends(verify_token)])
+@router.post("/rag")
 async def rag_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
     """Handle RAG stream requests"""
     try:
@@ -26,7 +28,11 @@ async def rag_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, 
             count = await registry.embeddings_service.add(data["documents"])
             return {
                 "type": MessageType.RAG_RESPONSE.value,
-                "data": {"count": count},
+                "data": {
+                    "answer": f"Successfully added {count} documents",
+                    "sources": [],
+                    "context": "",
+                },
                 "session_id": session_id,
             }
         else:
@@ -46,27 +52,25 @@ async def rag_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, 
         }
 
 
-@router.post("/llm", dependencies=[Depends(verify_token)])
+@router.post("/llm")
 async def llm_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
     """Handle LLM stream requests"""
     try:
-        if "prompt" not in data:
-            return {
-                "type": MessageType.ERROR.value,
-                "data": {"error": "Prompt is required", "details": {"required": ["prompt"]}},
-                "session_id": session_id,
-            }
-
-        response = await registry.llm_service.generate(data["prompt"], system=data.get("system"))
+        response = await registry.llm_service.generate(
+            data.get("prompt", ""), system=data.get("system", "")
+        )
         return {
             "type": MessageType.LLM_RESPONSE.value,
-            "data": {"response": response},
+            "data": {
+                "response": response,
+            },
             "session_id": session_id,
         }
     except Exception as e:
+        logger.error(f"Error in LLM stream: {str(e)}", exc_info=True)
         return {
             "type": MessageType.ERROR.value,
-            "data": {"error": str(e), "details": {"exception": e.__class__.__name__}},
+            "data": {"error": str(e)},
             "session_id": session_id,
         }
 
