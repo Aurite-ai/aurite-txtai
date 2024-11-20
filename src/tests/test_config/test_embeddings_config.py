@@ -1,6 +1,6 @@
 import pytest
-from src.config.txtai_config import create_embeddings_config
-from settings import Settings
+from src.services.core.embeddings_service import create_embeddings_config
+from src.config import Settings
 import os
 from dotenv import load_dotenv
 

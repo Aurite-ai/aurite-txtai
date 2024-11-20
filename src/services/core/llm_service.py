@@ -2,7 +2,7 @@ from typing import List, Optional, Union, Dict, Any
 from litellm import completion
 import logging
 from ..base_service import BaseService
-from settings import Settings
+from src.config import Settings
 
 logger = logging.getLogger(__name__)
 

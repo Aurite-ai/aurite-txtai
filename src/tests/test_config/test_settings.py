@@ -1,6 +1,6 @@
 import pytest
 import os
-from settings import Settings
+from src.config import Settings
 from dotenv import load_dotenv
 
 # Load environment variables

@@ -8,7 +8,13 @@
       "name": "Service Status",
       "request": {
         "method": "GET",
-        "url": "http://localhost:8000/"
+        "url": "{{BASE_URL}}/",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{API_KEY}}"
+          }
+        ]
       }
     },
     {
@@ -18,21 +24,39 @@
           "name": "Start Stream Listener",
           "request": {
             "method": "POST",
-            "url": "http://localhost:8000/api/stream/start"
+            "url": "{{BASE_URL}}/api/stream/start",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              }
+            ]
           }
         },
         {
           "name": "Stop Stream Listener",
           "request": {
             "method": "POST",
-            "url": "http://localhost:8000/api/stream/stop"
+            "url": "{{BASE_URL}}/api/stream/stop",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              }
+            ]
           }
         },
         {
           "name": "Stream Status",
           "request": {
             "method": "GET",
-            "url": "http://localhost:8000/api/stream/status"
+            "url": "{{BASE_URL}}/api/stream/status",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              }
+            ]
           }
         }
       ]
@@ -44,8 +68,17 @@
           "name": "Query RAG",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "http://localhost:8000/api/rag/query",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{BASE_URL}}/api/rag/query",
             "body": {
               "mode": "raw",
               "raw": {
@@ -64,8 +97,17 @@
           "name": "Generate Embedding",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "http://localhost:8000/api/embeddings/embed",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{BASE_URL}}/api/embeddings/embed",
             "body": {
               "mode": "raw",
               "raw": {
@@ -83,8 +125,17 @@
           "name": "Complete Text",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": "http://localhost:8000/api/llm/complete",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{BASE_URL}}/api/llm/complete",
             "body": {
               "mode": "raw",
               "raw": {

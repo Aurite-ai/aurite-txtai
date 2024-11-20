@@ -2,7 +2,7 @@
 
 import logging
 from typing import Dict, Any
-from settings import Settings
+from src.config import Settings
 from .embeddings_service import embeddings_service
 from .llm_service import llm_service
 from .rag_service import rag_service

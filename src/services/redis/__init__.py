@@ -2,7 +2,7 @@
 
 import logging
 from typing import Dict, Any
-from settings import Settings
+from src.config import Settings
 from ..core import initialize_core_services
 from .communication_service import communication_service
 from .stream_service import stream_service
@@ -23,10 +23,12 @@ async def initialize_redis_services(
         # Initialize txtai service with core services
         logger.info("Initializing txtai service...")
         await txtai_service.initialize(
+            services={
+                "embeddings": core_services["embeddings"],
+                "llm": core_services["llm"],
+                "rag": core_services["rag"],
+            },
             settings=settings,
-            embeddings_service=core_services["embeddings"],
-            llm_service=core_services["llm"],
-            rag_service=core_services["rag"],
         )
 
         # Initialize stream service last

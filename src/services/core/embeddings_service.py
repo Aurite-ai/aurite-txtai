@@ -4,7 +4,7 @@ import json
 import logging
 from txtai.embeddings import Embeddings
 from ..base_service import BaseService
-from settings import Settings
+from src.config import Settings
 
 logger = logging.getLogger(__name__)
 

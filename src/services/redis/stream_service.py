@@ -4,8 +4,9 @@ from typing import Dict, Any, List, Optional
 from ..base_service import BaseService
 from .communication_service import communication_service
 from .txtai_service import txtai_service
-from settings import Settings
+from src.config import Settings
 from src.models.messages import Message, MessageType
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -16,120 +17,81 @@ class StreamService(BaseService):
     def __init__(self):
         """Initialize stream service"""
         super().__init__()
+        self._listening = False
+        self._listen_task: Optional[asyncio.Task] = None
         self.settings: Optional[Settings] = None
-        self._listening: bool = False
-        self._task: Optional[asyncio.Task] = None
-        self.streams: List[str] = []
-        self.read_count: int = 1
-        self.block_ms: int = 1000
+        self.streams: Optional[list] = None
 
-    async def initialize(self, settings: Settings = None) -> None:
-        """Initialize stream service with settings"""
-        if not self.initialized:
-            try:
-                # Get or create settings
-                self.settings = settings or Settings()
-
-                # Set stream configuration
-                self.streams = self.settings.STREAMS
-                self.read_count = self.settings.STREAM_READ_COUNT
-                self.block_ms = self.settings.STREAM_BLOCK_MS
-
-                self._initialized = True
-                logger.info(f"Stream service initialized with streams: {self.streams}")
-
-            except Exception as e:
-                logger.error(f"Failed to initialize stream service: {e}")
-                raise
+    async def initialize(self, settings: Settings) -> None:
+        """Initialize stream service"""
+        self.settings = settings
+        self.streams = settings.STREAMS
+        logger.info(f"Stream service initialized with streams: {self.streams}")
+        self._initialized = True
 
     async def start_listening(self) -> None:
         """Start listening to streams"""
-        if self._listening:
-            logger.warning("Stream listener already running")
-            return
-
-        self._listening = True
-        self._task = asyncio.create_task(self._listen())
-        logger.info("Stream listener started")
+        self._check_initialized()
+        if not self._listening:
+            self._listening = True
+            self._listen_task = asyncio.create_task(self._listen())
+            logger.info("Stream listener started")
 
     async def stop_listening(self) -> None:
         """Stop listening to streams"""
-        if not self._listening:
-            return
-
-        self._listening = False
-        if self._task:
-            self._task.cancel()
+        if self._listening and self._listen_task:
+            self._listening = False
+            self._listen_task.cancel()
             try:
-                await self._task
+                await self._listen_task
             except asyncio.CancelledError:
                 pass
-        logger.info("Stream listener stopped")
+            self._listen_task = None
+            logger.info("Stream listener stopped")
 
     async def _listen(self) -> None:
-        """Main listening loop"""
+        """Listen to streams and process messages"""
         while self._listening:
             try:
                 for stream in self.streams:
-                    # Read messages from stream
-                    message = await communication_service.read_from_stream(
-                        stream, timeout_ms=self.block_ms
-                    )
-
+                    message = await communication_service.read_from_stream(stream)
                     if message:
-                        await self._process_message(stream, message)
-
-                await asyncio.sleep(0.1)  # Prevent CPU overload
-
+                        await self.process_message(stream, message)
             except Exception as e:
                 logger.error(f"Error in stream listener: {e}")
-                await asyncio.sleep(1)  # Back off on error
+                await asyncio.sleep(1)  # Prevent tight loop on error
 
-    async def _process_message(self, stream: str, message: Dict[str, Any]) -> None:
-        """Process a single message from stream"""
+    async def process_message(self, stream: str, message: Dict[str, Any]) -> None:
+        """Process a message from a stream"""
         try:
-            # Validate message type
-            try:
-                msg_type = MessageType(message["type"])
-            except ValueError:
-                raise ValueError(f"Invalid message type: {message['type']}")
+            # First, try to parse the message data if it's a string
+            data = message.get('data')
+            if isinstance(data, str):
+                try:
+                    data = json.loads(data)
+                except json.JSONDecodeError:
+                    logger.error(f"Invalid JSON in message data: {data}")
+                    return
 
-            # Create validated message
-            msg = Message(
-                type=msg_type,
-                data=message.get("data", {}),
-                session_id=message.get("session_id", ""),
-            )
+            # Create Message object with parsed data
+            msg = Message(type=message.get('type'), data=data, session_id=message.get('session_id'))
 
-            # Process through txtai service
-            result = await txtai_service.handle_request(msg)
+            # Process the message
+            response = await txtai_service.handle_request(msg)
 
-            # Determine response stream
-            service_type = msg_type.value.split("_")[0]  # e.g., 'rag' from 'rag_request'
-            response_stream = f"{service_type}_stream"
-
-            if response_stream not in self.streams:
-                raise ValueError(f"Invalid response stream: {response_stream}")
-
-            # Format and send response
-            response = {
-                "type": f"{service_type}_response",
-                "data": result,
-                "session_id": msg.session_id,
-            }
-
-            await communication_service.publish_to_stream(response_stream, response)
-            logger.info(f"Published response to {response_stream}")
+            # Publish response
+            if response:
+                await communication_service.publish(stream, response)
 
         except Exception as e:
-            logger.error(f"Error processing message: {e}")
-            # Send error response
+            logger.error(f"Error processing message: {str(e)}")
+            # Send a simple error response to avoid recursive validation errors
             error_response = {
                 "type": "error",
-                "data": {"error": str(e)},
-                "session_id": message.get("session_id", ""),
+                "data": str(e),
+                "session_id": message.get('session_id', 'unknown'),
             }
-            await communication_service.publish_to_stream(stream, error_response)
+            await communication_service.publish(stream, error_response)
 
 
 # Global service instance

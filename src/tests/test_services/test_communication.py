@@ -1,6 +1,6 @@
 import pytest
 import json
-from src.services.communication_service import communication_service
+from src.services.redis.communication_service import communication_service
 from src.models.messages import Message, MessageType
 import redis
 

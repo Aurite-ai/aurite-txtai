@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     STREAM_LLM: str = "llm_stream"
 
     # Redis Consumer Groups (complementary to persona server)
-    CONSUMER_GROUP_TXTAI: str = "txtai-group"  # Persona uses "persona-group"
-    CONSUMER_NAME_TXTAI: str = "txtai-consumer"  # Persona uses "persona-consumer"
+    CONSUMER_GROUP_TXTAI: str = "txtai-group"
+    CONSUMER_NAME_TXTAI: str = "txtai-consumer"
 
     # Redis Stream Settings
     STREAM_READ_COUNT: int = 1

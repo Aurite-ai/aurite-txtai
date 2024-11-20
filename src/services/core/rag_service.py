@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Optional
 from ..base_service import BaseService
 from .embeddings_service import EmbeddingsService
 from .llm_service import LLMService
-from settings import Settings
+from src.config import Settings
 
 logger = logging.getLogger(__name__)
 

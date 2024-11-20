@@ -2,8 +2,8 @@ import redis.asyncio as redis
 import json
 import logging
 from typing import Optional, Dict, Any
-from ..base_service import BaseService
-from settings import Settings
+from src.services.base_service import BaseService
+from src.config import Settings
 
 logger = logging.getLogger(__name__)
 

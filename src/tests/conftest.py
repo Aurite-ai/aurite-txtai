@@ -2,7 +2,7 @@ import pytest
 import logging
 import asyncio
 from src.services import initialize_services
-from src.settings import Settings
+from src.config import Settings
 from .fixtures.test_docs import get_test_documents
 import os
 from dotenv import load_dotenv

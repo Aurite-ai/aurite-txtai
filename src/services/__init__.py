@@ -2,9 +2,10 @@
 
 import logging
 from typing import Dict, Any
-from settings import Settings
+from src.config import Settings
 from .core import initialize_core_services
 from .redis import initialize_redis_services
+from .registry import registry
 
 logger = logging.getLogger(__name__)
 
@@ -22,13 +23,16 @@ async def initialize_services(settings: Settings) -> Dict[str, Any]:
         redis_services = await initialize_redis_services(settings, core_services)
         logger.info("Redis services initialized successfully")
 
-        # Return combined services
-        return {**core_services, **redis_services}
+        # Combine services and register them
+        services = {**core_services, **redis_services}
+        registry.register_services(services)
+
+        return services
 
     except Exception as e:
         logger.error(f"Service initialization failed: {e}")
         raise
 
 
-# Export initialization function
-__all__ = ["initialize_services"]
+# Export initialization function and registry
+__all__ = ["initialize_services", "registry"]

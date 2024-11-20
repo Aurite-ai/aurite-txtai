@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException
 from src.services import registry
-from src.models.messages import Message, MessageType
 
 router = APIRouter()
 
@@ -31,9 +30,8 @@ async def stream_status():
     try:
         return {
             "initialized": registry.stream_service.initialized,
+            "listening": registry.stream_service._listening,
             "streams": registry.stream_service.streams,
-            "consumer_group": registry.stream_service.consumer_group,
-            "consumer_name": registry.stream_service.consumer_name,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
