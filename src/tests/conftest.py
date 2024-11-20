@@ -1,8 +1,8 @@
 import pytest
 import logging
 import asyncio
-from src.services import registry
-from src.config.settings import Settings
+from src.services import initialize_services
+from src.settings import Settings
 from .fixtures.test_docs import get_test_documents
 import os
 from dotenv import load_dotenv
@@ -42,54 +42,41 @@ def test_settings():
 
 
 @pytest.fixture(scope="session")
-async def redis_client(event_loop, test_settings):
-    """Create a Redis client for tests"""
-    import redis.asyncio as redis
-
-    client = redis.Redis(
-        host=test_settings.REDIS_HOST,
-        port=test_settings.REDIS_PORT,
-        db=test_settings.REDIS_DB,
-        decode_responses=True,
-        single_connection_client=True,
-    )
-    await client.ping()  # Test connection
-    yield client
-    await client.close()
-
-
-@pytest.fixture(scope="session")
-async def initialized_services(event_loop, test_settings, redis_client):
+async def initialized_services(event_loop, test_settings):
     """Initialize all services with test settings"""
     logger.info("\n=== Initializing Services (Session) ===")
     try:
-        # Set event loop for the entire initialization process
-        asyncio.set_event_loop(event_loop)
-
-        registry.config_service.settings = test_settings
-        await registry.config_service.initialize()
-
-        # Set Redis client before other services
-        registry.communication_service._redis_client = redis_client
-
-        # Initialize services
-        await registry.embeddings_service.initialize()
-        await registry.llm_service.initialize()
-        await registry.rag_service.initialize()
-        await registry.communication_service.initialize()
-        await registry.stream_service.initialize()
-        await registry.txtai_service.initialize()
-
+        # Initialize all services
+        services = await initialize_services(test_settings)
         logger.info("All services initialized successfully")
-        return registry
+        yield services
+
+        # Cleanup
+        if services.get("stream"):
+            await services["stream"].stop_listening()
+        if services.get("communication"):
+            await services["communication"].close()
+
     except Exception as e:
-        logger.error(f"Unexpected error during initialization: {e}")
-        pytest.exit(f"Critical error: {e}", returncode=1)
+        logger.error(f"Service initialization failed: {e}")
+        raise
 
 
-@pytest.fixture(autouse=True)
-async def clean_redis(redis_client):
-    """Clean Redis before and after each test"""
-    await redis_client.flushdb()
-    yield
-    await redis_client.flushdb()
+@pytest.fixture
+async def setup_test_data(initialized_services):
+    """Setup test documents in embeddings service"""
+    logger.info("\n=== Setting up Test Data ===")
+    try:
+        # Get test documents
+        test_docs = get_test_documents()
+
+        # Add documents to embeddings service
+        embeddings_service = initialized_services["embeddings"]
+        count = await embeddings_service.add(test_docs)
+        logger.info(f"Added {count} test documents")
+
+        yield test_docs
+
+    except Exception as e:
+        logger.error(f"Test data setup failed: {e}")
+        raise

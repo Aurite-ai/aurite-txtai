@@ -1,6 +1,9 @@
 from fastapi import HTTPException, Security
 from fastapi.security import APIKeyHeader
-from ..services.config_service import config_service
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 api_key_header = APIKeyHeader(name="Authorization", auto_error=True)
 
@@ -23,7 +26,7 @@ async def verify_token(api_key: str = Security(api_key_header)):
             raise HTTPException(status_code=403, detail="Invalid authorization header format")
 
         token = api_key.split(" ")[1]
-        if token != config_service.settings.API_KEY:
+        if token != os.getenv("API_KEY"):
             raise HTTPException(status_code=403, detail="Invalid API key")
 
         return True
@@ -49,7 +52,7 @@ async def get_api_key(api_key: str = Security(api_key_header)) -> str:
             raise HTTPException(status_code=403, detail="Invalid authorization header format")
 
         token = api_key.split(" ")[1]
-        if token != config_service.settings.API_KEY:
+        if token != os.getenv("API_KEY"):
             raise HTTPException(status_code=403, detail="Invalid API key")
 
         return token

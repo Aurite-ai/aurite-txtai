@@ -1,6 +1,8 @@
-from functools import lru_cache
+from txtai.api import API
+import logging
+from typing import Dict, Any
 from pydantic_settings import BaseSettings
-from typing import List, Dict, Any, Optional, Literal, Dict
+from typing import List, Dict, Any, Optional, Literal
 
 
 class Settings(BaseSettings):
@@ -17,14 +19,14 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379"
     REDIS_DB: int = 0
 
-    # Redis Stream Names
+    # Redis Stream Names (must match persona server)
     STREAM_RAG: str = "rag_stream"
     STREAM_EMBEDDINGS: str = "embeddings_stream"
     STREAM_LLM: str = "llm_stream"
 
-    # Redis Consumer Groups
-    CONSUMER_GROUP_TXTAI: str = "txtai-group"
-    CONSUMER_NAME_TXTAI: str = "txtai-consumer"
+    # Redis Consumer Groups (complementary to persona server)
+    CONSUMER_GROUP_TXTAI: str = "txtai-group"  # Persona uses "persona-group"
+    CONSUMER_NAME_TXTAI: str = "txtai-consumer"  # Persona uses "persona-consumer"
 
     # Redis Stream Settings
     STREAM_READ_COUNT: int = 1
@@ -33,9 +35,9 @@ class Settings(BaseSettings):
     # List of all streams for easy access
     STREAMS: List[str] = [STREAM_RAG, STREAM_EMBEDDINGS, STREAM_LLM]
 
-    # Storage types
-    EMBEDDINGS_STORAGE_TYPE: Literal["memory", "sqlite", "cloud"]
-    EMBEDDINGS_CONTENT_PATH: str
+    # txtai-specific settings
+    EMBEDDINGS_STORAGE_TYPE: Literal["memory", "sqlite", "cloud"] = "memory"
+    EMBEDDINGS_CONTENT_PATH: str = ":memory:"
     EMBEDDINGS_PREFIX: str = "txtai"
     EMBEDDINGS_BATCH_SIZE: int = 32
     EMBEDDINGS_MODEL: str = "sentence-transformers/nli-mpnet-base-v2"
@@ -54,17 +56,3 @@ class Settings(BaseSettings):
         "rag": "You are a helpful AI assistant.",
         "default": "You are a helpful AI assistant.",
     }
-
-    # Cloud settings
-    GOOGLE_CLOUD_PROJECT: Optional[str] = None
-    GOOGLE_CLOUD_BUCKET: Optional[str] = None
-
-    class Config:
-        env_file = ".env"
-        extra = "allow"
-
-
-@lru_cache()
-def get_settings() -> Settings:
-    """Get cached settings instance"""
-    return Settings()

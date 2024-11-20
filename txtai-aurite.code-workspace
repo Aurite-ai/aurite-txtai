@@ -2,11 +2,11 @@
   "folders": [
     {
       "path": "."
-    },
-    {
-      "name": "../aurite-dev/services/persona-server",
-      "path": "../aurite-dev/services/persona-server"
     }
+    // {
+    //   "name": "../aurite-dev/services/persona-server",
+    //   "path": "../aurite-dev/services/persona-server"
+    // }
   ],
   "settings": {
     "python.analysis.ignore": ["notebooks/**", "../aurite-dev/services/**"],

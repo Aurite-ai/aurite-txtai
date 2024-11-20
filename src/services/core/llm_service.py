@@ -1,12 +1,22 @@
 from typing import List, Optional, Union, Dict, Any
 from litellm import completion
-from txtai import LLM
 import logging
-from .base_service import BaseService
-from src.config.settings import Settings
-from .config_service import config_service  # Import directly
+from ..base_service import BaseService
+from settings import Settings
 
 logger = logging.getLogger(__name__)
+
+
+def create_llm_config(settings: Settings) -> dict:
+    """Create LLM configuration"""
+    return {
+        "path": settings.LLM_MODELS[settings.LLM_PROVIDER],
+        "api_key": (
+            settings.ANTHROPIC_API_KEY
+            if settings.LLM_PROVIDER == "anthropic"
+            else settings.OPENAI_API_KEY
+        ),
+    }
 
 
 class LLMService(BaseService):
@@ -15,24 +25,22 @@ class LLMService(BaseService):
     def __init__(self):
         """Initialize LLM service"""
         super().__init__()
-        self._llm = None
-        self._config = None
-        self.config_service = config_service  # Set config service directly
+        self.settings: Optional[Settings] = None
+        self._config: Optional[Dict[str, Any]] = None
 
-    async def initialize(self):
+    async def initialize(self, settings: Settings = None):
         """Initialize LLM service"""
         if not self.initialized:
             try:
-                # Get settings from config service
-                self.settings = self.config_service.settings
+                # Get or create settings
+                self.settings = settings or Settings()
 
                 # Get LLM config
-                self._config = self.config_service.llm_config
+                self._config = create_llm_config(self.settings)
                 logger.info(f"LLM Config: {self._config}")
 
                 # Mark as initialized
                 self._initialized = True
-
                 logger.info(
                     f"LLM initialized successfully with provider: {self.settings.LLM_PROVIDER}"
                 )

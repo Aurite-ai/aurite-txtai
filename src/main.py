@@ -1,16 +1,18 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import logging
-from src.routes import api_router
-from src.services import registry
-from src.config.settings import Settings
+from src.services import initialize_services
+from settings import Settings
+import asyncio
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="txtai Service", description="txtai API with Redis Streams")
-settings = Settings()
+# Initialize FastAPI app
+app = FastAPI(title="txtai Service", description="txtai API with Redis Streams", version="1.0.0")
 
 # Add CORS middleware
 app.add_middleware(
@@ -21,46 +23,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add routes
-app.include_router(api_router, prefix="/api")
-
-
-@app.get("/")
-async def root():
-    """Root endpoint with service status"""
-    return {
-        "status": "healthy",
-        "services": {
-            "config": registry.config_service.initialized,
-            "embeddings": registry.embeddings_service.initialized,
-            "llm": registry.llm_service.initialized,
-            "rag": registry.rag_service.initialized,
-            "communication": registry.communication_service.initialized,
-            "stream": registry.stream_service.initialized,
-            "stream_listening": registry.stream_service.is_listening,
-        },
-    }
+# Global services registry
+services = {}
 
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
     try:
-        # Initialize services in dependency order
-        await registry.config_service.initialize()
-        await registry.communication_service.initialize()
-        await registry.stream_service.initialize()
-        await registry.embeddings_service.initialize()
-        await registry.llm_service.initialize()
-        await registry.rag_service.initialize()
-        await registry.txtai_service.initialize()
+        # Load settings
+        settings = Settings()
+        logger.info("Settings loaded successfully")
 
-        # Start stream listener after all services are ready
-        await registry.stream_service.start_listening()
-        logger.info("All services initialized and stream listener started")
+        # Initialize all services
+        global services
+        services = await initialize_services(settings)
+        logger.info("All services initialized successfully")
+
+        # Start stream listener
+        await services["stream"].start_listening()
+        logger.info("Stream listener started")
 
     except Exception as e:
-        logger.error(f"Failed to start services: {str(e)}")
+        logger.error(f"Startup failed: {str(e)}")
         raise
 
 
@@ -68,8 +53,33 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on shutdown"""
     try:
-        await registry.stream_service.stop_listening()
-        await registry.communication_service.close()
-        logger.info("Services shut down successfully")
+        if services.get("stream"):
+            await services["stream"].stop_listening()
+            logger.info("Stream listener stopped")
+
+        if services.get("communication"):
+            await services["communication"].close()
+            logger.info("Communication service closed")
+
+        logger.info("All services shut down successfully")
+
     except Exception as e:
         logger.error(f"Error during shutdown: {e}")
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    if not services:
+        raise HTTPException(status_code=503, detail="Services not initialized")
+
+    return {
+        "status": "healthy",
+        "services": {name: service.initialized for name, service in services.items()},
+    }
+
+
+# Import and include routers
+from src.routes import api_router
+
+app.include_router(api_router)

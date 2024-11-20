@@ -1,9 +1,9 @@
 import logging
-from typing import List, Dict, Any
-from .base_service import BaseService
-from .embeddings_service import embeddings_service
-from .config_service import config_service
-from .llm_service import llm_service
+from typing import List, Dict, Any, Optional
+from ..base_service import BaseService
+from .embeddings_service import EmbeddingsService
+from .llm_service import LLMService
+from settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -14,16 +14,32 @@ class RAGService(BaseService):
     def __init__(self):
         """Initialize RAG service"""
         super().__init__()
-        self.embeddings_service = embeddings_service
-        self.config_service = config_service
-        self.llm_service = llm_service
+        self.settings: Optional[Settings] = None
+        self.embeddings_service: Optional[EmbeddingsService] = None
+        self.llm_service: Optional[LLMService] = None
 
-    async def initialize(self) -> None:
-        """Initialize RAG service"""
+    async def initialize(
+        self,
+        settings: Settings = None,
+        embeddings_service: Optional[EmbeddingsService] = None,
+        llm_service: Optional[LLMService] = None,
+    ) -> None:
+        """Initialize RAG service with dependencies"""
         if not self.initialized:
             try:
-                # Get settings from config service
-                self.settings = self.config_service.settings
+                # Get or create settings
+                self.settings = settings or Settings()
+
+                # Set service dependencies
+                self.embeddings_service = embeddings_service
+                self.llm_service = llm_service
+
+                # Verify dependencies are initialized
+                if not (self.embeddings_service and self.embeddings_service.initialized):
+                    raise ValueError("Embeddings service must be initialized")
+                if not (self.llm_service and self.llm_service.initialized):
+                    raise ValueError("LLM service must be initialized")
+
                 self._initialized = True
                 logger.info("RAG service initialized successfully")
             except Exception as e:

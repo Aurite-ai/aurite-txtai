@@ -1,44 +1,34 @@
-"""Service registry for txtai services"""
+"""Service initialization and registry for txtai services"""
 
 import logging
-from .base_service import BaseService
-from .config_service import ConfigService
-from .embeddings_service import EmbeddingsService
-from .llm_service import LLMService
-from .rag_service import RAGService
-from .communication_service import CommunicationService
-from .stream_service import StreamService
-from .txtai_service import TxtAIService
+from typing import Dict, Any
+from settings import Settings
+from .core import initialize_core_services
+from .redis import initialize_redis_services
 
 logger = logging.getLogger(__name__)
 
-# Initialize services in dependency order
-config_service = ConfigService()
-embeddings_service = EmbeddingsService()
-llm_service = LLMService()
-rag_service = RAGService()
-communication_service = CommunicationService()
-stream_service = StreamService()
-txtai_service = TxtAIService()
 
-# Create registry with initialized services
-registry = type(
-    "ServiceRegistry",
-    (),
-    {
-        "config_service": config_service,
-        "embeddings_service": embeddings_service,
-        "llm_service": llm_service,
-        "rag_service": rag_service,
-        "communication_service": communication_service,
-        "stream_service": stream_service,
-        "txtai_service": txtai_service,
-    },
-)()
+async def initialize_services(settings: Settings) -> Dict[str, Any]:
+    """Initialize all services in correct order"""
+    try:
+        # Initialize core services first
+        logger.info("Initializing core services...")
+        core_services = await initialize_core_services(settings)
+        logger.info("Core services initialized successfully")
 
-# Add registry reference to each service
-for service in registry.__dict__.values():
-    if isinstance(service, BaseService):
-        service.registry = registry
+        # Initialize redis services with core services
+        logger.info("Initializing redis services...")
+        redis_services = await initialize_redis_services(settings, core_services)
+        logger.info("Redis services initialized successfully")
 
-logger.info("Service registry initialized")
+        # Return combined services
+        return {**core_services, **redis_services}
+
+    except Exception as e:
+        logger.error(f"Service initialization failed: {e}")
+        raise
+
+
+# Export initialization function
+__all__ = ["initialize_services"]

@@ -1,66 +1,62 @@
 import pytest
 import logging
-from src.services import registry
 from src.models.messages import Message, MessageType
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.mark.asyncio
-class TestServiceIntegration:
-    """Test service integration"""
+class TestServiceInitialization:
+    """Test service initialization and basic functionality"""
 
-    async def test_basic_search(self, initialized_services, setup_test_data):
-        """Test basic search functionality"""
-        logger.info("\n=== Testing Basic Search ===")
+    async def test_core_services_initialized(self, initialized_services):
+        """Test that core services are properly initialized"""
+        assert initialized_services["embeddings"].initialized
+        assert initialized_services["llm"].initialized
+        assert initialized_services["rag"].initialized
+        logger.info("Core services initialized successfully")
 
-        # Search for documents
-        results = await registry.embeddings_service.search("machine learning", limit=1)
-        assert len(results) == 1
-        assert "machine learning" in results[0]["text"].lower()
+    async def test_redis_services_initialized(self, initialized_services):
+        """Test that Redis services are properly initialized"""
+        assert initialized_services["communication"].initialized
+        assert initialized_services["txtai"].initialized
+        assert initialized_services["stream"].initialized
+        logger.info("Redis services initialized successfully")
 
-    async def test_basic_rag(self, initialized_services, setup_test_data):
+    async def test_embeddings_functionality(self, initialized_services, setup_test_data):
+        """Test basic embeddings functionality"""
+        embeddings_service = initialized_services["embeddings"]
+        results = await embeddings_service.search("machine learning")
+        assert len(results) > 0
+        assert isinstance(results[0]["score"], float)
+        logger.info(f"Search returned {len(results)} results")
+
+    async def test_llm_functionality(self, initialized_services):
+        """Test basic LLM functionality"""
+        llm_service = initialized_services["llm"]
+        response = await llm_service.generate("Say hello!")
+        assert isinstance(response, str)
+        assert len(response) > 0
+        logger.info("LLM generation successful")
+
+    async def test_rag_functionality(self, initialized_services, setup_test_data):
         """Test basic RAG functionality"""
-        # Perform RAG query
-        context = await registry.rag_service.get_context("What is artificial intelligence?")
-        assert len(context) > 0
-
-        # Generate response with context
-        response = await registry.llm_service.generate_with_context(
-            "What is artificial intelligence?", context
-        )
+        rag_service = initialized_services["rag"]
+        response = await rag_service.generate("What is machine learning?")
         assert isinstance(response, str)
         assert len(response) > 0
+        logger.info("RAG generation successful")
 
-    async def test_message_flow(self, initialized_services, setup_test_data):
-        """Test message flow through services"""
-        logger.info("\n=== Testing Message Flow ===")
+    async def test_message_handling(self, initialized_services, setup_test_data):
+        """Test message handling through txtai service"""
+        txtai_service = initialized_services["txtai"]
 
-        # Test RAG message flow
-        rag_request = Message(
-            type=MessageType.RAG_REQUEST,
-            data={"query": "What is artificial intelligence?"},
-            session_id="test-session",
+        # Test RAG request
+        message = Message(
+            type=MessageType.RAG_REQUEST, data={"query": "What is AI?"}, session_id="test-session"
         )
 
-        # Get context
-        context = await registry.rag_service.get_context(rag_request.data["query"])
-        assert len(context) > 0
-
-        # Generate response
-        response = await registry.llm_service.generate_with_context(
-            rag_request.data["query"], context
-        )
-        assert isinstance(response, str)
-        assert len(response) > 0
-
-        # Create response message
-        rag_response = Message(
-            type=MessageType.RAG_RESPONSE,
-            data={"response": response, "context": context},
-            session_id=rag_request.session_id,
-        )
-
-        assert rag_response.type == MessageType.RAG_RESPONSE
-        assert isinstance(rag_response.data["response"], str)
-        assert len(rag_response.data["response"]) > 0
+        response = await txtai_service.handle_request(message)
+        assert response["session_id"] == "test-session"
+        assert "answer" in response
+        logger.info("Message handling successful")
