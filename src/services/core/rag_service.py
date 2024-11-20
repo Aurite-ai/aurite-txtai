@@ -54,13 +54,35 @@ class RAGService(BaseService):
             raise ValueError("Query cannot be empty")
 
         try:
-            # Get context
-            context = await self.get_context(query)
+            # Get context with proper parameters
+            context = await self.search_context(query, limit=3)  # Using default limit
             if not context:
                 return "No relevant context found to answer the question."
 
-            # Generate response using LLM with context
-            response = await self.llm_service.generate_with_context(query, context)
+            # Format context for LLM with proper structure
+            context_text = "\n\nRelevant context:\n" + "\n---\n".join(
+                f"{r['text']}"
+                + (
+                    f" (Source: {r['metadata'].get('source', 'Unknown')})"
+                    if r.get('metadata')
+                    else ""
+                )
+                for r in context
+            )
+
+            # Generate response using LLM with context and system prompt
+            system_prompt = self.settings.SYSTEM_PROMPTS.get(
+                "rag", "You are a helpful AI assistant."
+            )
+            prompt = (
+                f"Based on the following context, answer the question. "
+                f"If the context doesn't contain relevant information, say so.\n\n"
+                f"Question: {query}\n\n{context_text}"
+            )
+
+            response = await self.llm_service.generate_with_context(prompt, system=system_prompt)
+
+            logger.info(f"Generated RAG response for query: {query[:50]}...")
             return response
 
         except Exception as e:
@@ -73,34 +95,26 @@ class RAGService(BaseService):
         """Search for relevant context"""
         self._check_initialized()
         try:
-            # Search for documents
-            results = await self.embeddings_service.search(query, limit=limit)
+            # Use hybrid search as specified in SERVICE.md
+            results = await self.embeddings_service.hybrid_search(query, limit=limit)
 
-            # Filter by minimum score
-            filtered_results = [r for r in results if r["score"] > min_score]
+            # Filter and format results
+            filtered_results = [
+                {
+                    "text": r["text"],
+                    "score": r["score"],
+                    "metadata": r.get("metadata", {}),
+                    "id": r.get("id", ""),
+                }
+                for r in results
+                if r["score"] > min_score
+            ]
+
             logger.info(f"Found {len(filtered_results)} relevant documents above score threshold")
-
             return filtered_results
 
         except Exception as e:
             logger.error(f"Context search failed: {e}")
-            raise
-
-    async def get_context(self, query: str, limit: int = 3) -> str:
-        """Get context for query"""
-        self._check_initialized()
-        try:
-            # Search for relevant documents
-            results = await self.search_context(query, limit=limit)
-
-            # Combine context from relevant documents
-            context = " ".join([r["text"] for r in results])
-            logger.info(f"Generated context of length: {len(context)}")
-
-            return context
-
-        except Exception as e:
-            logger.error(f"Failed to get context: {e}")
             raise
 
 

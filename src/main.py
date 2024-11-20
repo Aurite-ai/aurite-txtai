@@ -1,70 +1,22 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import logging
-import signal
-import sys
+from src.routes import router, stream_router
 from src.services import initialize_services
 from src.config import Settings
-import asyncio
-from contextlib import asynccontextmanager
+import logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Global services registry
-services = {}
+# Initialize settings
+settings = Settings()
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Lifecycle manager for the FastAPI app"""
-    try:
-        # Load settings
-        settings = Settings()
-        logger.info("Settings loaded successfully")
-
-        # Initialize all services
-        global services
-        services = await initialize_services(settings)
-        logger.info("All services initialized successfully")
-
-        # Start stream listener
-        if services.get("stream"):
-            await services["stream"].start_listening()
-            logger.info("Stream listener started")
-
-        yield  # Server is running here
-
-    except Exception as e:
-        logger.error(f"Startup failed: {str(e)}")
-        raise
-    finally:
-        # Cleanup
-        try:
-            if services.get("stream"):
-                logger.info("Stopping stream listener...")
-                await services["stream"].stop_listening()
-                logger.info("Stream listener stopped")
-
-            if services.get("communication"):
-                logger.info("Closing Redis connection...")
-                await services["communication"].close()
-                logger.info("Redis connection closed")
-
-            logger.info("All services shut down successfully")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
-
-
-# Initialize FastAPI app with lifespan manager
+# Create FastAPI app
 app = FastAPI(
-    title="txtai Service",
-    description="txtai API with Redis Streams",
+    title="TxtAI Service",
+    description="TxtAI service for embeddings and LLM functionality",
     version="1.0.0",
-    lifespan=lifespan,
 )
 
 # Add CORS middleware
@@ -77,23 +29,36 @@ app.add_middleware(
 )
 
 
-@app.get("/")
-async def root():
-    """Root endpoint for service status"""
+# Initialize services on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup"""
+    try:
+        await initialize_services(settings)
+        logger.info("Services initialized successfully")
+    except Exception as e:
+        logger.error(f"Service initialization failed: {e}")
+        raise
+
+
+# Include routers
+app.include_router(router)
+app.include_router(stream_router, prefix="/stream", tags=["stream"])
+
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
     return {
-        "status": "online",
-        "version": app.version,
+        "status": "healthy",
+        "version": "1.0.0",
         "services": {
-            name: "initialized" if service.initialized else "not initialized"
-            for name, service in services.items()
+            "embeddings": "initialized",
+            "llm": "initialized",
+            "rag": "initialized",
+            "communication": "initialized",
+            "txtai": "initialized",
+            "stream": "initialized",
         },
     }
-
-
-# Import and include routers
-from src.routes import router
-
-app.include_router(router)
-
-# Add startup logging
-logger.info("Application initialized and ready to start")

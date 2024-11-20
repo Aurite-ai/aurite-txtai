@@ -39,7 +39,13 @@ class TxtAIService(BaseService):
         try:
             logger.info(f"Handling {message.type} request for session {message.session_id}")
 
-            if message.type == MessageType.RAG_REQUEST:
+            if message.type == MessageType.HEALTH_CHECK:
+                return {
+                    "type": MessageType.HEALTH_CHECK_RESPONSE.value,
+                    "data": {"status": "healthy"},
+                    "session_id": message.session_id,
+                }
+            elif message.type == MessageType.RAG_REQUEST:
                 return await self._handle_rag_request(message)
             elif message.type == MessageType.LLM_REQUEST:
                 return await self._handle_llm_request(message)
@@ -63,14 +69,48 @@ class TxtAIService(BaseService):
         """Handle RAG requests"""
         query = message.data.get("query")
         if not query:
-            raise ValueError("Query is required for RAG requests")
+            raise ValueError("Query cannot be empty")
 
-        response = await self.rag_service.generate(query)
-        return {
-            "type": "rag_response",
-            "data": {"answer": response},
-            "session_id": message.session_id,
-        }
+        # Get optional parameters from standard format
+        options = message.data.get("options", {})
+        limit = options.get("limit", 3)
+        threshold = options.get("threshold", 0.5)
+
+        try:
+            # Get context from embeddings service
+            context = await self.rag_service.search_context(query, limit=limit, min_score=threshold)
+            if not context:
+                return {
+                    "type": MessageType.RAG_RESPONSE.value,
+                    "data": {
+                        "answer": "No relevant context found to answer the question.",
+                        "sources": [],
+                        "context": "",
+                    },
+                    "session_id": message.session_id,
+                }
+
+            # Format context for LLM
+            context_text = "\n".join(doc["text"] for doc in context)
+            sources = [doc.get("metadata", {}).get("source", "") for doc in context]
+
+            # Generate response using LLM with context
+            answer = await self.rag_service.generate(query)
+
+            # Return in standard format
+            return {
+                "type": MessageType.RAG_RESPONSE.value,
+                "data": {
+                    "answer": answer,
+                    "sources": sources,
+                    "context": context_text,
+                },
+                "session_id": message.session_id,
+            }
+
+        except Exception as e:
+            logger.error(f"RAG request failed: {e}")
+            raise ValueError(f"RAG generation failed: {str(e)}")
 
     async def _handle_llm_request(self, message: Message) -> Dict[str, Any]:
         """Handle LLM requests"""
@@ -80,7 +120,7 @@ class TxtAIService(BaseService):
 
         response = await self.llm_service.generate(prompt)
         return {
-            "type": "llm_response",
+            "type": MessageType.LLM_RESPONSE.value,
             "data": {"response": response},
             "session_id": message.session_id,
         }
@@ -93,7 +133,7 @@ class TxtAIService(BaseService):
 
         count = await self.embeddings_service.add(documents)
         return {
-            "type": "embeddings_response",
+            "type": MessageType.EMBEDDINGS_RESPONSE.value,
             "data": {"count": count},
             "session_id": message.session_id,
         }

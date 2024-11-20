@@ -32,9 +32,9 @@ class CommunicationService(BaseService):
                 self.streams = settings.STREAMS
                 self.consumer_group = settings.CONSUMER_GROUP_TXTAI
                 self.consumer_name = settings.CONSUMER_NAME_TXTAI
+                self.settings = settings
 
-                # Clean up and initialize streams
-                await self._cleanup_streams()
+                # Initialize consumer groups
                 await self._initialize_consumer_groups()
 
                 self._initialized = True
@@ -44,32 +44,35 @@ class CommunicationService(BaseService):
                 logger.error(f"Failed to initialize Redis connection: {e}")
                 raise
 
-    async def _cleanup_streams(self) -> None:
-        """Clean up existing streams"""
-        for stream in self.streams:
-            try:
-                # Delete existing stream
-                await self._redis_client.delete(stream)
-                logger.info(f"Cleaned up stream: {stream}")
-            except Exception as e:
-                logger.error(f"Failed to clean up stream {stream}: {e}")
-                raise
-
     async def _initialize_consumer_groups(self) -> None:
         """Initialize consumer groups for all streams"""
         for stream in self.streams:
             try:
-                # Create stream and consumer group
+                # Create stream and consumer group first
                 await self._redis_client.xgroup_create(
-                    stream,
-                    self.consumer_group,
-                    mkstream=True,
-                    id="$",  # Start from new messages only
+                    stream, self.consumer_group, mkstream=True, id="0"
                 )
-                logger.info(f"Created consumer group for stream: {stream}")
+                logger.info(f"Created consumer group {self.consumer_group} for stream: {stream}")
+
+                # Now that we know the stream exists, get group info
+                try:
+                    groups = await self._redis_client.xinfo_groups(stream)
+                    logger.info(f"Existing groups for stream {stream}: {groups}")
+
+                    # Log stream info
+                    stream_info = await self._redis_client.xinfo_stream(stream)
+                    logger.info(f"Stream info for {stream}: {stream_info}")
+                except redis.ResponseError as e:
+                    # Just log any issues getting stream info, don't fail initialization
+                    logger.warning(f"Could not get stream info for {stream}: {e}")
+
             except redis.ResponseError as e:
-                if "BUSYGROUP" not in str(e):  # Ignore if group exists
+                if "BUSYGROUP" not in str(e):
+                    logger.error(f"Error creating group for stream {stream}: {e}")
                     raise
+                logger.info(
+                    f"Consumer group {self.consumer_group} already exists for stream {stream}"
+                )
 
     async def publish_to_stream(self, stream: str, data: Dict[str, Any]) -> None:
         """Publish message to Redis Stream"""
@@ -101,24 +104,30 @@ class CommunicationService(BaseService):
         """Read message from Redis Stream"""
         self._check_initialized()
         try:
-            logger.info(f"Attempting to read from stream: {stream}")
-            # Read messages
+            # Use debug level for routine operations
+            logger.debug(f"Attempting to read from stream: {stream}")
+
             messages = await self._redis_client.xreadgroup(
-                self.consumer_group, self.consumer_name, {stream: ">"}, count=1, block=1000
+                self.consumer_group,
+                self.consumer_name,
+                {stream: ">"},
+                count=self.settings.STREAM_READ_COUNT,
+                block=self.settings.STREAM_BLOCK_MS,
             )
 
             if messages:
+                # Only log when we actually get messages
                 logger.info(f"Raw messages from Redis: {messages}")
                 stream_name, stream_messages = messages[0]
                 msg_id, msg_data = stream_messages[0]
 
-                # Parse message data
                 message = {
                     "type": msg_data[b"type"].decode(),
                     "data": json.loads(msg_data[b"data"].decode()),
                     "session_id": msg_data[b"session_id"].decode(),
                 }
-                logger.info(f"Parsed message: {message}")
+
+                await self._redis_client.xack(stream, self.consumer_group, msg_id)
                 return message
 
             return None

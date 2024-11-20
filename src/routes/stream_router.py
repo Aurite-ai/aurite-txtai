@@ -1,47 +1,65 @@
-from fastapi import APIRouter, Depends
-from src.middleware.auth import verify_token
-from src.services.redis.stream_service import stream_service
-from src.models.messages import Message, MessageType
+from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any
+from src.middleware.auth import verify_token
+from src.services import registry
+from src.models.messages import MessageType
 
-router = APIRouter()
-
-
-@router.post("/start")
-async def start_stream(token: bool = Depends(verify_token)):
-    """Start stream listener"""
-    await stream_service.start_listening()
-    return {"status": "started"}
+router = APIRouter(tags=["stream"])
 
 
-@router.post("/stop")
-async def stop_stream(token: bool = Depends(verify_token)):
-    """Stop stream listener"""
-    await stream_service.stop_listening()
-    return {"status": "stopped"}
+@router.post("/rag", dependencies=[Depends(verify_token)])
+async def rag_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
+    """Handle RAG stream requests"""
+    try:
+        if "query" in data:
+            response = await registry.rag_service.generate(data["query"])
+            return {
+                "type": MessageType.RAG_RESPONSE.value,
+                "data": {"answer": response},
+                "session_id": session_id,
+            }
+        elif "documents" in data:
+            count = await registry.embeddings_service.add(data["documents"])
+            return {
+                "type": MessageType.RAG_RESPONSE.value,
+                "data": {"count": count},
+                "session_id": session_id,
+            }
+        else:
+            raise ValueError("Invalid RAG request format")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/status")
-async def stream_status(token: bool = Depends(verify_token)):
-    """Get stream listener status"""
-    return {"listening": stream_service._listening, "initialized": stream_service.initialized}
+@router.post("/llm", dependencies=[Depends(verify_token)])
+async def llm_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
+    """Handle LLM stream requests"""
+    try:
+        if "prompt" not in data:
+            raise ValueError("Prompt is required for LLM requests")
+
+        response = await registry.llm_service.generate(data["prompt"], system=data.get("system"))
+        return {
+            "type": MessageType.LLM_RESPONSE.value,
+            "data": {"response": response},
+            "session_id": session_id,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/test/{stream_type}")
-async def test_stream(stream_type: str, data: Dict[str, Any], token: bool = Depends(verify_token)):
-    """Test stream by sending a message"""
-    # Map stream types to MessageType and stream names
-    stream_map = {
-        "rag": (MessageType.RAG_REQUEST, "rag_stream"),
-        "llm": (MessageType.LLM_REQUEST, "llm_stream"),
-        "embeddings": (MessageType.EMBEDDINGS_REQUEST, "embeddings_stream"),
-    }
+@router.post("/embeddings", dependencies=[Depends(verify_token)])
+async def embeddings_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
+    """Handle embeddings stream requests"""
+    try:
+        if "documents" not in data:
+            raise ValueError("Documents are required for embeddings requests")
 
-    if stream_type not in stream_map:
-        return {"error": f"Invalid stream type. Must be one of: {list(stream_map.keys())}"}
-
-    msg_type, stream = stream_map[stream_type]
-    message = Message(type=msg_type, data=data, session_id="test-session")
-
-    await stream_service.process_message(stream, message.dict())
-    return {"status": "message sent", "stream": stream, "message": message.dict()}
+        count = await registry.embeddings_service.add(data["documents"])
+        return {
+            "type": MessageType.EMBEDDINGS_RESPONSE.value,
+            "data": {"count": count},
+            "session_id": session_id,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
