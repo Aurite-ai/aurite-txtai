@@ -15,7 +15,11 @@ async def rag_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, 
             response = await registry.rag_service.generate(data["query"])
             return {
                 "type": MessageType.RAG_RESPONSE.value,
-                "data": {"answer": response},
+                "data": {
+                    "answer": response,
+                    "sources": [],
+                    "context": "",
+                },
                 "session_id": session_id,
             }
         elif "documents" in data:
