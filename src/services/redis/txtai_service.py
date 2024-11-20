@@ -2,142 +2,116 @@ import logging
 from typing import Dict, Any, Optional
 from ..base_service import BaseService
 from src.models.messages import Message, MessageType
+from fastapi import HTTPException
+import httpx
+from src.config.settings import Settings
 
 logger = logging.getLogger(__name__)
 
 
 class TxtAIService(BaseService):
-    """Service for handling txtai operations through Redis streams"""
+    """Service for communicating with txtai server"""
 
     def __init__(self):
-        """Initialize TxtAI service"""
-        super().__init__()
-        self.embeddings_service = None
-        self.llm_service = None
-        self.rag_service = None
+        self._initialized = False
+        self._settings: Optional[Settings] = None
+        self._client: Optional[httpx.AsyncClient] = None
+        self._services: Optional[Dict[str, Any]] = None
 
-    async def initialize(self, services: Dict[str, Any]) -> None:
-        """Initialize service with required dependencies"""
-        if not self.initialized:
-            try:
-                self.embeddings_service = services.get("embeddings")
-                self.llm_service = services.get("llm")
-                self.rag_service = services.get("rag")
+    @property
+    def initialized(self) -> bool:
+        return self._initialized
 
-                if not all([self.embeddings_service, self.llm_service, self.rag_service]):
-                    raise ValueError("Missing required services")
-
-                self._initialized = True
-                logger.info("TxtAI service initialized successfully")
-            except Exception as e:
-                logger.error(f"Failed to initialize txtai service: {e}")
-                raise
+    async def initialize(
+        self, settings: Settings, services: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Initialize service with settings and optional core services"""
+        if not self._initialized:
+            self._settings = settings
+            self._services = services
+            self._client = httpx.AsyncClient(
+                base_url=self._settings.TXTAI_URL,
+                headers={"Authorization": f"Bearer {self._settings.API_KEY}"},
+                timeout=30.0,
+            )
+            self._initialized = True
+            logger.info(f"TxtAI service initialized successfully")
 
     async def handle_request(self, message: Message) -> Dict[str, Any]:
-        """Handle incoming stream messages"""
-        self._check_initialized()
+        """Handle incoming request"""
         try:
-            logger.info(f"Handling {message.type} request for session {message.session_id}")
+            # Get endpoint based on message type
+            endpoint = self._get_endpoint(message.type)
 
-            if message.type == MessageType.HEALTH_CHECK:
+            # Process request based on message type
+            if message.type == MessageType.RAG_REQUEST:
+                response = await self._client.post(endpoint, json={"query": message.data["query"]})
+                response.raise_for_status()
                 return {
-                    "type": MessageType.HEALTH_CHECK_RESPONSE.value,
-                    "data": {"status": "healthy"},
+                    "type": MessageType.RAG_RESPONSE.value,
+                    "data": response.json(),
                     "session_id": message.session_id,
                 }
-            elif message.type == MessageType.RAG_REQUEST:
-                return await self._handle_rag_request(message)
             elif message.type == MessageType.LLM_REQUEST:
-                return await self._handle_llm_request(message)
+                response = await self._client.post(endpoint, json=message.data)
+                response.raise_for_status()
+                return {
+                    "type": MessageType.LLM_RESPONSE.value,
+                    "data": response.json(),
+                    "session_id": message.session_id,
+                }
             elif message.type == MessageType.EMBEDDINGS_REQUEST:
-                return await self._handle_embeddings_request(message)
-            elif message.type == MessageType.ERROR:
-                logger.info(f"Received error message: {message.data}")
-                return None
+                response = await self._client.post(endpoint, json=message.data)
+                response.raise_for_status()
+                return {
+                    "type": MessageType.EMBEDDINGS_RESPONSE.value,
+                    "data": response.json(),
+                    "session_id": message.session_id,
+                }
             else:
                 raise ValueError(f"Unsupported message type: {message.type}")
 
         except Exception as e:
-            logger.error(f"Error handling request: {str(e)}")
+            logger.error(f"Error handling request: {e}")
             return {
                 "type": MessageType.ERROR.value,
                 "data": {"error": str(e)},
                 "session_id": message.session_id,
             }
 
-    async def _handle_rag_request(self, message: Message) -> Dict[str, Any]:
-        """Handle RAG requests"""
-        query = message.data.get("query")
-        if not query:
-            raise ValueError("Query cannot be empty")
+    def _get_endpoint(self, message_type: MessageType) -> str:
+        """Get endpoint for message type"""
+        endpoints = {
+            MessageType.RAG_REQUEST: "/stream/rag",
+            MessageType.LLM_REQUEST: "/stream/llm",
+            MessageType.EMBEDDINGS_REQUEST: "/stream/embeddings",
+        }
 
-        # Get optional parameters from standard format
-        options = message.data.get("options", {})
-        limit = options.get("limit", 3)
-        threshold = options.get("threshold", 0.5)
+        if message_type not in endpoints:
+            raise ValueError(f"Unsupported message type: {message_type}")
+
+        return endpoints[message_type]
+
+    async def check_health(self) -> bool:
+        """Check txtai server health"""
+        if not self._client:
+            return False
 
         try:
-            # Get context from embeddings service
-            context = await self.rag_service.search_context(query, limit=limit, min_score=threshold)
-            if not context:
-                return {
-                    "type": MessageType.RAG_RESPONSE.value,
-                    "data": {
-                        "answer": "No relevant context found to answer the question.",
-                        "sources": [],
-                        "context": "",
-                    },
-                    "session_id": message.session_id,
-                }
-
-            # Format context for LLM
-            context_text = "\n".join(doc["text"] for doc in context)
-            sources = [doc.get("metadata", {}).get("source", "") for doc in context]
-
-            # Generate response using LLM with context
-            answer = await self.rag_service.generate(query)
-
-            # Return in standard format
-            return {
-                "type": MessageType.RAG_RESPONSE.value,
-                "data": {
-                    "answer": answer,
-                    "sources": sources,
-                    "context": context_text,
-                },
-                "session_id": message.session_id,
-            }
-
+            response = await self._client.get("/health")
+            response.raise_for_status()
+            return response.json().get("status") == "healthy"
         except Exception as e:
-            logger.error(f"RAG request failed: {e}")
-            raise ValueError(f"RAG generation failed: {str(e)}")
+            logger.error(f"Health check failed: {e}")
+            return False
 
-    async def _handle_llm_request(self, message: Message) -> Dict[str, Any]:
-        """Handle LLM requests"""
-        prompt = message.data.get("prompt")
-        if not prompt:
-            raise ValueError("Prompt is required for LLM requests")
-
-        response = await self.llm_service.generate(prompt)
-        return {
-            "type": MessageType.LLM_RESPONSE.value,
-            "data": {"response": response},
-            "session_id": message.session_id,
-        }
-
-    async def _handle_embeddings_request(self, message: Message) -> Dict[str, Any]:
-        """Handle embeddings requests"""
-        documents = message.data.get("documents")
-        if not documents:
-            raise ValueError("Documents are required for embeddings requests")
-
-        count = await self.embeddings_service.add(documents)
-        return {
-            "type": MessageType.EMBEDDINGS_RESPONSE.value,
-            "data": {"count": count},
-            "session_id": message.session_id,
-        }
+    async def close(self) -> None:
+        """Close HTTP client"""
+        if self._client:
+            await self._client.aclose()
+            self._initialized = False
+            logger.info("TxtAI service closed")
 
 
-# Global service instance
+# Global instance
 txtai_service = TxtAIService()
