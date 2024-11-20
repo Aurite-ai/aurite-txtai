@@ -1,8 +1,5 @@
-from txtai.api import API
-import logging
-from typing import Dict, Any
+from typing import List, Dict, Any, Optional
 from pydantic_settings import BaseSettings
-from typing import List, Dict, Any, Optional, Literal
 import os
 from functools import lru_cache
 from dotenv import load_dotenv
@@ -16,7 +13,7 @@ class Settings(BaseSettings):
 
     # Server Configuration
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = 8000  # txtai service port
     LOG_LEVEL: str = "debug"
     ENV: str = "development"
 
@@ -25,17 +22,31 @@ class Settings(BaseSettings):
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
     REDIS_DB: int = int(os.getenv("REDIS_DB", "0"))
-
     # Stream Configuration
     STREAM_BLOCK_MS: int = 5000
-    STREAM_RAG: str = "rag_stream"
-    STREAM_EMBEDDINGS: str = "embeddings_stream"
-    STREAM_LLM: str = "llm_stream"
+    STREAM_READ_COUNT: int = 100
+
+    # Stream Names
+    STREAM_PREFIX: str = "stream"
+    STREAM_RAG: str = f"rag_{STREAM_PREFIX}"
+    STREAM_EMBEDDINGS: str = f"embeddings_{STREAM_PREFIX}"
+    STREAM_LLM: str = f"llm_{STREAM_PREFIX}"
     STREAMS: List[str] = [STREAM_RAG, STREAM_EMBEDDINGS, STREAM_LLM]
 
-    # Consumer Groups
-    CONSUMER_GROUP_TXTAI: str = "txtai-group"
-    CONSUMER_NAME_TXTAI: str = "txtai-consumer"
+    # Consumer Configuration
+    CONSUMER_PREFIX: str = "txtai"
+    CONSUMER_GROUP_TXTAI: str = f"{CONSUMER_PREFIX}_group"
+    CONSUMER_NAME_TXTAI: str = f"{CONSUMER_PREFIX}_consumer"
+
+    # Message Types and Stream Mapping
+    MESSAGE_TYPES: Dict[str, str] = {
+        "rag_request": STREAM_RAG,
+        "rag_response": STREAM_RAG,
+        "embeddings_request": STREAM_EMBEDDINGS,
+        "embeddings_response": STREAM_EMBEDDINGS,
+        "llm_request": STREAM_LLM,
+        "llm_response": STREAM_LLM,
+    }
 
     # txtai Configuration
     TXTAI_HOST: str = os.getenv("TXTAI_HOST", "localhost")
@@ -53,7 +64,6 @@ class Settings(BaseSettings):
         "rag": "You are a helpful AI assistant.",
         "default": "You are a helpful AI assistant.",
     }
-
     LLM_MODELS: Dict[str, str] = {
         "anthropic": "claude-3-5-sonnet-20240620",
         "openai": "gpt-4o-mini",

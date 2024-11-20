@@ -40,6 +40,19 @@ class TxtAIService(BaseService):
     async def handle_request(self, message: Message) -> Dict[str, Any]:
         """Handle incoming request"""
         try:
+            # Skip response messages to avoid loops
+            if message.type in [
+                MessageType.RAG_RESPONSE,
+                MessageType.LLM_RESPONSE,
+                MessageType.EMBEDDINGS_RESPONSE,
+            ]:
+                logger.debug(f"Skipping response message type: {message.type}")
+                return {
+                    "type": message.type.value,
+                    "data": message.data,
+                    "session_id": message.session_id,
+                }
+
             # Get endpoint based on message type
             endpoint = self._get_endpoint(message.type)
 
@@ -83,8 +96,11 @@ class TxtAIService(BaseService):
         """Get endpoint for message type"""
         endpoints = {
             MessageType.RAG_REQUEST: "/stream/rag",
+            MessageType.RAG_RESPONSE: "/stream/rag",
             MessageType.LLM_REQUEST: "/stream/llm",
+            MessageType.LLM_RESPONSE: "/stream/llm",
             MessageType.EMBEDDINGS_REQUEST: "/stream/embeddings",
+            MessageType.EMBEDDINGS_RESPONSE: "/stream/embeddings",
         }
 
         if message_type not in endpoints:
