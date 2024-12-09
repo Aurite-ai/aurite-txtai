@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import logging
 from abc import ABC, abstractmethod
+import logging
 from typing import TYPE_CHECKING, Any, TypeVar
 
 

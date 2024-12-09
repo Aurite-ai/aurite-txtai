@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os
 
-import pytest
 from dotenv import load_dotenv
+import pytest
 
 from src.config import Settings
 

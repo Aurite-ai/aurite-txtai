@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import os
 from functools import lru_cache
+import os
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings

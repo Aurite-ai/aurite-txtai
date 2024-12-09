@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os
 
-import pytest
 from dotenv import load_dotenv
+import pytest
 
 from src.config import Settings
 from src.services.core.embeddings_service import create_embeddings_config
@@ -14,21 +14,23 @@ load_dotenv()
 
 
 @pytest.fixture
-def base_settings():
-    """Base settings fixture with required fields"""
-    return Settings(
-        API_KEY="test-key",
-        EMBEDDINGS_MODEL="sentence-transformers/nli-mpnet-base-v2",
-        EMBEDDINGS_STORAGE_TYPE="memory",
-        EMBEDDINGS_CONTENT_PATH=":memory:",
-        EMBEDDINGS_BATCH_SIZE=32,
-        LLM_PROVIDER="anthropic",
-        ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY"),
-        SYSTEM_PROMPTS={
+def common_test_settings():
+    """Common test settings fixture"""
+    return {
+        "API_KEY": "test-key",
+        "LLM_PROVIDER": "anthropic",
+        "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
+        "SYSTEM_PROMPTS": {
             "rag": "You are a helpful AI assistant.",
             "default": "You are a helpful AI assistant.",
         },
-    )
+    }
+
+
+@pytest.fixture
+def base_settings(common_test_settings):
+    """Base settings for embeddings tests"""
+    return Settings(EMBEDDINGS_STORAGE_TYPE="memory", EMBEDDINGS_CONTENT_PATH=":memory:", **common_test_settings)
 
 
 def test_base_config(base_settings) -> None:

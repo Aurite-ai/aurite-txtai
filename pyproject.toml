@@ -124,7 +124,22 @@ max-statements = 50  # Allow more statements in functions
     "ANN401",  # Allow Any in RAG operations
     "PLR0912", # Allow complex functions for RAG
 ]
-"tests/*" = ["ANN", "D", "PLR"]
+"src/middleware/auth.py" = [
+    "BLE001"  # Allow broad exception handling in auth middleware
+]
+"src/routes/stream_router.py" = [
+    "BLE001"  # Allow broad exception handling in stream router
+]
+"src/services/core/txtai_service.py" = [
+    "BLE001"  # Allow broad exception handling in txtai service
+]
+"tests/*" = [
+    "ANN",     # Allow missing annotations in tests
+    "D",       # Allow missing docstrings in tests
+    "PLR",     # Allow magic numbers and other pylint refactoring issues in tests
+    "BLE001",  # Allow broad exception handling in tests
+    "B017"     # Allow pytest.raises(Exception) in tests
+]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -140,3 +155,8 @@ known-first-party = ["src"]
 combine-as-imports = true
 lines-after-imports = 2
 required-imports = ["from __future__ import annotations"]
+force-single-line = false
+force-sort-within-sections = true
+order-by-type = true
+relative-imports-order = "closest-to-furthest"
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]

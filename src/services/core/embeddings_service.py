@@ -6,18 +6,12 @@ It handles document indexing, hybrid search, and database verification.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 import json
 import logging
-from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, cast
 
-from src.models.txtai_types import (
-    DictLike,
-    EmbeddingsConfig,
-    EmbeddingsDocument,
-    EmbeddingsResult,
-    TxtaiIndexDocuments,
-)
+from src.models.txtai_types import DictLike, EmbeddingsConfig, EmbeddingsDocument, EmbeddingsResult, TxtaiIndexDocuments
 from src.services.base_service import BaseService
 from txtai.embeddings import Embeddings
 

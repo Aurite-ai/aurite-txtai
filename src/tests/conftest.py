@@ -4,8 +4,8 @@ import asyncio
 import logging
 import os
 
-import pytest
 from dotenv import load_dotenv
+import pytest
 
 from src.config import Settings
 from src.services import initialize_services
@@ -28,22 +28,29 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="session")
-def test_settings():
-    """Test settings with memory storage"""
-    return Settings(
-        EMBEDDINGS_STORAGE_TYPE="memory",
-        EMBEDDINGS_CONTENT_PATH=":memory:",
-        API_KEY="test-key",
-        EMBEDDINGS_MODEL="sentence-transformers/nli-mpnet-base-v2",
-        EMBEDDINGS_BATCH_SIZE=32,
-        LLM_PROVIDER="anthropic",
-        ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY"),
-        SYSTEM_PROMPTS={
+@pytest.fixture
+def common_test_settings():
+    """Common test settings used across test files"""
+    return {
+        "EMBEDDINGS_MODEL": "sentence-transformers/nli-mpnet-base-v2",
+        "EMBEDDINGS_BATCH_SIZE": 32,
+        "LLM_PROVIDER": "anthropic",
+        "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
+        "SYSTEM_PROMPTS": {
             "rag": "You are a helpful AI assistant.",
             "default": "You are a helpful AI assistant.",
         },
+    }
+
+
+@pytest.fixture
+def test_settings(common_test_settings):
+    """Test settings for the application"""
+    return Settings(
+        EMBEDDINGS_CONTENT_PATH=":memory:",
+        API_KEY="test-key",
         REDIS_DB=1,  # Use test database
+        **common_test_settings,
     )
 
 

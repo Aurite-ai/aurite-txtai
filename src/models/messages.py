@@ -50,6 +50,6 @@ class Message(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary with string message type"""
-        data = self.dict()
+        data = self.model_dump()
         data["type"] = self.type.value
         return data

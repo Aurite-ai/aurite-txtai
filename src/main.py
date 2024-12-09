@@ -6,9 +6,9 @@ and defines core endpoints including health checks and service initialization.
 
 from __future__ import annotations
 
-import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+import logging
 from typing import Any, cast
 
 from fastapi import FastAPI, HTTPException
