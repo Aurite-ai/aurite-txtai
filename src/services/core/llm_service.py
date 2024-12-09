@@ -22,6 +22,7 @@ class LLMConfig(TypedDict):
 
     path: str
     api_key: str
+    provider: str
 
 
 class LLMService(BaseService):
@@ -54,6 +55,7 @@ class LLMService(BaseService):
                         if self.settings.LLM_PROVIDER == "anthropic"
                         else self.settings.LLM_API_KEY
                     ),
+                    "provider": self.settings.LLM_PROVIDER,
                 }
                 logger.info(f"LLM Config: {self._config}")
 
@@ -62,6 +64,35 @@ class LLMService(BaseService):
         except Exception as e:
             logger.error(f"Failed to initialize LLM: {e!s}")
             raise
+
+    def _prepare_completion_params(
+        self,
+        temperature: float = 0.7,
+        max_tokens: int = 1000,
+    ) -> dict[str, Any]:
+        """Prepare completion parameters based on provider
+
+        Args:
+            temperature: Sampling temperature (0.0 to 1.0)
+            max_tokens: Maximum tokens to generate
+
+        Returns:
+            dict[str, Any]: Provider-specific completion parameters
+        """
+        if self._config is None:
+            raise RuntimeError("LLM config not initialized")
+
+        params = {
+            "temperature": temperature,
+        }
+
+        # Handle max_tokens based on provider
+        if self._config["provider"] == "anthropic":
+            params["max_tokens_to_sample"] = max_tokens
+        else:
+            params["max_tokens"] = max_tokens
+
+        return params
 
     async def generate(
         self,
@@ -86,19 +117,26 @@ class LLMService(BaseService):
             if self._config is None:
                 raise RuntimeError("LLM config not initialized")
 
+            # Validate prompt
+            if not prompt or not prompt.strip():
+                logger.warning("Empty prompt provided")
+                return ""
+
             # Format messages
             messages = []
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
 
-            # Generate response
-            response = await completion(
+            # Get provider-specific parameters
+            completion_params = self._prepare_completion_params(temperature, max_tokens)
+
+            # Generate response (completion is not async)
+            response = completion(
                 model=self._config["path"],
                 messages=messages,
                 api_key=self._config["api_key"],
-                temperature=temperature,
-                max_tokens=max_tokens,
+                **completion_params,
             )
 
             # Extract response text safely
@@ -142,19 +180,26 @@ class LLMService(BaseService):
             if self._config is None:
                 raise RuntimeError("LLM config not initialized")
 
+            # Validate messages
+            if not messages or not all(msg.get("content") and msg.get("role") for msg in messages):
+                logger.warning("Invalid message format")
+                return ""
+
             # Format messages with optional system prompt
             formatted_messages = []
             if system_prompt:
                 formatted_messages.append({"role": "system", "content": system_prompt})
             formatted_messages.extend(messages)
 
-            # Generate response
-            response = await completion(
+            # Get provider-specific parameters
+            completion_params = self._prepare_completion_params(temperature, max_tokens)
+
+            # Generate response (completion is not async)
+            response = completion(
                 model=self._config["path"],
                 messages=formatted_messages,
                 api_key=self._config["api_key"],
-                temperature=temperature,
-                max_tokens=max_tokens,
+                **completion_params,
             )
 
             # Extract response text safely

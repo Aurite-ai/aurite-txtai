@@ -28,7 +28,7 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def common_test_settings():
     """Common test settings used across test files"""
     return {
@@ -36,6 +36,7 @@ def common_test_settings():
         "EMBEDDINGS_BATCH_SIZE": 32,
         "LLM_PROVIDER": "anthropic",
         "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
+        "LLM_MODELS": {"anthropic": "claude-2", "openai": "gpt-4"},
         "SYSTEM_PROMPTS": {
             "rag": "You are a helpful AI assistant.",
             "default": "You are a helpful AI assistant.",
@@ -43,7 +44,7 @@ def common_test_settings():
     }
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def test_settings(common_test_settings):
     """Test settings for the application"""
     return Settings(
@@ -66,7 +67,7 @@ async def initialized_services(event_loop, test_settings):
 
         # Cleanup
         if services.get("stream"):
-            await services["stream"].stop_listening()
+            await services["stream"].stop()
         if services.get("communication"):
             await services["communication"].close()
 

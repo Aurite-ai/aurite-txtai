@@ -23,6 +23,46 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def create_embeddings_config(settings: Settings) -> EmbeddingsConfig:
+    """Create embeddings configuration from settings.
+
+    Args:
+        settings: Application settings
+
+    Returns:
+        EmbeddingsConfig: Configuration dictionary for txtai embeddings
+    """
+    config: EmbeddingsConfig = {
+        "path": settings.EMBEDDINGS_MODEL,
+        "content": True,
+        "backend": "faiss",
+        "hybrid": True,
+        "normalize": True,
+        "database": True,
+        "storetokens": True,
+        "storeannoy": True,
+        "scoring": {
+            "method": "bm25",
+            "terms": True,
+            "normalize": True,
+            "weights": {"hybrid": 0.7, "terms": 0.3},
+        },
+        "batch": settings.EMBEDDINGS_BATCH_SIZE,
+        "contentpath": settings.EMBEDDINGS_CONTENT_PATH,
+    }
+
+    # Add cloud storage configuration if needed
+    if settings.EMBEDDINGS_STORAGE_TYPE == "cloud":
+        config["cloud"] = {
+            "provider": "gcs",
+            "container": settings.GOOGLE_CLOUD_BUCKET,
+            "prefix": settings.EMBEDDINGS_PREFIX,
+        }
+        config["contentpath"] = f"gcs://{settings.GOOGLE_CLOUD_BUCKET}"
+
+    return config
+
+
 class EmbeddingsService(BaseService):
     """Service for managing document embeddings and search"""
 
@@ -48,20 +88,7 @@ class EmbeddingsService(BaseService):
 
             if not self._initialized:
                 logger.info("=== Initializing Embeddings ===")
-                config: EmbeddingsConfig = {
-                    "path": self.settings.EMBEDDINGS_MODEL,
-                    "content": True,
-                    "backend": "faiss",
-                    "hybrid": True,
-                    "functions": {
-                        "search": {
-                            "function": "hybrid",
-                            "weights": {"hybrid": 0.7, "terms": 0.3},
-                        },
-                    },
-                    "batch": self.settings.EMBEDDINGS_BATCH_SIZE,
-                    "contentpath": self.settings.EMBEDDINGS_CONTENT_PATH,
-                }
+                config = create_embeddings_config(settings)
 
                 # Initialize embeddings
                 self.embeddings = Embeddings(config)

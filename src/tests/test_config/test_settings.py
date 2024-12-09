@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 import pytest
 
-from src.config import Settings
+from src.config.settings import Settings
 
 
 # Load environment variables
@@ -37,8 +37,8 @@ def test_default_settings(base_settings) -> None:
     # Test core settings
     assert settings.EMBEDDINGS_MODEL == "sentence-transformers/nli-mpnet-base-v2"
     assert settings.EMBEDDINGS_STORAGE_TYPE == "memory"
-    assert settings.API_HOST == "0.0.0.0"
-    assert settings.API_PORT == 8000
+    assert settings.HOST == "0.0.0.0"
+    assert settings.PORT == 8000
     assert settings.EMBEDDINGS_BATCH_SIZE == 32
     assert settings.LLM_PROVIDER == "anthropic"
 
@@ -47,10 +47,10 @@ def test_storage_type_validation() -> None:
     """Test validation of storage type"""
     with pytest.raises(ValueError, match="1 validation error"):
         Settings(
-            EMBEDDINGS_STORAGE_TYPE="invalid",  # Invalid storage type
-            EMBEDDINGS_CONTENT_PATH=":memory:",
             API_KEY="test-key",
             EMBEDDINGS_MODEL="test-model",
+            EMBEDDINGS_STORAGE_TYPE="invalid",  # Invalid storage type
+            EMBEDDINGS_CONTENT_PATH=":memory:",
             EMBEDDINGS_BATCH_SIZE=32,
             LLM_PROVIDER="anthropic",
             ANTHROPIC_API_KEY="test-key",

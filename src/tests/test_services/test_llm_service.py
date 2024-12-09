@@ -14,9 +14,14 @@ logger = logging.getLogger(__name__)
 class TestLLMService:
     """Test LLM service functionality"""
 
-    async def test_basic_generation(self, initialized_services) -> None:
+    @pytest.fixture(autouse=True)
+    async def setup_services(self, initialized_services, test_settings) -> None:
+        """Setup services before each test"""
+        self.settings = test_settings
+        self.services = initialized_services
+
+    async def test_basic_generation(self) -> None:
         """Test basic text generation"""
-        # No need to await initialized_services
         prompt = "What is 2+2?"
         response = await registry.llm_service.generate(prompt)
         assert isinstance(response, str)
@@ -29,7 +34,10 @@ class TestLLMService:
         context = "The capital of France is Paris. It is known for the Eiffel Tower."
         question = "What is the capital of France?"
 
-        response = await registry.llm_service.generate_with_context(question, context)
+        # Use system prompt for context
+        response = await registry.llm_service.generate(
+            prompt=question, system_prompt=f"Use this context to answer: {context}"
+        )
 
         assert isinstance(response, str)
         assert len(response) > 0
@@ -48,7 +56,7 @@ class TestLLMService:
             {"role": "system", "content": "You are a helpful AI assistant."},
             {"role": "user", "content": "Hello"},
         ]
-        list_response = await registry.llm_service.generate(messages)
+        list_response = await registry.llm_service.chat(messages)
         assert isinstance(list_response, str)
         logger.info(f"Message list format response: {list_response[:100]}...")
 
@@ -57,22 +65,26 @@ class TestLLMService:
         # Test with empty prompt
         empty_response = await registry.llm_service.generate("")
         assert isinstance(empty_response, str)
-        assert "error" in empty_response.lower() or len(empty_response) == 0
+        assert len(empty_response) == 0  # Should return empty string on error
 
         # Test with invalid message format
         invalid_messages = [{"invalid": "format"}]
-        error_response = await registry.llm_service.generate(invalid_messages)
+        error_response = await registry.llm_service.chat(invalid_messages)
         assert isinstance(error_response, str)
-        assert "error" in error_response.lower()
+        assert len(error_response) == 0  # Should return empty string on error
 
-        logger.info(f"Error handling response: {error_response[:100]}...")
+        logger.info("Error handling tests passed")
 
     async def test_context_constraints(self) -> None:
         """Test that context-based generation stays within context"""
         context = "The sky is blue. Birds can fly in the sky."
         question = "What color is grass?"
 
-        response = await registry.llm_service.generate_with_context(question, context)
+        # Use system prompt to enforce context constraints
+        response = await registry.llm_service.generate(
+            prompt=question,
+            system_prompt=f"Only answer using this context: {context}. If the answer cannot be found in the context, say so.",
+        )
 
         assert isinstance(response, str)
         assert len(response) > 0
@@ -80,16 +92,20 @@ class TestLLMService:
         assert any(word in response.lower() for word in ["cannot", "not", "unavailable", "context"])
         logger.info(f"Context constraint response: {response[:100]}...")
 
-    async def test_system_prompts(self, test_settings) -> None:
+    async def test_system_prompts(self) -> None:
         """Test system prompt handling"""
         # Test default system prompt
-        response = await registry.llm_service.generate("Hello")
+        response = await registry.llm_service.generate(
+            prompt="Hello", system_prompt=self.settings.SYSTEM_PROMPTS["default"]
+        )
         assert isinstance(response, str)
         logger.info(f"Default prompt response: {response[:100]}...")
 
         # Test RAG system prompt
         context = "AI helps automate tasks."
         question = "How does AI help?"
-        rag_response = await registry.llm_service.generate_with_context(question, context)
+        rag_response = await registry.llm_service.generate(
+            prompt=question, system_prompt=f"{self.settings.SYSTEM_PROMPTS['rag']}\nContext: {context}"
+        )
         assert isinstance(rag_response, str)
         logger.info(f"RAG prompt response: {rag_response[:100]}...")

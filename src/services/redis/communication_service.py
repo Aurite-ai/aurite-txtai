@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
 import redis.asyncio as redis
+
+from src.services.base_service import BaseService
 
 
 if TYPE_CHECKING:
@@ -50,77 +52,50 @@ class RedisClientProtocol(Protocol):
         """Read messages from one or more streams."""
         ...
 
-    async def xreadgroup(
-        self,
-        groupname: str,
-        consumername: str,
-        streams: dict[str, str],
-        count: int | None = None,
-        block: int | None = None,
-    ) -> list[tuple[bytes, list[tuple[bytes, dict[bytes, bytes]]]]] | None:
-        """Read messages from a stream as part of a consumer group."""
-        ...
 
-    async def xack(self, name: str, groupname: str, *message_ids: str) -> int:
-        """Acknowledge one or more messages as processed."""
-        ...
-
-
-class CommunicationService:
-    """Service for Redis stream communication"""
+class CommunicationService(BaseService):
+    """Service for Redis communication and stream operations"""
 
     def __init__(self) -> None:
         """Initialize communication service"""
-        self._initialized: bool = False
-        self._settings: Settings | None = None
-        self._redis_client: redis.Redis | None = None
-        self.streams: list[str] = []
+        super().__init__()
+        self._client: redis.Redis | None = None
         self.consumer_group: str = ""
         self.consumer_name: str = ""
 
-    @property
-    def initialized(self) -> bool:
-        """Check if service is initialized"""
-        return self._initialized
-
-    @property
-    def settings(self) -> Settings:
-        """Get settings, raising an error if not initialized"""
-        if self._settings is None:
-            raise RuntimeError("Settings not initialized")
-        return self._settings
-
-    async def initialize(self: T, settings: Settings) -> None:
-        """Initialize communication service with configuration
+    async def initialize(self, settings: Settings, **kwargs: Any) -> None:
+        """Initialize Redis connection and stream configuration
 
         Args:
             settings: Application settings
+            **kwargs: Additional configuration options
 
         Raises:
             Exception: If initialization fails
         """
         try:
-            if not self._initialized:
-                # Store settings
-                self._settings = settings
+            await super().initialize(settings, **kwargs)
 
+            if not self._initialized:
                 # Initialize Redis client
-                self._redis_client = cast(
-                    redis.Redis,
-                    redis.from_url(
-                        settings.REDIS_URL,
-                        encoding="utf-8",
-                        decode_responses=True,
-                    ),
+                self._client = redis.Redis(
+                    host=self.settings.REDIS_HOST,
+                    port=self.settings.REDIS_PORT,
+                    db=self.settings.REDIS_DB,
+                    decode_responses=True,
                 )
 
-                # Set stream configuration
-                self.streams = settings.STREAMS
-                self.consumer_group = settings.CONSUMER_GROUP_TXTAI
-                self.consumer_name = settings.CONSUMER_NAME_TXTAI
+                # Test connection
+                if not await self._client.ping():
+                    raise RuntimeError("Failed to connect to Redis")
 
-                # Initialize consumer groups
-                await self._initialize_consumer_groups()
+                # Set consumer configuration
+                self.consumer_group = self.settings.CONSUMER_GROUP_TXTAI
+                self.consumer_name = self.settings.CONSUMER_NAME_TXTAI
+
+                # Initialize streams
+                for stream in self.settings.STREAMS:
+                    await self._init_stream(stream)
 
                 self._initialized = True
                 logger.info("Communication service initialized successfully")
@@ -129,38 +104,41 @@ class CommunicationService:
             logger.error(f"Failed to initialize communication service: {e!s}")
             raise
 
-    async def _initialize_consumer_groups(self) -> None:
-        """Initialize consumer groups for all streams"""
-        if not self._redis_client:
-            raise RuntimeError("Redis client not initialized")
+    async def _init_stream(self, stream: str) -> None:
+        """Initialize a stream configuration
 
-        for stream in self.streams:
+        Args:
+            stream: Stream to initialize
+
+        Raises:
+            Exception: If stream initialization fails
+        """
+        try:
+            # Create stream and consumer group first
+            await self._client.xgroup_create(
+                name=stream,
+                groupname=self.consumer_group,
+                mkstream=True,
+                id="0",
+            )
+            logger.info(f"Created consumer group {self.consumer_group} for stream: {stream}")
+
+            # Now that we know the stream exists, get group info
             try:
-                # Create stream and consumer group first
-                await self._redis_client.xgroup_create(
-                    name=stream,
-                    groupname=self.consumer_group,
-                    mkstream=True,
-                    id="0",
-                )
-                logger.info(f"Created consumer group {self.consumer_group} for stream: {stream}")
+                groups = await self._client.xinfo_groups(name=stream)
+                logger.info(f"Existing groups for stream {stream}: {groups}")
 
-                # Now that we know the stream exists, get group info
-                try:
-                    groups = await self._redis_client.xinfo_groups(name=stream)
-                    logger.info(f"Existing groups for stream {stream}: {groups}")
-
-                    # Log stream info
-                    stream_info = await self._redis_client.xinfo_stream(name=stream)
-                    logger.info(f"Stream info for {stream}: {stream_info}")
-                except redis.ResponseError as e:
-                    # Just log any issues getting stream info, don't fail initialization
-                    logger.warning(f"Error getting stream info for {stream}: {e!s}")
-
+                # Log stream info
+                stream_info = await self._client.xinfo_stream(name=stream)
+                logger.info(f"Stream info for {stream}: {stream_info}")
             except redis.ResponseError as e:
-                if "BUSYGROUP" not in str(e):
-                    raise
-                logger.info(f"Consumer group {self.consumer_group} already exists for stream: {stream}")
+                # Just log any issues getting stream info, don't fail initialization
+                logger.warning(f"Error getting stream info for {stream}: {e!s}")
+
+        except redis.ResponseError as e:
+            if "BUSYGROUP" not in str(e):
+                raise
+            logger.info(f"Consumer group {self.consumer_group} already exists for stream: {stream}")
 
     async def publish_to_stream(self, stream: str, data: dict[str, Any]) -> None:
         """Publish message to stream
@@ -173,7 +151,7 @@ class CommunicationService:
             RuntimeError: If service is not initialized
             Exception: If publishing fails
         """
-        if not self._redis_client:
+        if not self._client:
             raise RuntimeError("Redis client not initialized")
 
         try:
@@ -183,7 +161,7 @@ class CommunicationService:
                 "timestamp": str(data.get("timestamp", "")),
             }
 
-            await self._redis_client.xadd(name=stream, fields=stream_data)
+            await self._client.xadd(name=stream, fields=stream_data)
             logger.info(f"Published to stream {stream}: {data}")
 
         except Exception as e:
@@ -203,13 +181,13 @@ class CommunicationService:
             RuntimeError: If service is not initialized
             Exception: If reading fails
         """
-        if not self._redis_client:
+        if not self._client:
             raise RuntimeError("Redis client not initialized")
 
         try:
             logger.debug(f"Attempting to read from stream: {stream}")
 
-            messages = await self._redis_client.xreadgroup(
+            messages = await self._client.xreadgroup(
                 groupname=self.consumer_group,
                 consumername=self.consumer_name,
                 streams={stream: ">"},
@@ -234,13 +212,20 @@ class CommunicationService:
                     stream_messages.append(message)
 
                     # Acknowledge message
-                    await self._redis_client.xack(name=stream, groupname=self.consumer_group, ids=msg_id.decode())
+                    await self._client.xack(name=stream, groupname=self.consumer_group, ids=msg_id.decode())
 
             return stream_messages
 
         except Exception as e:
             logger.error(f"Error reading from stream {stream}: {e!s}")
             raise
+
+    async def close(self) -> None:
+        """Close Redis connection"""
+        if self._client:
+            await self._client.close()
+            self._initialized = False
+            logger.info("Communication service closed")
 
 
 # Global instance

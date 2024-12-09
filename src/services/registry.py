@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import ClassVar, Self, cast
+from typing import ClassVar, TypeVar, cast
 
 from src.services.base_service import BaseService
 from src.services.core.embeddings_service import EmbeddingsService
@@ -13,6 +13,9 @@ from src.services.redis.txtai_service import TxtAIService
 
 
 logger = logging.getLogger(__name__)
+
+# Type variable for self-referential type hints
+T = TypeVar("T", bound="ServiceRegistry")
 
 
 class ServiceRegistry:
@@ -29,7 +32,7 @@ class ServiceRegistry:
     _instance: ClassVar[ServiceRegistry | None] = None
     _services: ClassVar[dict[str, BaseService]] = {}
 
-    def __new__(cls) -> Self:
+    def __new__(cls: type[T]) -> T:
         """Create or return singleton instance.
 
         Returns:
@@ -37,7 +40,7 @@ class ServiceRegistry:
         """
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-        return cast(Self, cls._instance)
+        return cast(T, cls._instance)
 
     @property
     def services(self) -> dict[str, BaseService]:
