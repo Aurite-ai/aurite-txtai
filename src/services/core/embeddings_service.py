@@ -1,9 +1,23 @@
+"""Embeddings service for managing document indexing and semantic search.
+
+This module provides a service for managing document embeddings using txtai.
+It handles document indexing, hybrid search, and database verification.
+"""
+
 from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, cast
 
+from src.models.txtai_types import (
+    DictLike,
+    EmbeddingsConfig,
+    EmbeddingsDocument,
+    EmbeddingsResult,
+    TxtaiIndexDocuments,
+)
 from src.services.base_service import BaseService
 from txtai.embeddings import Embeddings
 
@@ -21,109 +35,193 @@ class EmbeddingsService(BaseService):
     def __init__(self) -> None:
         """Initialize embeddings service"""
         super().__init__()
-        self.settings = None
-        self.embeddings = None
+        self.embeddings: Embeddings | None = None
 
-    async def initialize(self, settings: Settings) -> None:
-        """Initialize embeddings with configuration"""
-        if not self.initialized:
-            try:
-                self.settings = settings
-                logger.info("\n=== Initializing Embeddings ===")
-                config = {
+    async def initialize(self, settings: Settings, **kwargs: Any) -> None:
+        """Initialize embeddings with configuration
+
+        Args:
+            settings: Application settings containing embeddings configuration
+            **kwargs: Additional configuration options
+
+        Raises:
+            RuntimeError: If service is already initialized
+            ValueError: If configuration is invalid
+            ConnectionError: If embeddings backend fails to connect
+        """
+        try:
+            await super().initialize(settings, **kwargs)
+
+            if not self._initialized:
+                logger.info("=== Initializing Embeddings ===")
+                config: EmbeddingsConfig = {
                     "path": self.settings.EMBEDDINGS_MODEL,
                     "content": True,
                     "backend": "faiss",
                     "hybrid": True,
-                    "normalize": True,
-                    "scoring": {
-                        "method": "bm25",
-                        "terms": True,
-                        "normalize": True,
-                        "weights": {"hybrid": 0.7, "terms": 0.3},
+                    "functions": {
+                        "search": {
+                            "function": "hybrid",
+                            "weights": {"hybrid": 0.7, "terms": 0.3},
+                        },
                     },
                     "batch": self.settings.EMBEDDINGS_BATCH_SIZE,
                     "contentpath": self.settings.EMBEDDINGS_CONTENT_PATH,
-                    "database": True,
-                    "storetokens": True,
-                    "storeannoy": True,
                 }
-                logger.info(f"Using config: {json.dumps(config, indent=2)}")
 
-                # Create embeddings instance
+                # Initialize embeddings
                 self.embeddings = Embeddings(config)
-
-                # Initialize database and create empty index
-                self.embeddings.index([("init", "init", "{}")])
-                self.embeddings.delete(["init"])
 
                 self._initialized = True
                 logger.info("Embeddings initialized successfully")
-            except Exception as e:
-                logger.error(f"Embeddings initialization failed: {e}")
-                raise
 
-    async def add(self, documents: list[dict[str, Any]]) -> int:
-        """Add documents to embeddings index"""
-        self._check_initialized()
+        except (ValueError, ConnectionError) as e:
+            logger.error("Failed to initialize embeddings: %s", str(e))
+            raise
+        except Exception as e:
+            logger.error("Unexpected error initializing embeddings: %s", str(e))
+            raise RuntimeError(f"Failed to initialize embeddings: {e!s}") from e
+
+    async def verify_database(self) -> int:
+        """Verify database is initialized and return count of embeddings
+
+        Returns:
+            int: Number of embeddings in database
+
+        Raises:
+            RuntimeError: If service is not initialized
+            ConnectionError: If database verification fails
+        """
         try:
-            logger.info("\n=== Adding Documents ===")
-            logger.info(f"Processing {len(documents)} documents")
+            self._check_initialized()
+            if self.embeddings is None:
+                raise RuntimeError("Embeddings not initialized")
 
-            # Format documents for txtai
-            formatted_docs = []
-            for doc in documents:
-                doc_id = str(doc.get("id", len(formatted_docs) + 1))
-                text = doc.get("text", "")
-                metadata = json.dumps({k: v for k, v in doc.items() if k not in ["id", "text"]})
-                formatted = (doc_id, text, metadata)
-                logger.info(f"Formatted document: {formatted}")
-                formatted_docs.append(formatted)
-
-            logger.info("Indexing documents...")
-            self.embeddings.index(formatted_docs)
-            logger.info("Documents indexed")
-
-            # Verify count
             logger.info("Verifying with query: SELECT COUNT(*) as count FROM txtai")
-            count = self.embeddings.search("SELECT COUNT(*) as count FROM txtai")[0]["count"]
-            logger.info(f"Verified count: {count}")
+            result = self.embeddings.search("SELECT COUNT(*) as count FROM txtai")
+            if not result or not isinstance(result, list):
+                return 0
+
+            # Handle various return types from txtai search
+            first_result = result[0]
+            if isinstance(first_result, dict | DictLike):  # type: ignore[misc] # Pylance doesn't understand DictLike
+                count = cast(int, first_result.get("count", 0))  # type: ignore[union-attr] # Complex txtai return type
+            elif isinstance(first_result, tuple):
+                count = cast(int, first_result[0])
+            else:
+                count = 0
+
+            logger.info("Verified count: %d", count)
             return count
 
-        except Exception as e:
-            logger.error(f"Error adding documents: {e}")
+        except ConnectionError as e:
+            logger.error("Database verification failed: %s", str(e))
             raise
+        except Exception as e:
+            logger.error("Unexpected error verifying database: %s", str(e))
+            return 0
 
-    async def hybrid_search(self, query: str, limit: int = 3) -> list[dict[str, Any]]:
-        """Perform hybrid search (semantic + keyword) on indexed documents"""
-        self._check_initialized()
+    async def add(self, documents: list[EmbeddingsDocument]) -> int:
+        """Add documents to embeddings index
+
+        Args:
+            documents: List of documents to add
+
+        Returns:
+            int: Number of documents in the index after addition
+
+        Raises:
+            RuntimeError: If service is not initialized
+            ValueError: If documents are invalid
+            ConnectionError: If indexing fails
+        """
         try:
-            # Format search query with hybrid scoring
-            search_query = f"""
-            SELECT id, text, score, tags as metadata
-            FROM txtai
-            WHERE similar('{query}')
-            LIMIT {limit}
-            """
+            self._check_initialized()
+            if self.embeddings is None:
+                raise RuntimeError("Embeddings not initialized")
 
-            results = self.embeddings.search(search_query)
-            return [
-                {
-                    "id": str(result["id"]),
-                    "text": result["text"],
-                    "score": result["score"],
-                    "metadata": json.loads(result["metadata"]) if result.get("metadata") else {},
-                }
-                for result in results
+            logger.info("=== Adding Documents ===")
+            logger.info("Processing %d documents", len(documents))
+
+            # Format documents for txtai
+            formatted_docs: TxtaiIndexDocuments = [
+                (
+                    str(doc["id"]),
+                    str(doc["text"]),
+                    json.dumps(doc["metadata"]),
+                )
+                for doc in documents
             ]
-        except Exception as e:
-            logger.error(f"Error in hybrid search: {e}")
+
+            # Index documents
+            self.embeddings.index(formatted_docs)
+            logger.info("Documents indexed successfully")
+
+            # Verify count
+            return await self.verify_database()
+
+        except (ValueError, ConnectionError) as e:
+            logger.error("Error adding documents: %s", str(e))
             raise
+        except Exception as e:
+            logger.error("Unexpected error adding documents: %s", str(e))
+            raise RuntimeError(f"Failed to add documents: {e!s}") from e
 
-    async def search(self, query: str, limit: int = 3) -> list[dict[str, Any]]:
-        """Alias for hybrid_search to maintain compatibility"""
-        return await self.hybrid_search(query, limit)
+    async def hybrid_search(self, query: str, limit: int = 5, min_score: float = 0.0) -> list[EmbeddingsResult]:
+        """Perform hybrid search on embeddings
+
+        Args:
+            query: Search query
+            limit: Maximum number of results
+            min_score: Minimum score threshold
+
+        Returns:
+            list[EmbeddingsResult]: List of search results
+
+        Raises:
+            RuntimeError: If service is not initialized
+            ValueError: If query is invalid
+            ConnectionError: If search fails
+        """
+        try:
+            self._check_initialized()
+            if self.embeddings is None:
+                raise RuntimeError("Embeddings not initialized")
+
+            # Execute search
+            results = cast(Iterable[Any], self.embeddings.search(query, limit))  # type: ignore[misc] # Complex txtai return type
+            if not results:
+                return []
+
+            # Filter and format results
+            filtered_results: list[EmbeddingsResult] = []
+            for r in results:
+                if not isinstance(r, dict | DictLike) or not hasattr(r, "get"):  # type: ignore[misc]
+                    continue
+
+                score = float(r.get("score", 0.0))  # type: ignore[union-attr]
+                if score <= min_score:
+                    continue
+
+                filtered_results.append(
+                    {
+                        "text": str(r.get("text", "")),  # type: ignore[union-attr]
+                        "score": score,
+                        "metadata": json.loads(r.get("metadata", "{}")) if r.get("metadata") else {},  # type: ignore[union-attr]
+                        "id": str(r.get("id", "")),  # type: ignore[union-attr]
+                    }
+                )
+
+            logger.info("Found %d relevant documents above score threshold", len(filtered_results))
+            return filtered_results
+
+        except (ValueError, ConnectionError) as e:
+            logger.error("Search failed: %s", str(e))
+            raise
+        except Exception as e:
+            logger.error("Unexpected error during search: %s", str(e))
+            return []
 
 
-# Global service instance
+# Global instance
 embeddings_service = EmbeddingsService()

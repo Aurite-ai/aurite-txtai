@@ -2,72 +2,169 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import logging
+from typing import ClassVar, Self, cast
+
+from src.services.base_service import BaseService
+from src.services.core.embeddings_service import EmbeddingsService
+from src.services.core.llm_service import LLMService
+from src.services.core.rag_service import RAGService
+from src.services.redis.txtai_service import TxtAIService
 
 
-if TYPE_CHECKING:
-    from .base_service import BaseService
-    from .embeddings_service import EmbeddingsService
-    from .llm_service import LLMService
-    from .rag_service import RAGService
-    from .txtai_service import TxtAIService
+logger = logging.getLogger(__name__)
 
 
 class ServiceRegistry:
-    """Registry for accessing initialized services"""
+    """Registry for managing service instances.
 
-    _instance: ServiceRegistry | None = None
-    _services: dict[str, BaseService] = {}
+    This class implements the singleton pattern to provide global access to service instances.
+    It manages the lifecycle and access to all application services.
 
-    def __new__(cls) -> ServiceRegistry:
+    Attributes:
+        _instance: Singleton instance of the registry
+        _services: Dictionary of registered services
+    """
+
+    _instance: ClassVar[ServiceRegistry | None] = None
+    _services: ClassVar[dict[str, BaseService]] = {}
+
+    def __new__(cls) -> Self:
+        """Create or return singleton instance.
+
+        Returns:
+            ServiceRegistry: Singleton instance
+        """
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-        return cls._instance
+        return cast(Self, cls._instance)
+
+    @property
+    def services(self) -> dict[str, BaseService]:
+        """Get all registered services.
+
+        Returns:
+            dict[str, BaseService]: Dictionary of service instances
+        """
+        return self._services
+
+    def get_service(self, name: str) -> BaseService | None:
+        """Get a service by name.
+
+        Args:
+            name: Service name/key
+
+        Returns:
+            BaseService | None: Service instance if found, None otherwise
+        """
+        return self._services.get(name)
 
     @property
     def embeddings_service(self) -> EmbeddingsService | None:
-        """Get the embeddings service.
+        """Get embeddings service instance.
 
         Returns:
-            EmbeddingsService | None: The embeddings service if registered, None otherwise.
+            EmbeddingsService | None: Service instance if registered and of correct type
         """
-        return self._services.get("embeddings")  # type: ignore
+        service = self._services.get("embeddings")
+        return service if isinstance(service, EmbeddingsService) else None
 
     @property
     def llm_service(self) -> LLMService | None:
-        """Get the LLM service.
+        """Get LLM service instance.
 
         Returns:
-            LLMService | None: The LLM service if registered, None otherwise.
+            LLMService | None: Service instance if registered and of correct type
         """
-        return self._services.get("llm")  # type: ignore
+        service = self._services.get("llm")
+        return service if isinstance(service, LLMService) else None
 
     @property
     def rag_service(self) -> RAGService | None:
-        """Get the RAG service.
+        """Get RAG service instance.
 
         Returns:
-            RAGService | None: The RAG service if registered, None otherwise.
+            RAGService | None: Service instance if registered and of correct type
         """
-        return self._services.get("rag")  # type: ignore
+        service = self._services.get("rag")
+        return service if isinstance(service, RAGService) else None
 
     @property
     def txtai_service(self) -> TxtAIService | None:
-        """Get the txtai service.
+        """Get txtai service instance.
 
         Returns:
-            TxtAIService | None: The txtai service if registered, None otherwise.
+            TxtAIService | None: Service instance if registered and of correct type
         """
-        return self._services.get("txtai")  # type: ignore
+        service = self._services.get("txtai")
+        return service if isinstance(service, TxtAIService) else None
 
-    def register_services(self, services: dict[str, BaseService]) -> None:
-        """Register all services.
+    def register(self, name: str, service: BaseService) -> None:
+        """Register a service instance.
 
         Args:
-            services: Dictionary mapping service names to service instances.
+            name: Service name/key
+            service: Service instance to register
+
+        Raises:
+            ValueError: If service name is empty or None
+            TypeError: If service is not a BaseService instance
         """
-        self._services = services
+        if not name:
+            raise ValueError("Service name cannot be empty")
+        if not isinstance(service, BaseService):
+            raise TypeError(f"Service must be a BaseService instance, got {type(service)}")
+
+        self._services[name] = service
+        logger.info("Registered service: %s", name)
+
+    def register_services(self, services: dict[str, BaseService]) -> None:
+        """Register multiple services at once.
+
+        Args:
+            services: Dictionary of service instances to register
+
+        Raises:
+            ValueError: If services dict is empty
+            TypeError: If any service is not a BaseService instance
+        """
+        if not services:
+            raise ValueError("Services dictionary cannot be empty")
+
+        for name, service in services.items():
+            self.register(name, service)
+
+    def unregister(self, name: str) -> None:
+        """Unregister a service by name.
+
+        Args:
+            name: Service name/key to unregister
+        """
+        if name in self._services:
+            del self._services[name]
+            logger.info("Unregistered service: %s", name)
+
+    async def check_health(self) -> dict[str, str]:
+        """Check health of all registered services.
+
+        Returns:
+            dict[str, str]: Dictionary of service health statuses
+        """
+        health_status = {}
+        for name, service in self._services.items():
+            try:
+                if not service.initialized:
+                    health_status[name] = "not initialized"
+                    continue
+
+                # Add additional health checks here if needed
+                health_status[name] = "healthy"
+            except Exception as e:
+                logger.error("Health check failed for service %s: %s", name, str(e))
+                health_status[name] = f"unhealthy: {e!s}"
+
+        return health_status
 
 
-# Global instance
+# Global registry instance
 registry = ServiceRegistry()

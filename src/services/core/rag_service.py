@@ -1,128 +1,137 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 
-from src.config import Settings
 from src.services.base_service import BaseService
 
 
 if TYPE_CHECKING:
-    from .embeddings_service import EmbeddingsService
-    from .llm_service import LLMService
+    from src.config import Settings
+    from src.services.core.embeddings_service import EmbeddingsService
+    from src.services.core.llm_service import LLMService
 
 
 logger = logging.getLogger(__name__)
 
 
+class RAGResult(TypedDict):
+    """Type definition for RAG result"""
+
+    question: str
+    context: str
+    answer: str
+
+
 class RAGService(BaseService):
-    """Service for RAG operations"""
+    """Service for Retrieval Augmented Generation operations"""
 
     def __init__(self) -> None:
         """Initialize RAG service"""
         super().__init__()
-        self.settings: Settings | None = None
         self.embeddings_service: EmbeddingsService | None = None
         self.llm_service: LLMService | None = None
 
     async def initialize(
         self,
-        settings: Settings = None,
+        settings: Settings,
         embeddings_service: EmbeddingsService | None = None,
         llm_service: LLMService | None = None,
+        **kwargs: Any,
     ) -> None:
-        """Initialize RAG service with dependencies"""
-        if not self.initialized:
-            try:
-                # Get or create settings
-                self.settings = settings or Settings()
+        """Initialize RAG service with configuration
 
-                # Set service dependencies
+        Args:
+            settings: Application settings
+            embeddings_service: Optional pre-initialized embeddings service
+            llm_service: Optional pre-initialized LLM service
+            **kwargs: Additional configuration options
+
+        Raises:
+            Exception: If initialization fails
+        """
+        try:
+            await super().initialize(settings, **kwargs)
+
+            if not self._initialized:
+                # Set required services
                 self.embeddings_service = embeddings_service
                 self.llm_service = llm_service
 
-                # Verify dependencies are initialized
-                if not (self.embeddings_service and self.embeddings_service.initialized):
-                    raise ValueError("Embeddings service must be initialized")
-                if not (self.llm_service and self.llm_service.initialized):
-                    raise ValueError("LLM service must be initialized")
-
                 self._initialized = True
                 logger.info("RAG service initialized successfully")
-            except Exception as e:
-                logger.error(f"Failed to initialize RAG service: {e}")
-                raise
 
-    async def generate(self, query: str) -> str:
-        """Generate response using RAG"""
-        self._check_initialized()
+        except Exception as e:
+            logger.error(f"Failed to initialize RAG service: {e!s}")
+            raise
 
-        if not query.strip():
-            raise ValueError("Query cannot be empty")
+    async def answer(
+        self,
+        question: str,
+        limit: int = 3,
+        min_score: float = 0.0,
+        temperature: float = 0.7,
+    ) -> RAGResult:
+        """Answer a question using RAG
 
+        Args:
+            question: Question to answer
+            limit: Maximum number of context documents to retrieve
+            min_score: Minimum relevance score for context documents
+            temperature: LLM temperature for answer generation
+
+        Returns:
+            RAGResult: Question, context used, and generated answer
+        """
         try:
-            # Get context with proper parameters
-            context = await self.search_context(query, limit=3)  # Using default limit
-            if not context:
-                return "No relevant context found to answer the question."
+            self._check_initialized()
+            if not self.embeddings_service or not self.llm_service:
+                raise RuntimeError("Required services not initialized")
 
-            # Format context for LLM with proper structure
-            context_text = "\n\nRelevant context:\n" + "\n---\n".join(
-                f"{r['text']}"
-                + (
-                    f" (Source: {r['metadata'].get('source', 'Unknown')})"
-                    if r.get("metadata")
-                    else ""
-                )
-                for r in context
+            # Search for relevant context
+            results = await self.embeddings_service.hybrid_search(
+                query=question,
+                limit=limit,
+                min_score=min_score,
             )
 
-            # Generate response using LLM with context and system prompt
+            # Format context from results
+            context = (
+                "\n\n".join(f"Document {i+1}:\n{r['text']}" for i, r in enumerate(results))
+                if results
+                else "No relevant context found."
+            )
+
+            # Generate answer using context
             system_prompt = self.settings.SYSTEM_PROMPTS.get(
                 "rag", "You are a helpful AI assistant."
             )
             prompt = (
-                f"Based on the following context, answer the question. "
-                f"If the context doesn't contain relevant information, say so.\n\n"
-                f"Question: {query}\n\n{context_text}"
+                f"Answer this question using ONLY the context below:\n\n"
+                f"Context:\n{context}\n\n"
+                f"Question: {question}\n\n"
+                f"Answer:"
             )
 
-            response = await self.llm_service.generate_with_context(prompt, system=system_prompt)
+            answer = await self.llm_service.generate(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                temperature=temperature,
+            )
 
-            logger.info(f"Generated RAG response for query: {query[:50]}...")
-            return response
-
-        except Exception as e:
-            logger.error(f"Generation failed: {e}")
-            raise
-
-    async def search_context(
-        self, query: str, limit: int = 3, min_score: float = 0.3
-    ) -> list[dict[str, Any]]:
-        """Search for relevant context"""
-        self._check_initialized()
-        try:
-            # Use hybrid search as specified in SERVICE.md
-            results = await self.embeddings_service.hybrid_search(query, limit=limit)
-
-            # Filter and format results
-            filtered_results = [
-                {
-                    "text": r["text"],
-                    "score": r["score"],
-                    "metadata": r.get("metadata", {}),
-                    "id": r.get("id", ""),
-                }
-                for r in results
-                if r["score"] > min_score
-            ]
-
-            logger.info(f"Found {len(filtered_results)} relevant documents above score threshold")
-            return filtered_results
+            return {
+                "question": question,
+                "context": context,
+                "answer": answer,
+            }
 
         except Exception as e:
-            logger.error(f"Context search failed: {e}")
-            raise
+            logger.error(f"RAG answer generation failed: {e!s}")
+            return {
+                "question": question,
+                "context": "Error retrieving context",
+                "answer": "Failed to generate answer due to an error",
+            }
 
 
 # Global service instance

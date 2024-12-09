@@ -1,0 +1,27 @@
+[MASTER]
+ignore=.venv,build,dist,*.egg-info
+
+[MESSAGES CONTROL]
+# Most checks are handled by ruff, only keep pylint-specific ones
+disable=all
+enable=
+    # Enable only pylint-specific checks that ruff doesn't cover
+    R0801,  # duplicate-code
+    R0911,  # too-many-return-statements
+    R0912,  # too-many-branches
+    R0915,  # too-many-statements
+    R0916   # too-many-boolean-expressions
+
+[FORMAT]
+max-line-length=200
+
+[DESIGN]
+max-args=10
+max-attributes=10
+max-branches=15
+max-locals=20
+max-returns=8
+max-statements=100
+
+[TYPECHECK]
+ignored-classes=pytest

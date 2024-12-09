@@ -36,19 +36,18 @@ dev = [
 packages = ["src"]
 
 [tool.black]
-line-length = 100
+line-length = 120
 target-version = ['py311']
 skip-string-normalization = true
 
-# Ruff configuration
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py311"
 extend-exclude = ["__pycache__", "*.pyc", "*.egg-info"]
 fix = true
 unsafe-fixes = true
 
-# Rule selection
+[tool.ruff.lint]
 select = [
     "E",   # pycodestyle
     "F",   # pyflakes
@@ -62,16 +61,29 @@ select = [
     "RUF", # ruff-specific
     "ERA", # eradicate
     "PL",  # pylint
+    "PLR", # pylint refactoring
     "W",   # warnings
     "D",   # pydocstyle
     "TCH", # type-checking
     "TID", # tidy imports
+    "BLE"  # flake8-blind-except
+]
+
+extend-select = [
+    "B",   # flake8-bugbear
+    "C",   # flake8-comprehensions
+    "I",   # isort
+    "N",   # pep8-naming
+    "RUF", # Ruff-specific rules
+    "UP",  # pyupgrade
+    "W",   # pycodestyle warnings
 ]
 
 ignore = [
     "E501",    # Line too long (handled by formatter)
     "ANN101",  # Missing type annotation for self
     "ANN102",  # Missing type annotation for cls
+    "ANN401",  # Dynamically typed expressions (Any) are disallowed
     "PLR0913", # Too many arguments to function call
     "D100",    # Missing docstring in public module
     "D104",    # Missing docstring in public package
@@ -83,42 +95,42 @@ ignore = [
     "D415",    # Missing blank line after class docstring
     "B904",    # Use 'raise from' in exception handling
     "ERA001",  # Unused import
+    "TC001",   # Move import into TYPE_CHECKING block
+    "TC002",   # Move import into TYPE_CHECKING block (third-party)
+    "TC003",   # Move import into TYPE_CHECKING block (stdlib)
 ]
 
-# Exclude directories
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
+[tool.ruff.lint.pylint]
+max-args = 8  # Allow more arguments in functions
+max-branches = 15  # Allow more complex functions
+max-statements = 50  # Allow more statements in functions
+
+[tool.ruff.lint.per-file-ignores]
+"src/services/base_service.py" = ["ANN401"]
+"src/services/registry.py" = [
+    "N818",    # Exception name should end with Error
+    "BLE001"  # Do not catch blind exception: Exception
 ]
+"src/services/core/embeddings_service.py" = [
+    "ANN401",  # Allow Any in txtai interactions
+    "PLR0912", # Allow complex functions for txtai operations
+    "PLR0915", # Allow many statements for txtai operations
+]
+"src/services/core/llm_service.py" = [
+    "ANN401",  # Allow Any in LLM responses
+    "PLR0912", # Allow complex functions for LLM handling
+]
+"src/services/core/rag_service.py" = [
+    "ANN401",  # Allow Any in RAG operations
+    "PLR0912", # Allow complex functions for RAG
+]
+"tests/*" = ["ANN", "D", "PLR"]
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "lf"
-
-[tool.ruff.lint]
-fixable = ["ALL"]
-unfixable = []
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

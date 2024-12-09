@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from .embeddings_service import embeddings_service
 from .llm_service import llm_service
@@ -32,7 +32,7 @@ async def initialize_core_services(settings: Settings) -> dict[str, Any]:
         return {"embeddings": embeddings_service, "llm": llm_service, "rag": rag_service}
 
     except Exception as e:
-        logger.error(f"Core service initialization failed: {e}")
+        logger.error("Core service initialization failed: %s", str(e))
         raise
 
 

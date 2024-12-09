@@ -79,6 +79,12 @@ class Settings(BaseSettings):
     EMBEDDINGS_BATCH_SIZE: int = int(os.getenv("EMBEDDINGS_BATCH_SIZE", "32"))
 
     class Config:
+        """Pydantic configuration for settings.
+
+        This class configures how the settings are loaded and validated.
+        It enables environment variable loading and case-sensitive field names.
+        """
+
         env_file = ".env"
         case_sensitive = True
         extra = "allow"
