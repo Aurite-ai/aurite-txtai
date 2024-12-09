@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
+
+from redis.exceptions import RedisError
 
 from .communication_service import communication_service
 from .stream_service import stream_service
@@ -17,9 +19,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-async def initialize_redis_services(
-    settings: Settings, core_services: dict[str, Any]
-) -> dict[str, Any]:
+async def initialize_redis_services(settings: Settings, core_services: dict[str, Any]) -> dict[str, Any]:
     """Initialize Redis services"""
     try:
         logger.info("Initializing Redis communication service...")
@@ -34,7 +34,7 @@ async def initialize_redis_services(
             "txtai": txtai_service,
             "stream": stream_service,
         }
-    except Exception as e:
+    except (RedisError, RuntimeError) as e:
         logger.error(f"Redis service initialization failed: {e}")
         raise
 

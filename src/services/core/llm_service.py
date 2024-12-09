@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, TypedDict, cast
 
+import httpx
 from litellm import completion
 from litellm.types.utils import ModelResponse
 
@@ -57,9 +58,7 @@ class LLMService(BaseService):
                 logger.info(f"LLM Config: {self._config}")
 
                 self._initialized = True
-                logger.info(
-                    f"LLM initialized successfully with provider: {self.settings.LLM_PROVIDER}"
-                )
+                logger.info(f"LLM initialized successfully with provider: {self.settings.LLM_PROVIDER}")
         except Exception as e:
             logger.error(f"Failed to initialize LLM: {e!s}")
             raise
@@ -116,7 +115,7 @@ class LLMService(BaseService):
             logger.info(f"Generated response: {response_text}")
             return response_text
 
-        except Exception as e:
+        except (ValueError, RuntimeError, httpx.HTTPError) as e:
             logger.error(f"Generation failed: {e!s}")
             return ""
 
@@ -172,7 +171,7 @@ class LLMService(BaseService):
             logger.info(f"Generated response: {response_text}")
             return response_text
 
-        except Exception as e:
+        except (ValueError, RuntimeError, httpx.HTTPError) as e:
             logger.error(f"Chat failed: {e!s}")
             return ""
 

@@ -17,20 +17,39 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="CommunicationService")
 
 
-class RedisClient(Protocol):
+class RedisClientProtocol(Protocol):
     """Protocol for Redis client operations"""
 
-    async def ping(self) -> bool: ...
-    async def exists(self, key: str) -> bool: ...
-    async def xgroup_create(
-        self, name: str, groupname: str, id: str = "$", mkstream: bool = False
-    ) -> bool: ...
-    async def xinfo_groups(self, name: str) -> list[dict[str, Any]]: ...
-    async def xinfo_stream(self, name: str) -> dict[str, Any]: ...
-    async def xadd(self, name: str, fields: dict[str, str], id: str = "*") -> str: ...
+    async def ping(self) -> bool:
+        """Check Redis connection."""
+        ...
+
+    async def exists(self, key: str) -> bool:
+        """Check if key exists in Redis."""
+        ...
+
+    async def xgroup_create(self, name: str, groupname: str, message_id: str = "$", mkstream: bool = False) -> bool:
+        """Create a consumer group for a stream."""
+        ...
+
+    async def xinfo_groups(self, name: str) -> list[dict[str, Any]]:
+        """Get information about consumer groups of a stream."""
+        ...
+
+    async def xinfo_stream(self, name: str) -> dict[str, Any]:
+        """Get information about a stream."""
+        ...
+
+    async def xadd(self, name: str, fields: dict[str, str], message_id: str = "*") -> str:
+        """Add a message to a stream."""
+        ...
+
     async def xread(
         self, streams: dict[str, str], count: int | None = None, block: int | None = None
-    ) -> list[tuple[bytes, list[tuple[bytes, dict[bytes, bytes]]]]] | None: ...
+    ) -> list[tuple[bytes, list[tuple[bytes, dict[bytes, bytes]]]]] | None:
+        """Read messages from one or more streams."""
+        ...
+
     async def xreadgroup(
         self,
         groupname: str,
@@ -38,8 +57,13 @@ class RedisClient(Protocol):
         streams: dict[str, str],
         count: int | None = None,
         block: int | None = None,
-    ) -> list[tuple[bytes, list[tuple[bytes, dict[bytes, bytes]]]]] | None: ...
-    async def xack(self, name: str, groupname: str, *ids: str) -> int: ...
+    ) -> list[tuple[bytes, list[tuple[bytes, dict[bytes, bytes]]]]] | None:
+        """Read messages from a stream as part of a consumer group."""
+        ...
+
+    async def xack(self, name: str, groupname: str, *message_ids: str) -> int:
+        """Acknowledge one or more messages as processed."""
+        ...
 
 
 class CommunicationService:
@@ -136,9 +160,7 @@ class CommunicationService:
             except redis.ResponseError as e:
                 if "BUSYGROUP" not in str(e):
                     raise
-                logger.info(
-                    f"Consumer group {self.consumer_group} already exists for stream: {stream}"
-                )
+                logger.info(f"Consumer group {self.consumer_group} already exists for stream: {stream}")
 
     async def publish_to_stream(self, stream: str, data: dict[str, Any]) -> None:
         """Publish message to stream
@@ -212,9 +234,7 @@ class CommunicationService:
                     stream_messages.append(message)
 
                     # Acknowledge message
-                    await self._redis_client.xack(
-                        name=stream, groupname=self.consumer_group, ids=msg_id.decode()
-                    )
+                    await self._redis_client.xack(name=stream, groupname=self.consumer_group, ids=msg_id.decode())
 
             return stream_messages
 

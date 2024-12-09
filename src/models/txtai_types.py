@@ -2,14 +2,24 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, TypedDict, TypeVar, Union
+from typing import Any, Protocol, TypedDict, TypeVar
 
 
 # Protocol for objects that support dict-like get operations
 class DictLike(Protocol):
     """Protocol for objects that support dict-like get operations"""
 
-    def get(self, key: str, default: Any = None) -> Any: ...
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get value from dict-like object.
+
+        Args:
+            key: Key to get value for
+            default: Default value if key not found
+
+        Returns:
+            Value for key or default if not found
+        """
+        ...
 
 
 # Type variable for search results
@@ -68,7 +78,7 @@ class EmbeddingsConfig(TypedDict, total=False):
 
 
 # Type aliases for txtai return types
-TxtaiSearchResult = Union[dict[str, Any], DictLike, tuple[Any, ...]]
+TxtaiSearchResult = dict[str, Any] | DictLike | tuple[Any, ...]
 TxtaiSearchResults = list[TxtaiSearchResult]
 TxtaiIndexDocument = tuple[str, str, str]  # id, text, metadata_json
 TxtaiIndexDocuments = list[TxtaiIndexDocument]

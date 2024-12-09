@@ -65,7 +65,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 await comm_service.close()
 
             logger.info("Services shut down successfully")
-        except Exception as e:
+        except (RuntimeError, ConnectionError) as e:
             logger.error("Error during service shutdown: %s", str(e))
 
 

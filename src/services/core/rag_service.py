@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, TypedDict
 
+import httpx
+
 from src.services.base_service import BaseService
 
 
@@ -103,9 +105,7 @@ class RAGService(BaseService):
             )
 
             # Generate answer using context
-            system_prompt = self.settings.SYSTEM_PROMPTS.get(
-                "rag", "You are a helpful AI assistant."
-            )
+            system_prompt = self.settings.SYSTEM_PROMPTS.get("rag", "You are a helpful AI assistant.")
             prompt = (
                 f"Answer this question using ONLY the context below:\n\n"
                 f"Context:\n{context}\n\n"
@@ -125,7 +125,7 @@ class RAGService(BaseService):
                 "answer": answer,
             }
 
-        except Exception as e:
+        except (ValueError, RuntimeError, httpx.HTTPError) as e:
             logger.error(f"RAG answer generation failed: {e!s}")
             return {
                 "question": question,

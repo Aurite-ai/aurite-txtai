@@ -4,6 +4,8 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Any
 
+from redis.exceptions import RedisError
+
 from src.models.messages import Message, MessageType
 from src.services.base_service import BaseService
 
@@ -158,7 +160,7 @@ class StreamService(BaseService):
                     },
                 )
 
-        except Exception as e:
+        except (ValueError, RuntimeError, RedisError) as e:
             logger.error(f"Message processing error: {e!s}")
             # Don't re-raise to continue processing other messages
 

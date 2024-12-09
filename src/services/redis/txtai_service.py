@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 import httpx
 
+from src.config import Settings
 from src.models.messages import Message, MessageType
 from src.services.base_service import BaseService
 
@@ -27,6 +28,7 @@ class TxtAIService(BaseService):
 
     @property
     def initialized(self) -> bool:
+        """Check if the service is initialized."""
         return self._initialized
 
     async def initialize(self, settings: Settings, services: dict[str, Any] | None = None) -> None:
@@ -87,7 +89,7 @@ class TxtAIService(BaseService):
             else:
                 raise ValueError(f"Unsupported message type: {message.type}")
 
-        except Exception as e:
+        except (ValueError, RuntimeError, httpx.HTTPError) as e:
             logger.error(f"Error handling request: {e}")
             return {
                 "type": MessageType.ERROR.value,
@@ -120,7 +122,7 @@ class TxtAIService(BaseService):
             response = await self._client.get("/health")
             response.raise_for_status()
             return response.json().get("status") == "healthy"
-        except Exception as e:
+        except (httpx.HTTPError, httpx.RequestError) as e:
             logger.error(f"Health check failed: {e}")
             return False
 

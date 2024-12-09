@@ -12,3 +12,4 @@ ipywidgets
 pytest-depends
 pytest-ordering
 pytest-xdist
+isort==5.13.2

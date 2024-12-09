@@ -13,54 +13,74 @@ router = APIRouter()
 
 # Request Models
 class LLMRequest(BaseModel):
+    """Request model for LLM operations.
+
+    Attributes:
+        prompt: The text prompt to send to the LLM
+        system: Optional system prompt to guide LLM behavior
+    """
+
     prompt: str
     system: str | None = None
 
 
 class RAGRequest(BaseModel):
+    """Request model for RAG operations.
+
+    Attributes:
+        query: The query to search for relevant context
+        limit: Maximum number of documents to retrieve
+    """
+
     query: str
     limit: int = 3
 
 
 class EmbeddingRequest(BaseModel):
+    """Request model for embedding operations.
+
+    Attributes:
+        text: The text to generate embeddings for
+    """
+
     text: str
 
 
 # Direct API Endpoints
 @router.post("/llm/complete")
-async def complete_text(request: LLMRequest, token: bool = Depends(verify_token)):
+async def complete_text(request: LLMRequest, token: bool = Depends(verify_token)) -> dict[str, str]:
     """Generate text completion directly"""
     try:
         response = await registry.llm_service.generate(request.prompt, system=request.system)
         return {"response": response}
-    except Exception as e:
+    except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/rag/query")
-async def query_documents(request: RAGRequest, token: bool = Depends(verify_token)):
+async def query_documents(request: RAGRequest, token: bool = Depends(verify_token)) -> dict[str, str]:
     """Query documents using RAG directly"""
     try:
         response = await registry.rag_service.generate(request.query, limit=request.limit)
         return {"answer": response}
-    except Exception as e:
+    except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/embeddings/embed")
-async def embed_text(request: EmbeddingRequest, token: bool = Depends(verify_token)):
+async def embed_text(request: EmbeddingRequest, token: bool = Depends(verify_token)) -> dict[str, int]:
     """Generate embeddings for text directly"""
     try:
         documents = [{"text": request.text, "id": "temp"}]
         count = await registry.embeddings_service.add(documents)
         return {"count": count}
-    except Exception as e:
+    except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 # Stream-based API Endpoints
 @router.post("/llm/stream")
-async def stream_llm(request: LLMRequest, token: bool = Depends(verify_token)):
+async def stream_llm(request: LLMRequest, token: bool = Depends(verify_token)) -> Message:
     """Process LLM request through stream"""
     try:
         message = Message(
@@ -70,12 +90,12 @@ async def stream_llm(request: LLMRequest, token: bool = Depends(verify_token)):
         )
         response = await registry.txtai_service.handle_request(message)
         return response
-    except Exception as e:
+    except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/rag/stream")
-async def stream_rag(request: RAGRequest, token: bool = Depends(verify_token)):
+async def stream_rag(request: RAGRequest, token: bool = Depends(verify_token)) -> Message:
     """Process RAG request through stream"""
     try:
         message = Message(
@@ -85,12 +105,12 @@ async def stream_rag(request: RAGRequest, token: bool = Depends(verify_token)):
         )
         response = await registry.txtai_service.handle_request(message)
         return response
-    except Exception as e:
+    except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/embeddings/stream")
-async def stream_embeddings(request: EmbeddingRequest, token: bool = Depends(verify_token)):
+async def stream_embeddings(request: EmbeddingRequest, token: bool = Depends(verify_token)) -> Message:
     """Process embeddings request through stream"""
     try:
         message = Message(
@@ -100,5 +120,5 @@ async def stream_embeddings(request: EmbeddingRequest, token: bool = Depends(ver
         )
         response = await registry.txtai_service.handle_request(message)
         return response
-    except Exception as e:
+    except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e))

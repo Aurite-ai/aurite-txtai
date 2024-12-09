@@ -117,7 +117,7 @@ class EmbeddingsService(BaseService):
         except ConnectionError as e:
             logger.error("Database verification failed: %s", str(e))
             raise
-        except Exception as e:
+        except (ValueError, RuntimeError, OSError) as e:
             logger.error("Unexpected error verifying database: %s", str(e))
             return 0
 
@@ -218,7 +218,7 @@ class EmbeddingsService(BaseService):
         except (ValueError, ConnectionError) as e:
             logger.error("Search failed: %s", str(e))
             raise
-        except Exception as e:
+        except RuntimeError as e:
             logger.error("Unexpected error during search: %s", str(e))
             return []
 
