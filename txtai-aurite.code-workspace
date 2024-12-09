@@ -11,7 +11,7 @@
   "settings": {
     "python.analysis.ignore": ["notebooks/**", "../aurite-dev/services/**"],
     "[python]": {
-      "editor.defaultFormatter": "ms-python.black-formatter",
+      "editor.defaultFormatter": "charliermarsh.ruff",
       "editor.formatOnSave": true
     },
     "black-formatter.args": ["--skip-string-normalization"]

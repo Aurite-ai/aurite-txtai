@@ -1,6 +1,11 @@
-import pytest
+from __future__ import annotations
+
 import logging
+
+import pytest
+
 from src.models.messages import Message, MessageType
+
 
 logger = logging.getLogger(__name__)
 
@@ -9,21 +14,21 @@ logger = logging.getLogger(__name__)
 class TestServiceInitialization:
     """Test service initialization and basic functionality"""
 
-    async def test_core_services_initialized(self, initialized_services):
+    async def test_core_services_initialized(self, initialized_services) -> None:
         """Test that core services are properly initialized"""
         assert initialized_services["embeddings"].initialized
         assert initialized_services["llm"].initialized
         assert initialized_services["rag"].initialized
         logger.info("Core services initialized successfully")
 
-    async def test_redis_services_initialized(self, initialized_services):
+    async def test_redis_services_initialized(self, initialized_services) -> None:
         """Test that Redis services are properly initialized"""
         assert initialized_services["communication"].initialized
         assert initialized_services["txtai"].initialized
         assert initialized_services["stream"].initialized
         logger.info("Redis services initialized successfully")
 
-    async def test_embeddings_functionality(self, initialized_services, setup_test_data):
+    async def test_embeddings_functionality(self, initialized_services, setup_test_data) -> None:
         """Test basic embeddings functionality"""
         embeddings_service = initialized_services["embeddings"]
         results = await embeddings_service.search("machine learning")
@@ -31,7 +36,7 @@ class TestServiceInitialization:
         assert isinstance(results[0]["score"], float)
         logger.info(f"Search returned {len(results)} results")
 
-    async def test_llm_functionality(self, initialized_services):
+    async def test_llm_functionality(self, initialized_services) -> None:
         """Test basic LLM functionality"""
         llm_service = initialized_services["llm"]
         response = await llm_service.generate("Say hello!")
@@ -39,7 +44,7 @@ class TestServiceInitialization:
         assert len(response) > 0
         logger.info("LLM generation successful")
 
-    async def test_rag_functionality(self, initialized_services, setup_test_data):
+    async def test_rag_functionality(self, initialized_services, setup_test_data) -> None:
         """Test basic RAG functionality"""
         rag_service = initialized_services["rag"]
         response = await rag_service.generate("What is machine learning?")
@@ -47,7 +52,7 @@ class TestServiceInitialization:
         assert len(response) > 0
         logger.info("RAG generation successful")
 
-    async def test_message_handling(self, initialized_services, setup_test_data):
+    async def test_message_handling(self, initialized_services, setup_test_data) -> None:
         """Test message handling through txtai service"""
         txtai_service = initialized_services["txtai"]
 

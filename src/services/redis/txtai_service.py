@@ -1,10 +1,17 @@
+from __future__ import annotations
+
 import logging
-from typing import Dict, Any, Optional
-from ..base_service import BaseService
-from src.models.messages import Message, MessageType
-from fastapi import HTTPException
+from typing import TYPE_CHECKING, Any
+
 import httpx
-from src.config.settings import Settings
+
+from src.models.messages import Message, MessageType
+from src.services.base_service import BaseService
+
+
+if TYPE_CHECKING:
+    from src.config.settings import Settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -12,19 +19,17 @@ logger = logging.getLogger(__name__)
 class TxtAIService(BaseService):
     """Service for communicating with txtai server"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._initialized = False
-        self._settings: Optional[Settings] = None
-        self._client: Optional[httpx.AsyncClient] = None
-        self._services: Optional[Dict[str, Any]] = None
+        self._settings: Settings | None = None
+        self._client: httpx.AsyncClient | None = None
+        self._services: dict[str, Any] | None = None
 
     @property
     def initialized(self) -> bool:
         return self._initialized
 
-    async def initialize(
-        self, settings: Settings, services: Optional[Dict[str, Any]] = None
-    ) -> None:
+    async def initialize(self, settings: Settings, services: dict[str, Any] | None = None) -> None:
         """Initialize service with settings and optional core services"""
         if not self._initialized:
             self._settings = settings
@@ -35,9 +40,9 @@ class TxtAIService(BaseService):
                 timeout=30.0,
             )
             self._initialized = True
-            logger.info(f"TxtAI service initialized successfully")
+            logger.info("TxtAI service initialized successfully")
 
-    async def handle_request(self, message: Message) -> Dict[str, Any]:
+    async def handle_request(self, message: Message) -> dict[str, Any]:
         """Handle incoming request"""
         try:
             # Skip response messages to avoid loops

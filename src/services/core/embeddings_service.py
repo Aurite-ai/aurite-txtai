@@ -1,9 +1,16 @@
-from typing import List, Dict, Any, Optional
+from __future__ import annotations
+
 import json
 import logging
+from typing import TYPE_CHECKING, Any
+
+from src.services.base_service import BaseService
 from txtai.embeddings import Embeddings
-from src.config import Settings
-from ..base_service import BaseService
+
+
+if TYPE_CHECKING:
+    from src.config import Settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +18,7 @@ logger = logging.getLogger(__name__)
 class EmbeddingsService(BaseService):
     """Service for managing document embeddings and search"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize embeddings service"""
         super().__init__()
         self.settings = None
@@ -56,7 +63,7 @@ class EmbeddingsService(BaseService):
                 logger.error(f"Embeddings initialization failed: {e}")
                 raise
 
-    async def add(self, documents: List[Dict[str, Any]]) -> int:
+    async def add(self, documents: list[dict[str, Any]]) -> int:
         """Add documents to embeddings index"""
         self._check_initialized()
         try:
@@ -87,7 +94,7 @@ class EmbeddingsService(BaseService):
             logger.error(f"Error adding documents: {e}")
             raise
 
-    async def hybrid_search(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
+    async def hybrid_search(self, query: str, limit: int = 3) -> list[dict[str, Any]]:
         """Perform hybrid search (semantic + keyword) on indexed documents"""
         self._check_initialized()
         try:
@@ -113,7 +120,7 @@ class EmbeddingsService(BaseService):
             logger.error(f"Error in hybrid search: {e}")
             raise
 
-    async def search(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
+    async def search(self, query: str, limit: int = 3) -> list[dict[str, Any]]:
         """Alias for hybrid_search to maintain compatibility"""
         return await self.hybrid_search(query, limit)
 

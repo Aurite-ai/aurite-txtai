@@ -1,9 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends
-from src.middleware.auth import verify_token
-from src.services import registry
-from src.models.messages import Message, MessageType
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+
+from src.middleware.auth import verify_token
+from src.models.messages import Message, MessageType
+from src.services import registry
+
 
 router = APIRouter()
 
@@ -11,7 +14,7 @@ router = APIRouter()
 # Request Models
 class LLMRequest(BaseModel):
     prompt: str
-    system: Optional[str] = None
+    system: str | None = None
 
 
 class RAGRequest(BaseModel):

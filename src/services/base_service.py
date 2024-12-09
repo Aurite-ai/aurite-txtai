@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
-from typing import Optional
 from abc import ABC
+
 
 logger = logging.getLogger(__name__)
 
@@ -8,7 +10,7 @@ logger = logging.getLogger(__name__)
 class BaseService(ABC):
     """Base class for all services"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize base service"""
         self._initialized: bool = False
 

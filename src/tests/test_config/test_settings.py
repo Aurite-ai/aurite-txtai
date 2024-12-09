@@ -1,7 +1,12 @@
-import pytest
+from __future__ import annotations
+
 import os
-from src.config import Settings
+
+import pytest
 from dotenv import load_dotenv
+
+from src.config import Settings
+
 
 # Load environment variables
 load_dotenv()
@@ -25,7 +30,7 @@ def base_settings():
     }
 
 
-def test_default_settings(base_settings):
+def test_default_settings(base_settings) -> None:
     """Test default settings match expected values"""
     settings = Settings(**base_settings)
 
@@ -38,7 +43,7 @@ def test_default_settings(base_settings):
     assert settings.LLM_PROVIDER == "anthropic"
 
 
-def test_storage_type_validation():
+def test_storage_type_validation() -> None:
     """Test validation of storage type"""
     with pytest.raises(ValueError, match="1 validation error"):
         Settings(
@@ -56,7 +61,7 @@ def test_storage_type_validation():
         )
 
 
-def test_valid_settings():
+def test_valid_settings() -> None:
     """Test valid settings configuration"""
     settings = Settings(
         EMBEDDINGS_STORAGE_TYPE="memory",
@@ -75,7 +80,7 @@ def test_valid_settings():
     assert settings.EMBEDDINGS_CONTENT_PATH == ":memory:"
 
 
-def test_cloud_settings():
+def test_cloud_settings() -> None:
     """Test cloud settings validation"""
     cloud_settings = Settings(
         EMBEDDINGS_STORAGE_TYPE="cloud",
@@ -96,7 +101,7 @@ def test_cloud_settings():
     assert cloud_settings.GOOGLE_CLOUD_PROJECT == "aurite-dev"
 
 
-def test_llm_settings():
+def test_llm_settings() -> None:
     """Test LLM-specific settings"""
     settings = Settings(
         EMBEDDINGS_STORAGE_TYPE="memory",
@@ -117,7 +122,7 @@ def test_llm_settings():
     assert "default" in settings.SYSTEM_PROMPTS
 
 
-def test_environment_override(monkeypatch, base_settings):
+def test_environment_override(monkeypatch, base_settings) -> None:
     """Test environment variable override"""
     monkeypatch.setenv("EMBEDDINGS_MODEL", "test-model")
     monkeypatch.setenv("API_KEY", "test-key")

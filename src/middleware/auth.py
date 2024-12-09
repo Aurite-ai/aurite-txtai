@@ -1,14 +1,18 @@
+from __future__ import annotations
+
+import os
+
+from dotenv import load_dotenv
 from fastapi import HTTPException, Security
 from fastapi.security import APIKeyHeader
-from dotenv import load_dotenv
-import os
+
 
 load_dotenv()
 
 api_key_header = APIKeyHeader(name="Authorization", auto_error=True)
 
 
-async def verify_token(api_key: str = Security(api_key_header)):
+async def verify_token(api_key: str = Security(api_key_header)) -> bool | None:
     """Verify the API token from request header
 
     Args:

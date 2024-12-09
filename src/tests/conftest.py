@@ -1,11 +1,17 @@
-import pytest
-import logging
+from __future__ import annotations
+
 import asyncio
-from src.services import initialize_services
-from src.config import Settings
-from .fixtures.test_docs import get_test_documents
+import logging
 import os
+
+import pytest
 from dotenv import load_dotenv
+
+from src.config import Settings
+from src.services import initialize_services
+
+from .fixtures.test_docs import get_test_documents
+
 
 # Load environment variables
 load_dotenv()

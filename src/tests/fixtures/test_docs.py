@@ -1,12 +1,15 @@
 """Test document fixtures"""
 
-from typing import List, Dict, Any
+from __future__ import annotations
+
 import logging
+from typing import Any
+
 
 logger = logging.getLogger(__name__)
 
 
-def get_test_documents() -> List[Dict[str, Any]]:
+def get_test_documents() -> list[dict[str, Any]]:
     """Get standard test documents"""
     docs = [
         {
@@ -37,14 +40,14 @@ def get_test_documents() -> List[Dict[str, Any]]:
             },
         },
     ]
-    logger.info(f"\n=== Test Documents ===")
+    logger.info("\n=== Test Documents ===")
     logger.info(f"Created {len(docs)} test documents")
     for doc in docs:
         logger.info(f"Document: {doc}")
     return docs
 
 
-def get_edge_case_documents() -> List[Dict[str, Any]]:
+def get_edge_case_documents() -> list[dict[str, Any]]:
     """Get edge case test documents"""
     return [
         {

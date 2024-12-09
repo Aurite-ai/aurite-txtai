@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 import logging
-from typing import List, Dict, Any, Optional
-from ..base_service import BaseService
-from .embeddings_service import EmbeddingsService
-from .llm_service import LLMService
+from typing import TYPE_CHECKING, Any
+
 from src.config import Settings
+from src.services.base_service import BaseService
+
+
+if TYPE_CHECKING:
+    from .embeddings_service import EmbeddingsService
+    from .llm_service import LLMService
+
 
 logger = logging.getLogger(__name__)
 
@@ -11,18 +18,18 @@ logger = logging.getLogger(__name__)
 class RAGService(BaseService):
     """Service for RAG operations"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize RAG service"""
         super().__init__()
-        self.settings: Optional[Settings] = None
-        self.embeddings_service: Optional[EmbeddingsService] = None
-        self.llm_service: Optional[LLMService] = None
+        self.settings: Settings | None = None
+        self.embeddings_service: EmbeddingsService | None = None
+        self.llm_service: LLMService | None = None
 
     async def initialize(
         self,
         settings: Settings = None,
-        embeddings_service: Optional[EmbeddingsService] = None,
-        llm_service: Optional[LLMService] = None,
+        embeddings_service: EmbeddingsService | None = None,
+        llm_service: LLMService | None = None,
     ) -> None:
         """Initialize RAG service with dependencies"""
         if not self.initialized:
@@ -64,7 +71,7 @@ class RAGService(BaseService):
                 f"{r['text']}"
                 + (
                     f" (Source: {r['metadata'].get('source', 'Unknown')})"
-                    if r.get('metadata')
+                    if r.get("metadata")
                     else ""
                 )
                 for r in context
@@ -91,7 +98,7 @@ class RAGService(BaseService):
 
     async def search_context(
         self, query: str, limit: int = 3, min_score: float = 0.3
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Search for relevant context"""
         self._check_initialized()
         try:

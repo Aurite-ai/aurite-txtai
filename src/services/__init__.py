@@ -1,16 +1,23 @@
 """Service initialization and registry for txtai services"""
 
+from __future__ import annotations
+
 import logging
-from typing import Dict, Any
-from src.config import Settings
+from typing import TYPE_CHECKING, Any, Dict
+
 from .core import initialize_core_services
 from .redis import initialize_redis_services
 from .registry import registry
 
+
+if TYPE_CHECKING:
+    from src.config import Settings
+
+
 logger = logging.getLogger(__name__)
 
 
-async def initialize_services(settings: Settings) -> Dict[str, Any]:
+async def initialize_services(settings: Settings) -> dict[str, Any]:
     """Initialize all services in correct order"""
     try:
         # Initialize core services first

@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 from fastapi import APIRouter
+
 from .api import router as api_router
 from .stream_router import router as stream_router
+
 
 # Create main router
 router = APIRouter()

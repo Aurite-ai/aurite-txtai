@@ -1,8 +1,13 @@
-import pytest
-from src.services.core.embeddings_service import create_embeddings_config
-from src.config import Settings
+from __future__ import annotations
+
 import os
+
+import pytest
 from dotenv import load_dotenv
+
+from src.config import Settings
+from src.services.core.embeddings_service import create_embeddings_config
+
 
 # Load environment variables
 load_dotenv()
@@ -26,7 +31,7 @@ def base_settings():
     )
 
 
-def test_base_config(base_settings):
+def test_base_config(base_settings) -> None:
     """Test base configuration matches expected pattern"""
     config = create_embeddings_config(base_settings)
 
@@ -48,7 +53,7 @@ def test_base_config(base_settings):
     assert config["scoring"]["weights"] == {"hybrid": 0.7, "terms": 0.3}
 
 
-def test_memory_storage_config(base_settings):
+def test_memory_storage_config(base_settings) -> None:
     """Test memory storage configuration"""
     base_settings.EMBEDDINGS_STORAGE_TYPE = "memory"
     config = create_embeddings_config(base_settings)
@@ -57,7 +62,7 @@ def test_memory_storage_config(base_settings):
     assert config["batch"] == base_settings.EMBEDDINGS_BATCH_SIZE
 
 
-def test_cloud_storage_config(base_settings):
+def test_cloud_storage_config(base_settings) -> None:
     """Test cloud storage configuration"""
     # Update settings for cloud storage
     base_settings.EMBEDDINGS_STORAGE_TYPE = "cloud"
@@ -75,7 +80,7 @@ def test_cloud_storage_config(base_settings):
     assert config["contentpath"] == "gcs://aurite-txtai-dev"
 
 
-def test_batch_size_config(base_settings):
+def test_batch_size_config(base_settings) -> None:
     """Test batch size configuration"""
     base_settings.EMBEDDINGS_BATCH_SIZE = 64
     config = create_embeddings_config(base_settings)
@@ -83,7 +88,7 @@ def test_batch_size_config(base_settings):
     assert config["batch"] == 64
 
 
-def test_model_config(base_settings):
+def test_model_config(base_settings) -> None:
     """Test model configuration"""
     base_settings.EMBEDDINGS_MODEL = "alternative-model"
     config = create_embeddings_config(base_settings)

@@ -26,6 +26,8 @@ dev = [
     "pytest-depends>=1.0.1",
     "pytest-ordering>=0.6",
     "pytest-xdist>=3.5.0",
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
     "ipykernel",
     "jupyter"
 ]
@@ -37,3 +39,92 @@ packages = ["src"]
 line-length = 100
 target-version = ['py311']
 skip-string-normalization = true
+
+# Ruff configuration
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["__pycache__", "*.pyc", "*.egg-info"]
+fix = true
+unsafe-fixes = true
+
+# Rule selection
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # naming
+    "UP",  # pyupgrade
+    "ANN", # annotations
+    "B",   # bugbear
+    "A",   # builtins
+    "C4",  # comprehensions
+    "RUF", # ruff-specific
+    "ERA", # eradicate
+    "PL",  # pylint
+    "W",   # warnings
+    "D",   # pydocstyle
+    "TCH", # type-checking
+    "TID", # tidy imports
+]
+
+ignore = [
+    "E501",    # Line too long (handled by formatter)
+    "ANN101",  # Missing type annotation for self
+    "ANN102",  # Missing type annotation for cls
+    "PLR0913", # Too many arguments to function call
+    "D100",    # Missing docstring in public module
+    "D104",    # Missing docstring in public package
+    "D107",    # Missing docstring in __init__
+    "D203",    # 1 blank line required before class docstring
+    "D213",    # Multi-line docstring summary should start at the second line
+    "D406",    # Section name should end with a newline
+    "D407",    # Missing dashed underline after section
+    "D415",    # Missing blank line after class docstring
+    "B904",    # Use 'raise from' in exception handling
+    "ERA001",  # Unused import
+]
+
+# Exclude directories
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+
+[tool.ruff.lint]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+combine-as-imports = true
+lines-after-imports = 2
+required-imports = ["from __future__ import annotations"]

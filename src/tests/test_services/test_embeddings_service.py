@@ -1,7 +1,12 @@
-import pytest
+from __future__ import annotations
+
 import json
 import logging
+
+import pytest
+
 from src.services import registry
+
 
 logger = logging.getLogger(__name__)
 
@@ -10,13 +15,13 @@ logger = logging.getLogger(__name__)
 class TestEmbeddingsCore:
     """Test embeddings core functionality"""
 
-    async def test_service_initialization(self, initialized_services):
+    async def test_service_initialization(self, initialized_services) -> None:
         """Test service initialization and configuration"""
         assert registry.embeddings_service.initialized
         assert registry.embeddings_service.embeddings is not None
         assert registry.embeddings_service.embeddings.config["contentpath"] == ":memory:"
 
-    async def test_document_operations(self, setup_test_data):
+    async def test_document_operations(self, setup_test_data) -> None:
         """Test basic document operations"""
         test_doc = {
             "id": "test1",
@@ -35,7 +40,7 @@ class TestEmbeddingsCore:
         assert "text" in results[0]
         assert "machine learning" in results[0]["text"].lower()
 
-    async def test_empty_metadata_handling(self):
+    async def test_empty_metadata_handling(self) -> None:
         """Test handling of documents with missing metadata"""
         minimal_docs = [
             {"id": "doc3", "text": "Test document with minimal metadata", "metadata": {}}
@@ -48,7 +53,7 @@ class TestEmbeddingsCore:
         assert len(results) == 1
         assert json.loads(results[0]["tags"]) == {}
 
-    async def test_error_handling(self):
+    async def test_error_handling(self) -> None:
         """Test error handling in service operations"""
         # Create a new service instance for testing errors
         test_service = registry.embeddings_service.__class__()
@@ -64,7 +69,7 @@ class TestEmbeddingsCore:
         with pytest.raises(KeyError):
             await registry.embeddings_service.add([{"invalid": "document"}])
 
-    async def test_batch_operations(self):
+    async def test_batch_operations(self) -> None:
         """Test batch document operations"""
         # Create multiple test documents
         batch_docs = [
@@ -86,7 +91,7 @@ class TestEmbeddingsCore:
         )
         assert results[0]["count"] >= 5
 
-    async def test_search_scoring(self):
+    async def test_search_scoring(self) -> None:
         """Test search result scoring"""
         # Add documents with varying relevance
         docs = [

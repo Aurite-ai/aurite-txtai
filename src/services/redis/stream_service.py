@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Optional, Dict, Any
-from src.config import Settings
+from typing import TYPE_CHECKING, Any
+
 from src.models.messages import Message, MessageType
-from ..base_service import BaseService
+from src.services.base_service import BaseService
+
+
+if TYPE_CHECKING:
+    from src.config import Settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -11,13 +18,13 @@ logger = logging.getLogger(__name__)
 class StreamService(BaseService):
     """Service for handling Redis stream operations"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize stream service"""
         super().__init__()
         self._listening = False
-        self._listen_task: Optional[asyncio.Task] = None
-        self.settings: Optional[Settings] = None
-        self.streams: Optional[list] = None
+        self._listen_task: asyncio.Task | None = None
+        self.settings: Settings | None = None
+        self.streams: list | None = None
         self.comm_service = None
         self.txtai_service = None
 
@@ -64,7 +71,7 @@ class StreamService(BaseService):
                 logger.error(f"Error processing stream messages: {e}")
                 await asyncio.sleep(1)  # Prevent tight loop on error
 
-    async def _process_message(self, stream: str, message: Dict[str, Any]) -> None:
+    async def _process_message(self, stream: str, message: dict[str, Any]) -> None:
         """Process a single message from a stream"""
         try:
             msg = Message.from_dict(message)
@@ -87,7 +94,7 @@ class StreamService(BaseService):
                 await self.comm_service.publish_to_stream(stream, response)
 
         except Exception as e:
-            logger.error(f"Error processing message: {str(e)}", exc_info=True)
+            logger.error(f"Error processing message: {e!s}", exc_info=True)
 
 
 # Global service instance

@@ -1,16 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException
-from typing import Dict, Any
-from src.middleware.auth import verify_token
-from src.services import registry
-from src.models.messages import MessageType
+from __future__ import annotations
+
 import logging
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from src.middleware.auth import verify_token
+from src.models.messages import MessageType
+from src.services import registry
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["stream"])
 
 
 @router.post("/rag")
-async def rag_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
+async def rag_stream(data: dict[str, Any], session_id: str | None = None) -> dict[str, Any]:
     """Handle RAG stream requests"""
     try:
         if "query" in data:
@@ -53,7 +58,7 @@ async def rag_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, 
 
 
 @router.post("/llm")
-async def llm_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
+async def llm_stream(data: dict[str, Any], session_id: str | None = None) -> dict[str, Any]:
     """Handle LLM stream requests"""
     try:
         response = await registry.llm_service.generate(
@@ -67,7 +72,7 @@ async def llm_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, 
             "session_id": session_id,
         }
     except Exception as e:
-        logger.error(f"Error in LLM stream: {str(e)}", exc_info=True)
+        logger.error(f"Error in LLM stream: {e!s}", exc_info=True)
         return {
             "type": MessageType.ERROR.value,
             "data": {"error": str(e)},
@@ -76,7 +81,7 @@ async def llm_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, 
 
 
 @router.post("/embeddings", dependencies=[Depends(verify_token)])
-async def embeddings_stream(data: Dict[str, Any], session_id: str = None) -> Dict[str, Any]:
+async def embeddings_stream(data: dict[str, Any], session_id: str | None = None) -> dict[str, Any]:
     """Handle embeddings stream requests"""
     try:
         if "documents" not in data:

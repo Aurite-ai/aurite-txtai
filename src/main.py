@@ -1,9 +1,14 @@
+from __future__ import annotations
+
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from src.config import Settings
 from src.routes import router, stream_router
 from src.services import initialize_services
-from src.config import Settings
-import logging
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -31,7 +36,7 @@ app.add_middleware(
 
 # Initialize services on startup
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     """Initialize services on startup"""
     try:
         await initialize_services(settings)

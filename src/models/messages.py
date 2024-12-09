@@ -1,6 +1,9 @@
-from pydantic import BaseModel
-from typing import Dict, Any
+from __future__ import annotations
+
 from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel
 
 
 class MessageType(Enum):
@@ -17,7 +20,7 @@ class MessageType(Enum):
     HEALTH_CHECK_RESPONSE = "health_check_response"
 
     @classmethod
-    def from_str(cls, value: str) -> "MessageType":
+    def from_str(cls, value: str) -> MessageType:
         """Convert string to enum value"""
         try:
             return cls(value)
@@ -29,7 +32,7 @@ class Message(BaseModel):
     """Message model for stream communication"""
 
     type: MessageType
-    data: Dict[str, Any]
+    data: dict[str, Any]
     session_id: str = ""
 
     class Config:
@@ -38,14 +41,14 @@ class Message(BaseModel):
         use_enum_values = True
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Message":
+    def from_dict(cls, data: dict[str, Any]) -> Message:
         """Create Message from dictionary, handling string message types"""
         if isinstance(data.get("type"), str):
             data = data.copy()  # Don't modify original
             data["type"] = MessageType.from_str(data["type"])
         return cls(**data)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary with string message type"""
         data = self.dict()
         data["type"] = self.type.value

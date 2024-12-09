@@ -1,9 +1,17 @@
-import redis.asyncio as redis
+from __future__ import annotations
+
 import json
 import logging
-from typing import Optional, Dict, Any, List
+from typing import TYPE_CHECKING, Any
+
+import redis.asyncio as redis
+
 from src.services.base_service import BaseService
-from src.config import Settings
+
+
+if TYPE_CHECKING:
+    from src.config import Settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -11,11 +19,11 @@ logger = logging.getLogger(__name__)
 class CommunicationService(BaseService):
     """Service for handling Redis stream communication"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize communication service"""
         super().__init__()
-        self._redis_client: Optional[redis.Redis] = None
-        self.streams: List[str] = []
+        self._redis_client: redis.Redis | None = None
+        self.streams: list[str] = []
         self.consumer_group: str = ""
         self.consumer_name: str = ""
 
@@ -74,7 +82,7 @@ class CommunicationService(BaseService):
                     f"Consumer group {self.consumer_group} already exists for stream {stream}"
                 )
 
-    async def publish_to_stream(self, stream: str, data: Dict[str, Any]) -> None:
+    async def publish_to_stream(self, stream: str, data: dict[str, Any]) -> None:
         """Publish message to Redis Stream"""
         self._check_initialized()
         try:
@@ -100,7 +108,7 @@ class CommunicationService(BaseService):
             logger.error(f"Failed to publish message: {e}")
             raise
 
-    async def read_from_stream(self, stream: str) -> Optional[Dict[str, Any]]:
+    async def read_from_stream(self, stream: str) -> dict[str, Any] | None:
         """Read message from Redis Stream"""
         self._check_initialized()
         try:

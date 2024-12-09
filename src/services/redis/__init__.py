@@ -1,18 +1,25 @@
 """Redis stream service initialization"""
 
+from __future__ import annotations
+
 import logging
-from typing import Dict, Any
-from src.config import Settings
+from typing import TYPE_CHECKING, Any, Dict
+
 from .communication_service import communication_service
 from .stream_service import stream_service
 from .txtai_service import txtai_service
+
+
+if TYPE_CHECKING:
+    from src.config import Settings
+
 
 logger = logging.getLogger(__name__)
 
 
 async def initialize_redis_services(
-    settings: Settings, core_services: Dict[str, Any]
-) -> Dict[str, Any]:
+    settings: Settings, core_services: dict[str, Any]
+) -> dict[str, Any]:
     """Initialize Redis services"""
     try:
         logger.info("Initializing Redis communication service...")
@@ -33,4 +40,4 @@ async def initialize_redis_services(
 
 
 # Export services
-__all__ = ["communication_service", "stream_service", "txtai_service", "initialize_redis_services"]
+__all__ = ["communication_service", "initialize_redis_services", "stream_service", "txtai_service"]

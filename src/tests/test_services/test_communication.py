@@ -1,15 +1,19 @@
-import pytest
+from __future__ import annotations
+
 import json
-from src.services.redis.communication_service import communication_service
-from src.models.messages import Message, MessageType
+
+import pytest
 import redis
+
+from src.models.messages import Message, MessageType
+from src.services.redis.communication_service import communication_service
 
 
 @pytest.mark.asyncio
 class TestCommunicationService:
     """Test communication service functionality"""
 
-    async def test_service_initialization(self, initialized_services):
+    async def test_service_initialization(self, initialized_services) -> None:
         """Test that communication service initializes with correct Redis settings"""
         assert communication_service.initialized
         assert (
@@ -22,7 +26,7 @@ class TestCommunicationService:
         )
         assert communication_service.streams == communication_service.settings.STREAMS
 
-    async def test_redis_connection(self, initialized_services):
+    async def test_redis_connection(self, initialized_services) -> None:
         """Test Redis connection and stream creation"""
         # Test connection
         assert await communication_service._redis_client.ping()
@@ -39,7 +43,7 @@ class TestCommunicationService:
                 if "BUSYGROUP" not in str(e):  # Ignore if group already exists
                     raise
 
-    async def test_message_publishing(self, initialized_services):
+    async def test_message_publishing(self, initialized_services) -> None:
         """Test publishing messages to streams"""
         test_message = Message(
             type=MessageType.RAG_REQUEST, data={"query": "test query"}, session_id="test-session"
@@ -61,7 +65,7 @@ class TestCommunicationService:
             assert json.loads(msg_data["data"]) == test_message.data
             assert msg_data["session_id"] == test_message.session_id
 
-    async def test_consumer_groups(self, initialized_services):
+    async def test_consumer_groups(self, initialized_services) -> None:
         """Test consumer group functionality"""
         stream = communication_service.settings.STREAM_RAG
 
@@ -93,7 +97,7 @@ class TestCommunicationService:
         assert messages is not None
         assert len(messages) > 0
 
-    async def test_error_handling(self, initialized_services):
+    async def test_error_handling(self, initialized_services) -> None:
         """Test error handling in communication service"""
         # Test invalid stream
         with pytest.raises(Exception):
@@ -107,6 +111,8 @@ class TestCommunicationService:
             await communication_service.publish_to_stream(
                 communication_service.settings.STREAM_RAG,
                 Message(
-                    type="invalid_type", data={"query": "test"}, session_id="test"  # type: ignore
+                    type="invalid_type",
+                    data={"query": "test"},
+                    session_id="test",  # type: ignore
                 ),
             )

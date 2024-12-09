@@ -1,6 +1,11 @@
-import pytest
+from __future__ import annotations
+
 import logging
+
+import pytest
+
 from src.services import registry
+
 
 logger = logging.getLogger(__name__)
 
@@ -9,7 +14,7 @@ logger = logging.getLogger(__name__)
 class TestLLMService:
     """Test LLM service functionality"""
 
-    async def test_basic_generation(self, initialized_services):
+    async def test_basic_generation(self, initialized_services) -> None:
         """Test basic text generation"""
         # No need to await initialized_services
         prompt = "What is 2+2?"
@@ -19,7 +24,7 @@ class TestLLMService:
         assert "4" in response.lower()
         logger.info(f"Generated response: {response[:100]}...")
 
-    async def test_context_generation(self):
+    async def test_context_generation(self) -> None:
         """Test generation with context"""
         context = "The capital of France is Paris. It is known for the Eiffel Tower."
         question = "What is the capital of France?"
@@ -31,7 +36,7 @@ class TestLLMService:
         assert "paris" in response.lower()
         logger.info(f"Context-based response: {response[:100]}...")
 
-    async def test_message_format(self):
+    async def test_message_format(self) -> None:
         """Test different message formats"""
         # Test string format
         str_response = await registry.llm_service.generate("Hello")
@@ -47,7 +52,7 @@ class TestLLMService:
         assert isinstance(list_response, str)
         logger.info(f"Message list format response: {list_response[:100]}...")
 
-    async def test_error_handling(self):
+    async def test_error_handling(self) -> None:
         """Test error handling in generation"""
         # Test with empty prompt
         empty_response = await registry.llm_service.generate("")
@@ -62,7 +67,7 @@ class TestLLMService:
 
         logger.info(f"Error handling response: {error_response[:100]}...")
 
-    async def test_context_constraints(self):
+    async def test_context_constraints(self) -> None:
         """Test that context-based generation stays within context"""
         context = "The sky is blue. Birds can fly in the sky."
         question = "What color is grass?"
@@ -75,7 +80,7 @@ class TestLLMService:
         assert any(word in response.lower() for word in ["cannot", "not", "unavailable", "context"])
         logger.info(f"Context constraint response: {response[:100]}...")
 
-    async def test_system_prompts(self, test_settings):
+    async def test_system_prompts(self, test_settings) -> None:
         """Test system prompt handling"""
         # Test default system prompt
         response = await registry.llm_service.generate("Hello")

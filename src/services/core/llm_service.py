@@ -1,8 +1,16 @@
-from typing import Dict, Any
-from litellm import completion
+from __future__ import annotations
+
 import logging
-from ..base_service import BaseService
-from src.config import Settings
+from typing import TYPE_CHECKING
+
+from litellm import completion
+
+from src.services.base_service import BaseService
+
+
+if TYPE_CHECKING:
+    from src.config import Settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +18,7 @@ logger = logging.getLogger(__name__)
 class LLMService(BaseService):
     """Service for managing LLM operations"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize LLM service"""
         super().__init__()
         self.settings = None
@@ -38,10 +46,10 @@ class LLMService(BaseService):
                     f"LLM initialized successfully with provider: {self.settings.LLM_PROVIDER}"
                 )
             except Exception as e:
-                logger.error(f"Failed to initialize LLM: {str(e)}")
+                logger.error(f"Failed to initialize LLM: {e!s}")
                 raise
 
-    async def generate(self, prompt: str, system: str = None) -> str:
+    async def generate(self, prompt: str, system: str | None = None) -> str:
         """Generate text from prompt"""
         self._check_initialized()
         try:

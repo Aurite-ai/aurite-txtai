@@ -1,8 +1,11 @@
-from typing import List, Dict, Any, Optional
-from pydantic_settings import BaseSettings
+from __future__ import annotations
+
 import os
 from functools import lru_cache
+
 from dotenv import load_dotenv
+from pydantic_settings import BaseSettings
+
 
 # Load environment variables
 load_dotenv()
@@ -31,7 +34,7 @@ class Settings(BaseSettings):
     STREAM_RAG: str = f"rag_{STREAM_PREFIX}"
     STREAM_EMBEDDINGS: str = f"embeddings_{STREAM_PREFIX}"
     STREAM_LLM: str = f"llm_{STREAM_PREFIX}"
-    STREAMS: List[str] = [STREAM_RAG, STREAM_EMBEDDINGS, STREAM_LLM]
+    STREAMS: list[str] = [STREAM_RAG, STREAM_EMBEDDINGS, STREAM_LLM]
 
     # Consumer Configuration
     CONSUMER_PREFIX: str = "txtai"
@@ -39,7 +42,7 @@ class Settings(BaseSettings):
     CONSUMER_NAME_TXTAI: str = f"{CONSUMER_PREFIX}_consumer"
 
     # Message Types and Stream Mapping
-    MESSAGE_TYPES: Dict[str, str] = {
+    MESSAGE_TYPES: dict[str, str] = {
         "rag_request": STREAM_RAG,
         "rag_response": STREAM_RAG,
         "embeddings_request": STREAM_EMBEDDINGS,
@@ -60,11 +63,11 @@ class Settings(BaseSettings):
     # LLM Settings
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "anthropic")
-    SYSTEM_PROMPTS: Dict[str, str] = {
+    SYSTEM_PROMPTS: dict[str, str] = {
         "rag": "You are a helpful AI assistant.",
         "default": "You are a helpful AI assistant.",
     }
-    LLM_MODELS: Dict[str, str] = {
+    LLM_MODELS: dict[str, str] = {
         "anthropic": "claude-3-5-sonnet-20240620",
         "openai": "gpt-4o-mini",
     }
@@ -81,7 +84,7 @@ class Settings(BaseSettings):
         extra = "allow"
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance"""
     return Settings()
