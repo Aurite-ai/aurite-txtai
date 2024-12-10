@@ -4,8 +4,6 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Any
 
-from redis.exceptions import RedisError
-
 from src.models.messages import Message, MessageType
 from src.services.base_service import BaseService
 
@@ -29,6 +27,7 @@ class StreamService(BaseService):
         self.txtai_service: TxtAIService | None = None
         self._running: bool = False
         self._task: asyncio.Task[None] | None = None
+        self._processed_messages: set[str] = set()
 
     async def initialize(
         self,
@@ -75,6 +74,7 @@ class StreamService(BaseService):
                 return
 
             self._running = True
+            self._processed_messages.clear()  # Reset processed messages on start
             self._task = asyncio.create_task(self._process_streams())
             logger.info("Stream service started")
 
@@ -95,34 +95,47 @@ class StreamService(BaseService):
                 try:
                     await self._task
                 except asyncio.CancelledError:
-                    pass
-                self._task = None
-            logger.info("Stream service stopped")
+                    logger.info("Stream processing cancelled")
+                except Exception as e:
+                    logger.error(f"Error during stream service shutdown: {e}")
+                finally:
+                    self._task = None
+                    self._processed_messages.clear()
+                    logger.info("Stream service stopped")
 
         except Exception as e:
             logger.error(f"Failed to stop stream service: {e!s}")
-            raise
 
     async def _process_streams(self) -> None:
         """Process messages from all configured streams"""
-        try:
-            if not self.comm_service:
-                raise RuntimeError("Communication service not initialized")
+        if not self.comm_service:
+            raise RuntimeError("Communication service not initialized")
 
-            while self._running:
+        while self._running:
+            try:
                 for stream in self.settings.STREAMS:
-                    messages = await self.comm_service.read_stream(stream)
-                    if messages:
-                        for msg in messages:
-                            await self._process_message(stream, msg)
+                    try:
+                        messages = await self.comm_service.read_stream(stream)
+                        if messages:
+                            for msg in messages:
+                                # Generate message ID from content
+                                msg_id = f"{stream}:{hash(str(msg))}"
+                                if msg_id not in self._processed_messages:
+                                    await self._process_message(stream, msg)
+                                    self._processed_messages.add(msg_id)
+                    except Exception as e:
+                        logger.error(f"Error processing stream {stream}: {e}")
+                        continue
                 await asyncio.sleep(0.1)  # Prevent CPU spinning
 
-        except asyncio.CancelledError:
-            logger.info("Stream processing cancelled")
-            raise
-        except Exception as e:
-            logger.error(f"Stream processing error: {e!s}")
-            raise
+            except asyncio.CancelledError:
+                logger.info("Stream processing cancelled")
+                raise
+            except Exception as e:
+                logger.error(f"Stream processing error: {e!s}")
+                if self._running:
+                    await asyncio.sleep(1)  # Back off on error
+                    continue
 
     async def _process_message(self, stream: str, message: dict[str, Any]) -> None:
         """Process a single stream message
@@ -136,7 +149,7 @@ class StreamService(BaseService):
                 raise RuntimeError("Required services not initialized")
 
             # Convert raw message to Message type
-            msg_data = message["data"]
+            msg_data = message.get("data", {})
             if not isinstance(msg_data, dict):
                 raise ValueError("Invalid message format")
 
@@ -149,20 +162,32 @@ class StreamService(BaseService):
 
             # Process message with txtai service
             response = await self.txtai_service.handle_request(msg)
-            if response and isinstance(response, Message):
-                # Convert Message to dict for Redis
-                await self.comm_service.publish_to_stream(
-                    stream,
-                    {
+            if response:
+                # Handle both Message objects and dictionaries
+                if isinstance(response, Message):
+                    response_dict = {
                         "type": response.type.value,
                         "data": response.data,
                         "session_id": response.session_id,
-                    },
-                )
+                    }
+                else:
+                    response_dict = {
+                        "type": response.get("type"),
+                        "data": response.get("data", {}),
+                        "session_id": response.get("session_id", ""),
+                    }
 
-        except (ValueError, RuntimeError, RedisError) as e:
-            logger.error(f"Message processing error: {e!s}")
-            # Don't re-raise to continue processing other messages
+                await self.comm_service.publish_to_stream(stream, response_dict)
+
+        except (ValueError, RuntimeError) as e:
+            logger.error(f"Message processing error: {e}")
+            if self.comm_service:
+                error_response = {
+                    "type": MessageType.ERROR.value,
+                    "data": {"error": str(e)},
+                    "session_id": message.get("data", {}).get("session_id", ""),
+                }
+                await self.comm_service.publish_to_stream(stream, error_response)
 
 
 # Global instance

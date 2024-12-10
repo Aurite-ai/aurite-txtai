@@ -51,5 +51,5 @@ class Message(BaseModel):
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary with string message type"""
         data = self.model_dump()
-        data["type"] = self.type.value
+        # type is already a string due to use_enum_values = True
         return data
