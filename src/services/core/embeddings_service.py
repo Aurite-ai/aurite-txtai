@@ -135,12 +135,12 @@ class EmbeddingsService(BaseService):
             logger.info("Verified count: %d", count)
             return count
 
-        except ConnectionError as e:
+        except (RuntimeError, ConnectionError) as e:
             logger.error("Database verification failed: %s", str(e))
             raise
-        except (ValueError, RuntimeError, OSError) as e:
+        except Exception as e:
             logger.error("Unexpected error verifying database: %s", str(e))
-            return 0
+            raise RuntimeError(f"Failed to verify database: {e!s}") from e
 
     async def add(self, documents: list[EmbeddingsDocument]) -> int:
         """Add documents to embeddings index
@@ -181,7 +181,7 @@ class EmbeddingsService(BaseService):
             # Verify count
             return await self.verify_database()
 
-        except (ValueError, ConnectionError) as e:
+        except (RuntimeError, ValueError, ConnectionError) as e:
             logger.error("Error adding documents: %s", str(e))
             raise
         except Exception as e:
@@ -209,8 +209,47 @@ class EmbeddingsService(BaseService):
             if self.embeddings is None:
                 raise RuntimeError("Embeddings not initialized")
 
-            # Execute search
-            results = cast(Iterable[Any], self.embeddings.search(query, limit))  # type: ignore[misc] # Complex txtai return type
+            # Check if it's a SQL query
+            is_sql = query.strip().upper().startswith("SELECT")
+            if is_sql:
+                # For SQL queries, ensure we're using tags for metadata
+                if "metadata" in query:
+                    query = query.replace("metadata", "tags")
+
+                # Add LIMIT clause if not present and not a COUNT query
+                if "COUNT" not in query.upper() and "LIMIT" not in query.upper():
+                    query = f"{query} LIMIT {limit}"
+
+                # Execute SQL query
+                results = self.embeddings.search(query)
+                if not results:
+                    return []
+
+                # Format SQL results
+                formatted_results: list[EmbeddingsResult] = []
+                for r in results:
+                    if not isinstance(r, dict | DictLike) or not hasattr(r, "get"):  # type: ignore[misc]
+                        continue
+
+                    # Parse metadata from tags
+                    tags = r.get("tags", "{}")  # type: ignore[union-attr]
+                    try:
+                        metadata = json.loads(str(tags))
+                    except json.JSONDecodeError:
+                        metadata = {}
+
+                    formatted_results.append(
+                        {
+                            "id": str(r.get("id", "")),  # type: ignore[union-attr]
+                            "text": str(r.get("text", "")),  # type: ignore[union-attr]
+                            "score": 1.0,  # SQL results don't have scores
+                            "metadata": metadata,
+                        }
+                    )
+                return formatted_results
+
+            # Execute semantic search
+            results = cast(Iterable[Any], self.embeddings.search(query, limit))  # type: ignore[misc]
             if not results:
                 return []
 
@@ -224,24 +263,30 @@ class EmbeddingsService(BaseService):
                 if score <= min_score:
                     continue
 
+                # Parse metadata from tags
+                tags = r.get("tags", "{}")  # type: ignore[union-attr]
+                try:
+                    metadata = json.loads(str(tags))
+                except json.JSONDecodeError:
+                    metadata = {}
+
                 filtered_results.append(
                     {
+                        "id": str(r.get("id", "")),  # type: ignore[union-attr]
                         "text": str(r.get("text", "")),  # type: ignore[union-attr]
                         "score": score,
-                        "metadata": json.loads(r.get("metadata", "{}")) if r.get("metadata") else {},  # type: ignore[union-attr]
-                        "id": str(r.get("id", "")),  # type: ignore[union-attr]
+                        "metadata": metadata,
                     }
                 )
 
-            logger.info("Found %d relevant documents above score threshold", len(filtered_results))
             return filtered_results
 
-        except (ValueError, ConnectionError) as e:
-            logger.error("Search failed: %s", str(e))
+        except (RuntimeError, ValueError, ConnectionError) as e:
+            logger.error("Error performing search: %s", str(e))
             raise
-        except RuntimeError as e:
+        except Exception as e:
             logger.error("Unexpected error during search: %s", str(e))
-            return []
+            raise RuntimeError(f"Failed to perform search: {e!s}") from e
 
 
 # Global instance

@@ -98,6 +98,7 @@ ignore = [
     "TC001",   # Move import into TYPE_CHECKING block
     "TC002",   # Move import into TYPE_CHECKING block (third-party)
     "TC003",   # Move import into TYPE_CHECKING block (stdlib)
+    "C901",    # Function is too complex
 ]
 
 [tool.ruff.lint.pylint]
