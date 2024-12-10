@@ -127,25 +127,28 @@ class TestEmbeddingsCore:
                 assert isinstance(metadata["array"], list)
                 assert metadata["array"] == [1, 2, 3]
 
-    async def test_error_handling(self) -> None:
+    async def test_error_handling(self, initialized_services) -> None:
         """Test error handling in service operations"""
         # Test uninitialized service
-        test_service = registry.embeddings_service.__class__()
+        from src.services.core.embeddings_service import EmbeddingsService
+
+        test_service = EmbeddingsService()
         with pytest.raises((RuntimeError, ValueError), match=".*not initialized"):
             await test_service.add([])
         with pytest.raises((RuntimeError, ValueError), match=".*not initialized"):
             await test_service.hybrid_search("test")
 
         # Test invalid document format
+        embeddings_service = initialized_services["embeddings"]
         with pytest.raises(KeyError):
-            await registry.embeddings_service.add([{"invalid": "document"}])  # type: ignore
+            await embeddings_service.add([{"invalid": "document"}])  # type: ignore
 
         # Test empty query
-        results = await registry.embeddings_service.hybrid_search("")
+        results = await embeddings_service.hybrid_search("")
         assert len(results) == 0
 
         # Test invalid score threshold
-        results = await registry.embeddings_service.hybrid_search("test", min_score=2.0)
+        results = await embeddings_service.hybrid_search("test", min_score=2.0)
         assert len(results) == 0
 
         # Test invalid document fields
@@ -159,7 +162,7 @@ class TestEmbeddingsCore:
         ]
         for doc in invalid_docs:
             with pytest.raises((KeyError, TypeError)):
-                await registry.embeddings_service.add([doc])  # type: ignore
+                await embeddings_service.add([doc])  # type: ignore
 
     async def test_batch_operations(self) -> None:
         """Test batch document operations"""

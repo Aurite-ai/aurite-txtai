@@ -23,6 +23,38 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def validate_document(doc: Any) -> None:
+    """Validate document fields.
+
+    Args:
+        doc: Document to validate
+
+    Raises:
+        KeyError: If required field is missing
+        TypeError: If field has invalid type
+    """
+    # Check required fields
+    for field in ["id", "text", "metadata"]:
+        if field not in doc:
+            raise KeyError(f"Missing required field: {field}")
+
+    # Check field types
+    if not isinstance(doc["id"], str):
+        raise TypeError("Field 'id' must be string")
+    if not isinstance(doc["text"], str):
+        raise TypeError("Field 'text' must be string")
+    if not isinstance(doc["metadata"], dict):
+        raise TypeError("Field 'metadata' must be dict")
+
+    # Check for None values
+    if doc["id"] is None:
+        raise TypeError("Field 'id' cannot be None")
+    if doc["text"] is None:
+        raise TypeError("Field 'text' cannot be None")
+    if doc["metadata"] is None:
+        raise TypeError("Field 'metadata' cannot be None")
+
+
 def create_embeddings_config(settings: Settings) -> EmbeddingsConfig:
     """Create embeddings configuration from settings.
 
@@ -154,6 +186,8 @@ class EmbeddingsService(BaseService):
         Raises:
             RuntimeError: If service is not initialized
             ValueError: If documents are invalid
+            KeyError: If document is missing required fields
+            TypeError: If document fields have invalid types
             ConnectionError: If indexing fails
         """
         try:
@@ -163,6 +197,10 @@ class EmbeddingsService(BaseService):
 
             logger.info("=== Adding Documents ===")
             logger.info("Processing %d documents", len(documents))
+
+            # Validate all documents first
+            for doc in documents:
+                validate_document(doc)
 
             # Format documents for txtai
             formatted_docs: TxtaiIndexDocuments = [
@@ -183,6 +221,10 @@ class EmbeddingsService(BaseService):
 
         except (RuntimeError, ValueError, ConnectionError) as e:
             logger.error("Error adding documents: %s", str(e))
+            raise
+        except (KeyError, TypeError) as e:
+            # Let KeyError and TypeError propagate directly
+            logger.error("Document validation error: %s", str(e))
             raise
         except Exception as e:
             logger.error("Unexpected error adding documents: %s", str(e))
@@ -209,6 +251,10 @@ class EmbeddingsService(BaseService):
             if self.embeddings is None:
                 raise RuntimeError("Embeddings not initialized")
 
+            # Handle empty query
+            if not query.strip():
+                return []
+
             # Check if it's a SQL query
             is_sql = query.strip().upper().startswith("SELECT")
             if is_sql:
@@ -216,12 +262,20 @@ class EmbeddingsService(BaseService):
                 if "metadata" in query:
                     query = query.replace("metadata", "tags")
 
-                # Add LIMIT clause if not present and not a COUNT query
-                if "COUNT" not in query.upper() and "LIMIT" not in query.upper():
-                    query = f"{query} LIMIT {limit}"
+                # Add ORDER BY and LIMIT clauses if not present and not a COUNT query
+                if "COUNT" not in query.upper():
+                    # Get all matching documents first
+                    base_query = query
+                    if "ORDER BY" not in base_query.upper():
+                        base_query = f"{base_query} ORDER BY id"
+                    if "LIMIT" not in base_query.upper():
+                        base_query = f"{base_query} LIMIT 1000"  # Get all matching documents
 
-                # Execute SQL query
-                results = self.embeddings.search(query)
+                    # Execute SQL query
+                    results = self.embeddings.search(base_query)
+                else:
+                    results = self.embeddings.search(query)
+
                 if not results:
                     return []
 
@@ -246,7 +300,9 @@ class EmbeddingsService(BaseService):
                             "metadata": metadata,
                         }
                     )
-                return formatted_results
+
+                # Apply limit after formatting
+                return formatted_results[:limit]
 
             # Execute semantic search
             results = cast(Iterable[Any], self.embeddings.search(query, limit))  # type: ignore[misc]
