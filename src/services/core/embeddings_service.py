@@ -319,17 +319,30 @@ class EmbeddingsService(BaseService):
                 if score <= min_score:
                     continue
 
-                # Parse metadata from tags
-                tags = r.get("tags", "{}")  # type: ignore[union-attr]
-                try:
-                    metadata = json.loads(str(tags))
-                except json.JSONDecodeError:
+                # Get document ID from result
+                doc_id = str(r.get("id", ""))  # type: ignore[union-attr]
+                if not doc_id and "id" in r:  # Handle case where id is in result directly
+                    doc_id = str(r["id"])
+
+                # Get text from result
+                text = str(r.get("text", ""))  # type: ignore[union-attr]
+                if not text and "text" in r:  # Handle case where text is in result directly
+                    text = str(r["text"])
+
+                # Get metadata from SQL query
+                sql_results = self.embeddings.search(f"SELECT tags FROM txtai WHERE id = '{doc_id}'")
+                if sql_results and len(sql_results) > 0:
+                    try:
+                        metadata = json.loads(str(sql_results[0]["tags"]))
+                    except json.JSONDecodeError:
+                        metadata = {}
+                else:
                     metadata = {}
 
                 filtered_results.append(
                     {
-                        "id": str(r.get("id", "")),  # type: ignore[union-attr]
-                        "text": str(r.get("text", "")),  # type: ignore[union-attr]
+                        "id": doc_id,
+                        "text": text,
                         "score": score,
                         "metadata": metadata,
                     }

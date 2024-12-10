@@ -8,9 +8,22 @@ import pytest
 
 from src.models.txtai_types import EmbeddingsDocument, EmbeddingsResult
 from src.services import registry
+from src.tests.fixtures.test_docs import get_test_documents
 
 
 logger = logging.getLogger(__name__)
+
+
+@pytest.fixture(autouse=True)
+async def cleanup_database():
+    """Reset the database before each test"""
+    # Run the test
+    yield
+
+    # Clean up after test
+    if registry.embeddings_service.embeddings is not None:
+        # Just reinitialize the embeddings to clear the database
+        registry.embeddings_service.embeddings.index([])
 
 
 @pytest.fixture
@@ -143,13 +156,17 @@ class TestEmbeddingsCore:
         with pytest.raises(KeyError):
             await embeddings_service.add([{"invalid": "document"}])  # type: ignore
 
+        # Add some test documents for search tests
+        test_docs = get_test_documents()
+        await embeddings_service.add(test_docs)
+
         # Test empty query
         results = await embeddings_service.hybrid_search("")
         assert len(results) == 0
 
         # Test invalid score threshold
         results = await embeddings_service.hybrid_search("test", min_score=2.0)
-        assert len(results) == 0
+        assert len(results) == 0  # No results should match such a high score threshold
 
         # Test invalid document fields
         invalid_docs: list[Any] = [
@@ -180,13 +197,25 @@ class TestEmbeddingsCore:
         count = await registry.embeddings_service.add(batch_docs)
         assert count == 5
 
-        # Verify all documents were added
+        # Verify all documents were added using COUNT
+        count_results = registry.embeddings_service.embeddings.search("SELECT COUNT(*) as count FROM txtai")
+        assert count_results[0]["count"] == 5
+
+        # Verify all documents were added with full query
         results = registry.embeddings_service.embeddings.search(
-            "SELECT id, text, tags FROM txtai WHERE tags LIKE '%test%'"
+            "SELECT id, text, tags FROM txtai ORDER BY id LIMIT 1000"
         )
         assert len(results) == 5
 
-        # Verify document content
+        # Verify document content and metadata
+        for i, result in enumerate(results):
+            metadata = json.loads(result["tags"])
+            assert metadata["category"] == "test"
+            assert metadata["batch"] == i
+            assert result["id"] == f"batch{i}"
+            assert result["text"] == f"Test document {i} about various topics"
+
+        # Verify document content through hybrid search
         for i in range(5):
             results = await registry.embeddings_service.hybrid_search(f"document {i}", limit=1)
             assert len(results) == 1
