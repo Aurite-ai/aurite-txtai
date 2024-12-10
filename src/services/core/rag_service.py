@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, TypedDict
 
-import httpx
-
 from src.services.base_service import BaseService
 
 
@@ -84,17 +82,25 @@ class RAGService(BaseService):
 
         Returns:
             RAGResult: Question, context used, and generated answer
+
+        Raises:
+            ValueError: If question is empty
+            RuntimeError: If service is not initialized
         """
         try:
             self._check_initialized()
             if not self.embeddings_service or not self.llm_service:
                 raise RuntimeError("Required services not initialized")
 
+            # Validate question
+            if not question.strip():
+                raise ValueError("Query cannot be empty")
+
             # Search for relevant context
             results = await self.embeddings_service.hybrid_search(
                 query=question,
                 limit=limit,
-                min_score=min_score,
+                min_score=min_score or 0.3,  # Use default min_score if not provided
             )
 
             # Format context from results
@@ -125,8 +131,11 @@ class RAGService(BaseService):
                 "answer": answer,
             }
 
-        except (ValueError, RuntimeError, httpx.HTTPError) as e:
+        except (ValueError, RuntimeError) as e:
             logger.error(f"RAG answer generation failed: {e!s}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error in RAG answer generation: {e!s}")
             return {
                 "question": question,
                 "context": "Error retrieving context",

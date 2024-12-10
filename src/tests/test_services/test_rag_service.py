@@ -21,49 +21,90 @@ class TestRAGService:
         assert registry.llm_service.initialized
         logger.info("RAG service and dependencies initialized successfully")
 
-    async def test_basic_generation(self, initialized_services, setup_test_data) -> None:
-        """Test basic RAG generation"""
+    async def test_basic_rag(self, initialized_services, setup_test_data) -> None:
+        """Test basic RAG functionality"""
         query = "What is machine learning?"
-        logger.info("\n=== Testing RAG generation ===")
+        logger.info("\n=== Testing RAG answer generation ===")
         logger.info(f"Query: {query}")
 
-        response = await registry.rag_service.generate(query)
-        assert isinstance(response, str)
-        assert len(response) > 0
+        result = await registry.rag_service.answer(query)
+        assert isinstance(result, dict)
+        assert "question" in result
+        assert "context" in result
+        assert "answer" in result
+        assert result["question"] == query
+        assert len(result["answer"]) > 0
+        assert "machine learning" in result["context"].lower()
 
     async def test_no_context_handling(self, initialized_services) -> None:
         """Test RAG handling when no relevant context found"""
-        response = await registry.rag_service.generate("What is quantum physics?")
-        assert isinstance(response, str)
-        assert len(response) > 0
+        query = "What is quantum physics?"
+        result = await registry.rag_service.answer(query)
+        assert isinstance(result, dict)
+        assert result["question"] == query
+        assert "No relevant context found" in result["context"]
+        assert len(result["answer"]) > 0
 
     async def test_error_handling(self, initialized_services) -> None:
         """Test RAG error handling"""
+        # Test empty query
         with pytest.raises(ValueError, match="Query cannot be empty"):
-            await registry.rag_service.generate("")
+            await registry.rag_service.answer("")
+
+        # Test uninitialized service
+        from src.services.core.rag_service import RAGService
+
+        test_service = RAGService()
+        with pytest.raises(RuntimeError, match=".*not initialized"):
+            await test_service.answer("test")
 
     async def test_context_search(self, initialized_services, setup_test_data) -> None:
         """Test context search functionality"""
         query = "machine learning"
-        logger.info(f"\nTesting context search with query: {query}")
+        logger.info(f"\nTesting RAG with query: {query}")
 
-        results = await registry.rag_service.search_context(query, limit=2)
-        assert len(results) > 0
-        assert all("score" in r for r in results)
-        assert all("text" in r for r in results)
+        # Test with different limits
+        result1 = await registry.rag_service.answer(query, limit=1)
+        result2 = await registry.rag_service.answer(query, limit=2)
+
+        # Count context documents
+        doc_count1 = result1["context"].count("Document ")
+        doc_count2 = result2["context"].count("Document ")
+
+        assert doc_count1 == 1
+        assert doc_count2 == 2
+
+    async def test_temperature_control(self, initialized_services, setup_test_data) -> None:
+        """Test temperature parameter in answer generation"""
+        query = "What is artificial intelligence?"
+
+        # Generate answers with different temperatures
+        result1 = await registry.rag_service.answer(query, temperature=0.1)
+        result2 = await registry.rag_service.answer(query, temperature=0.9)
+
+        assert result1["answer"] != result2["answer"]
+        assert "artificial intelligence" in result1["context"].lower()
+        assert "artificial intelligence" in result2["context"].lower()
 
     async def test_min_score_filtering(self, initialized_services, setup_test_data) -> None:
-        """Test minimum score filtering in context search"""
-        results = await registry.rag_service.search_context(
-            "machine learning", limit=2, min_score=0.99
-        )
-        assert len(results) == 0  # No results should pass this high threshold
+        """Test minimum score filtering in context retrieval"""
+        query = "machine learning"
+
+        # Test with high min_score
+        result = await registry.rag_service.answer(query, min_score=0.99)
+        assert "No relevant context found" in result["context"]
+
+        # Test with normal min_score
+        result = await registry.rag_service.answer(query, min_score=0.0)
+        assert "No relevant context found" not in result["context"]
+        assert "machine learning" in result["context"].lower()
 
     async def test_context_relevance(self, initialized_services, setup_test_data) -> None:
         """Test that context results are relevant to query"""
-        query = "artificial intelligence"
+        query = "artificial intelligence and machine learning"
         logger.info(f"\nTesting context relevance with query: {query}")
 
-        results = await registry.rag_service.search_context(query, limit=3)
-        assert len(results) > 0
-        assert any(query.lower() in r["text"].lower() or "ai" in r["text"].lower() for r in results)
+        result = await registry.rag_service.answer(query)
+        assert "artificial intelligence" in result["context"].lower()
+        assert "machine learning" in result["context"].lower()
+        assert len(result["answer"]) > 0
