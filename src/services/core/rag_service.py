@@ -134,12 +134,19 @@ class RAGService(BaseService):
         except (ValueError, RuntimeError) as e:
             logger.error(f"RAG answer generation failed: {e!s}")
             raise
-        except Exception as e:
-            logger.error(f"Unexpected error in RAG answer generation: {e!s}")
+        except (ConnectionError, TimeoutError) as e:
+            logger.error(f"Network error in RAG answer generation: {e!s}")
             return {
                 "question": question,
                 "context": "Error retrieving context",
-                "answer": "Failed to generate answer due to an error",
+                "answer": "Failed to generate answer due to a network error",
+            }
+        except KeyError as e:
+            logger.error(f"Data format error in RAG answer generation: {e!s}")
+            return {
+                "question": question,
+                "context": "Error retrieving context",
+                "answer": "Failed to generate answer due to a data format error",
             }
 
 

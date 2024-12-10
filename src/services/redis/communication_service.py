@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
 import redis.asyncio as redis
 
+from src.models.messages import MessageType
 from src.services.base_service import BaseService
 
 
@@ -17,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 T = TypeVar("T", bound="CommunicationService")
+
+
+# Type for Redis message fields
+MessageDict = dict[str, str]
 
 
 class RedisClientProtocol(Protocol):
@@ -74,34 +79,41 @@ class CommunicationService(BaseService):
             Exception: If initialization fails
         """
         try:
+            # Reset state if already initialized
+            if self._initialized:
+                await self.close()
+                self._initialized = False
+                self._settings = None
+
+            # Initialize settings through super class
             await super().initialize(settings, **kwargs)
 
-            if not self._initialized:
-                # Initialize Redis client
-                self._client = redis.Redis(
-                    host=self.settings.REDIS_HOST,
-                    port=self.settings.REDIS_PORT,
-                    db=self.settings.REDIS_DB,
-                    decode_responses=True,
-                )
+            # Initialize Redis client
+            self._client = redis.Redis(
+                host=self.settings.REDIS_HOST,
+                port=self.settings.REDIS_PORT,
+                db=self.settings.REDIS_DB,
+                decode_responses=True,  # Auto-decode responses
+            )
 
-                # Test connection
-                if not await self._client.ping():
-                    raise RuntimeError("Failed to connect to Redis")
+            # Test connection
+            if not await self._client.ping():
+                raise RuntimeError("Failed to connect to Redis")
 
-                # Set consumer configuration
-                self.consumer_group = self.settings.CONSUMER_GROUP_TXTAI
-                self.consumer_name = self.settings.CONSUMER_NAME_TXTAI
+            # Set consumer configuration
+            self.consumer_group = self.settings.CONSUMER_GROUP_TXTAI
+            self.consumer_name = self.settings.CONSUMER_NAME_TXTAI
 
-                # Initialize streams
-                for stream in self.settings.STREAMS:
-                    await self._init_stream(stream)
+            # Initialize streams
+            for stream in self.settings.STREAMS:
+                await self._init_stream(stream)
 
-                self._initialized = True
-                logger.info("Communication service initialized successfully")
+            self._initialized = True
+            logger.info("Communication service initialized successfully")
 
         except Exception as e:
             logger.error(f"Failed to initialize communication service: {e!s}")
+            await self.close()
             raise
 
     async def _init_stream(self, stream: str) -> None:
@@ -140,6 +152,33 @@ class CommunicationService(BaseService):
                 raise
             logger.info(f"Consumer group {self.consumer_group} already exists for stream: {stream}")
 
+    def _validate_message(self, data: Any) -> None:
+        """Validate message format
+
+        Args:
+            data: Message data to validate
+
+        Raises:
+            ValueError: If message format is invalid
+        """
+        if not isinstance(data, dict):
+            raise ValueError("Message must be a dictionary")
+
+        required_fields = {"type", "data", "session_id"}
+        missing_fields = required_fields - set(data.keys())
+        if missing_fields:
+            raise ValueError(f"Missing required fields: {missing_fields}")
+
+        # Validate message type
+        try:
+            MessageType.from_str(data["type"])
+        except ValueError as e:
+            raise ValueError(f"Invalid message type: {e}")
+
+        # Validate data field
+        if not isinstance(data["data"], dict):
+            raise ValueError("Message data must be a dictionary")
+
     async def publish_to_stream(self, stream: str, data: dict[str, Any]) -> None:
         """Publish message to stream
 
@@ -149,12 +188,20 @@ class CommunicationService(BaseService):
 
         Raises:
             RuntimeError: If service is not initialized
+            ValueError: If message format is invalid
             Exception: If publishing fails
         """
         if not self._client:
             raise RuntimeError("Redis client not initialized")
 
         try:
+            # Validate stream
+            if stream not in self.settings.STREAMS:
+                raise ValueError(f"Invalid stream: {stream}")
+
+            # Validate message format
+            self._validate_message(data)
+
             # Format stream data
             stream_data = {
                 "data": json.dumps(data),
@@ -187,11 +234,31 @@ class CommunicationService(BaseService):
         try:
             logger.debug(f"Attempting to read from stream: {stream}")
 
+            # Clear any pending messages
+            pending = await self._client.xpending(name=stream, groupname=self.consumer_group)
+            if pending["pending"] > 0:
+                # Get pending message IDs
+                pending_ids = [
+                    entry["message_id"]
+                    for entry in await self._client.xpending_range(
+                        name=stream,
+                        groupname=self.consumer_group,
+                        min="-",
+                        max="+",
+                        count=pending["pending"],
+                    )
+                ]
+                # Acknowledge and delete pending messages
+                if pending_ids:
+                    await self._client.xack(stream, self.consumer_group, *pending_ids)
+                    await self._client.xdel(stream, *pending_ids)
+
+            # Read new messages
             messages = await self._client.xreadgroup(
                 groupname=self.consumer_group,
                 consumername=self.consumer_name,
                 streams={stream: ">"},
-                count=self.settings.STREAM_READ_COUNT,
+                count=1,  # Read one message at a time
                 block=self.settings.STREAM_BLOCK_MS,
             )
 
@@ -200,19 +267,23 @@ class CommunicationService(BaseService):
 
             # Process messages
             stream_messages = []
-            for _, message_list in messages:
+            for stream_name, message_list in messages:
                 for msg_id, msg_data in message_list:
-                    # Parse message data
-                    msg_data_str = {k.decode(): v.decode() for k, v in msg_data.items()}
+                    # Parse message data (already decoded by Redis client)
+                    data = json.loads(msg_data["data"])
                     message = {
-                        "id": msg_id.decode(),
-                        "data": json.loads(msg_data_str["data"]),
-                        "timestamp": msg_data_str.get("timestamp", ""),
+                        "id": msg_id,
+                        "data": data,  # Keep original message structure
                     }
                     stream_messages.append(message)
 
-                    # Acknowledge message
-                    await self._client.xack(name=stream, groupname=self.consumer_group, ids=msg_id.decode())
+                    # Acknowledge message and verify
+                    ack_result = await self._client.xack(stream_name, self.consumer_group, msg_id)
+                    if not ack_result:
+                        raise redis.RedisError(f"Failed to acknowledge message {msg_id}")
+
+                    # Delete message after acknowledgment
+                    await self._client.xdel(stream_name, msg_id)
 
             return stream_messages
 
@@ -224,6 +295,7 @@ class CommunicationService(BaseService):
         """Close Redis connection"""
         if self._client:
             await self._client.close()
+            self._client = None
             self._initialized = False
             logger.info("Communication service closed")
 
